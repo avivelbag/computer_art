@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Amber Current</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { background: #0a0500; overflow: hidden; }
+    canvas { display: block; }
+  </style>
+</head>
+<body>
+  <canvas id="canvas"></canvas>
+  <script>
+    const PARTICLE_COUNT = 600;
+    const SCALE = 0.003;
+    const SPEED = 1.8;
+    const FADE_ALPHA = 0.018;
+
+    const COLORS = [
+      'rgba(255,191,0,',
+      'rgba(255,153,0,',
+      'rgba(255,120,30,',
+      'rgba(230,90,0,',
+      'rgba(255,210,80,',
+    ];
+
+    // Permutation table for Perlin noise
+    const _p = [151,160,137,91,90,15,131,13,201,95,96,53,194,233,7,225,140,36,
+      103,30,69,142,8,99,37,240,21,10,23,190,6,148,247,120,234,75,0,26,197,62,
+      94,252,219,203,117,35,11,32,57,177,33,88,237,149,56,87,174,20,125,136,171,
+      168,68,175,74,165,71,134,139,48,27,166,77,146,158,231,83,111,229,122,60,
+      211,133,230,220,105,92,41,55,46,245,40,244,102,143,54,65,25,63,161,1,216,
+      80,73,209,76,132,187,208,89,18,169,200,196,135,130,116,188,159,86,164,100,
+      109,198,173,186,3,64,52,217,226,250,124,123,5,202,38,147,118,126,255,82,
+      85,212,207,206,59,227,47,16,58,17,182,189,28,42,223,183,170,213,119,248,
+      152,2,44,154,163,70,221,153,101,155,167,43,172,9,129,22,39,253,19,98,108,
+      110,79,113,224,232,178,185,112,104,218,246,97,228,251,34,242,193,238,210,
+      144,12,191,179,162,241,81,51,145,235,249,14,239,107,49,192,214,31,181,199,
+      106,157,184,84,204,176,115,121,50,45,127,4,150,254,138,236,205,93,222,114,
+      67,29,24,72,243,141,128,195,78,66,215,61,156,180];
+    const perm = new Uint8Array(512);
+    for (let i = 0; i < 512; i++) perm[i] = _p[i & 255];
+
+    function fade(t) { return t * t * t * (t * (t * 6 - 15) + 10); }
+    function lerp(a, b, t) { return a + t * (b - a); }
+    function grad(h, x, y) {
+      const u = (h & 1) ? x : y;
+      const v = (h & 2) ? x : y;
+      return ((h & 1) ? -u : u) + ((h & 2) ? -v : v);
+    }
+    function noise(x, y) {
+      const X = Math.floor(x) & 255, Y = Math.floor(y) & 255;
+      x -= Math.floor(x); y -= Math.floor(y);
+      const u = fade(x), v = fade(y);
+      const a = perm[X] + Y, b = perm[X + 1] + Y;
+      return lerp(
+        lerp(grad(perm[a],     x,   y  ), grad(perm[b],     x - 1, y  ), u),
+        lerp(grad(perm[a + 1], x,   y - 1), grad(perm[b + 1], x - 1, y - 1), u),
+        v
+      );
+    }
+
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    let W, H, particles;
+
+    function resize() {
+      W = canvas.width  = window.innerWidth;
+      H = canvas.height = window.innerHeight;
+    }
+
+    function mkParticle() {
+      return {
+        x: Math.random() * W,
+        y: Math.random() * H,
+        color: COLORS[Math.floor(Math.random() * COLORS.length)],
+        alpha: 0.3 + Math.random() * 0.5,
+        life: 0,
+        maxLife: 120 + Math.random() * 240,
+      };
+    }
+
+    function init() {
+      resize();
+      particles = Array.from({ length: PARTICLE_COUNT }, mkParticle);
+    }
+
+    function step() {
+      // Dim the canvas each frame to create fading trails
+      ctx.fillStyle = `rgba(10,5,0,${FADE_ALPHA})`;
+      ctx.fillRect(0, 0, W, H);
+
+      for (const p of particles) {
+        const angle = noise(p.x * SCALE, p.y * SCALE) * Math.PI * 4;
+        p.x += Math.cos(angle) * SPEED;
+        p.y += Math.sin(angle) * SPEED;
+        p.life++;
+
+        // Wrap around edges instead of resetting to keep flow continuous
+        if (p.x < 0) p.x += W;
+        if (p.x > W) p.x -= W;
+        if (p.y < 0) p.y += H;
+        if (p.y > H) p.y -= H;
+
+        const lifeFrac = p.life / p.maxLife;
+        const alpha = p.alpha * (1 - lifeFrac * lifeFrac);
+
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, 1.2, 0, Math.PI * 2);
+        ctx.fillStyle = p.color + alpha + ')';
+        ctx.fill();
+
+        if (p.life >= p.maxLife) Object.assign(p, mkParticle());
+      }
+
+      requestAnimationFrame(step);
+    }
+
+    window.addEventListener('resize', () => { resize(); });
+    init();
+    step();
+  </script>
+</body>
+</html>

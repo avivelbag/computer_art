@@ -1,0 +1,48 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300" width="400" height="300">
+  <rect width="400" height="300" fill="#0a0500"/>
+  <!-- Flow field particle trails in warm amber tones -->
+  <g opacity="0.85">
+    <path d="M 20 80 Q 80 60 140 90 Q 200 120 260 100 Q 320 80 380 110" stroke="rgba(255,191,0,0.8)" stroke-width="1.5" fill="none"/>
+    <path d="M 20 120 Q 70 100 130 130 Q 190 160 250 140 Q 310 120 380 150" stroke="rgba(255,153,0,0.7)" stroke-width="1.2" fill="none"/>
+    <path d="M 20 160 Q 90 140 150 170 Q 210 200 270 180 Q 330 160 380 190" stroke="rgba(255,120,30,0.65)" stroke-width="1.0" fill="none"/>
+    <path d="M 20 200 Q 85 180 145 210 Q 205 240 265 220 Q 325 200 380 230" stroke="rgba(230,90,0,0.6)" stroke-width="0.9" fill="none"/>
+    <path d="M 40 50  Q 100 30 160 55 Q 220 80 280 60 Q 340 40 390 65" stroke="rgba(255,210,80,0.75)" stroke-width="1.3" fill="none"/>
+
+    <path d="M 20 240 Q 80 220 140 250 Q 200 280 260 260 Q 320 240 380 265" stroke="rgba(255,191,0,0.5)" stroke-width="0.8" fill="none"/>
+    <path d="M 60 30  Q 120 10 180 35 Q 240 60 300 40 Q 350 25 390 45" stroke="rgba(255,170,50,0.6)" stroke-width="1.0" fill="none"/>
+    <path d="M 20 270 Q 90 255 150 275 Q 210 295 270 278 Q 330 262 380 282" stroke="rgba(200,80,0,0.45)" stroke-width="0.7" fill="none"/>
+  </g>
+  <!-- Particle dots scattered across the field -->
+  <g fill="rgba(255,191,0,0.9)">
+    <circle cx="45"  cy="78"  r="1.8"/>
+    <circle cx="110" cy="62"  r="1.5"/>
+    <circle cx="175" cy="92"  r="2.0"/>
+    <circle cx="240" cy="108" r="1.6"/>
+    <circle cx="305" cy="88"  r="1.9"/>
+    <circle cx="360" cy="112" r="1.4"/>
+  </g>
+  <g fill="rgba(255,153,0,0.8)">
+    <circle cx="55"  cy="118" r="1.6"/>
+    <circle cx="130" cy="132" r="1.8"/>
+    <circle cx="195" cy="158" r="1.5"/>
+    <circle cx="260" cy="142" r="2.0"/>
+    <circle cx="325" cy="122" r="1.7"/>
+    <circle cx="368" cy="152" r="1.3"/>
+  </g>
+  <g fill="rgba(255,120,30,0.75)">
+    <circle cx="70"  cy="165" r="1.7"/>
+    <circle cx="148" cy="172" r="1.4"/>
+    <circle cx="215" cy="198" r="1.9"/>
+    <circle cx="278" cy="182" r="1.6"/>
+    <circle cx="342" cy="162" r="1.5"/>
+    <circle cx="372" cy="192" r="1.2"/>
+  </g>
+  <g fill="rgba(255,210,80,0.85)">
+    <circle cx="30"  cy="48"  r="1.5"/>
+    <circle cx="95"  cy="32"  r="1.8"/>
+    <circle cx="165" cy="58"  r="1.6"/>
+    <circle cx="235" cy="65"  r="1.9"/>
+    <circle cx="295" cy="42"  r="1.4"/>
+    <circle cx="355" cy="68"  r="2.0"/>
+  </g>
+</svg>

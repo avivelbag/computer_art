@@ -28,11 +28,6 @@ def test_pieces_json_is_valid_json():
     assert data is not None
 
 
-def test_pieces_json_empty_by_default():
-    """Scaffold starts with an empty array; pieces are added later."""
-    assert load() == []
-
-
 @pytest.mark.parametrize("entry", load() if PIECES_JSON.exists() else [])
 def test_entry_complete(entry):
     """Every piece must carry the full set of required metadata fields."""

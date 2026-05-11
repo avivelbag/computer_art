@@ -1,1 +1,11 @@
-[]
+[
+  {
+    "id": "01-amber-current",
+    "title": "Amber Current",
+    "tagline": "600 particles drift through a Perlin-noise flow field in warm amber light",
+    "year": 2026,
+    "technique": "canvas / perlin noise",
+    "path": "pieces/01-amber-current",
+    "thumbnail": "pieces/01-amber-current/thumbnail.svg"
+  }
+]
