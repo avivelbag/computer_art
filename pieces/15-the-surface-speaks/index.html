@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>The Surface Speaks</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: #0a0e1a;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      overflow: hidden;
+    }
+    #output {
+      font-family: monospace;
+      font-size: clamp(7px, 1.1vw, 14px);
+      line-height: 1.1;
+      letter-spacing: 0.05em;
+      color: #ffb000;
+      white-space: pre;
+      user-select: none;
+    }
+  </style>
+</head>
+<body>
+  <pre id="output"></pre>
+  <script>
+    const COLS = 80;
+    const ROWS = 40;
+    const RAMP = ' .:-=+*#@';
+    const RAMP_MAX = RAMP.length - 1;
+    const FREQ = 3.0;
+    const SPEED = 0.045;
+    const FPS_CAP = 60;
+    const FRAME_MS = 1000 / FPS_CAP;
+
+    const pre = document.getElementById('output');
+
+    let t = 0;
+    let lastFrameTime = 0;
+
+    /**
+     * Map a z value in [-1, 1] to a character in the ASCII brightness ramp.
+     * Clamps the index so out-of-range floats never throw an error.
+     */
+    function zToChar(z) {
+      const idx = Math.round(((z + 1) / 2) * RAMP_MAX);
+      return RAMP[Math.max(0, Math.min(RAMP_MAX, idx))];
+    }
+
+    /**
+     * Build one full frame of the ASCII surface.
+     * For each grid cell (col, row) we compute normalised coordinates in
+     * [-π, π] then evaluate the rippling sine–cosine product surface:
+     *   z = sin(x * FREQ + t) * cos(y * FREQ + t * 0.7)
+     * The two different time multipliers (1.0 and 0.7) break the symmetry so
+     * the wave travels diagonally rather than purely left-right.
+     */
+    function buildFrame() {
+      const lines = new Array(ROWS);
+      for (let row = 0; row < ROWS; row++) {
+        const y = (row / ROWS - 0.5) * Math.PI * 2;
+        let line = '';
+        for (let col = 0; col < COLS; col++) {
+          const x = (col / COLS - 0.5) * Math.PI * 2;
+          const z = Math.sin(x * FREQ + t) * Math.cos(y * FREQ + t * 0.7);
+          line += zToChar(z);
+        }
+        lines[row] = line;
+      }
+      return lines.join('\n');
+    }
+
+    function render(now) {
+      if (now - lastFrameTime >= FRAME_MS) {
+        pre.textContent = buildFrame();
+        t += SPEED;
+        lastFrameTime = now;
+      }
+      requestAnimationFrame(render);
+    }
+
+    requestAnimationFrame(render);
+  </script>
+</body>
+</html>
