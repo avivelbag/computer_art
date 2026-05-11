@@ -43,5 +43,14 @@
     "technique": "SVG / recursive quadtree subdivision",
     "path": "pieces/10-the-room-divides-itself",
     "thumbnail": "pieces/10-the-room-divides-itself/thumbnail.svg"
+  },
+  {
+    "id": "15-the-surface-speaks",
+    "title": "The Surface Speaks",
+    "tagline": "A rippling sine–cosine surface sampled onto an 80×40 ASCII grid — amber phosphor on deep navy",
+    "year": 2026,
+    "technique": "HTML pre / ASCII art / sine-cosine product surface",
+    "path": "pieces/15-the-surface-speaks",
+    "thumbnail": "pieces/15-the-surface-speaks/thumbnail.svg"
   }
 ]
