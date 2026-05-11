@@ -7,10 +7,56 @@
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
-  <h1>Gallery</h1>
+  <header>
+    <h1>Gallery</h1>
+    <button id="theme-toggle" aria-label="Toggle dark/light mode">◑</button>
+  </header>
   <div id="grid"></div>
 
   <script>
+    // localStorage key for theme preference: "theme"
+    (function () {
+      const saved = localStorage.getItem('theme');
+      if (saved) document.documentElement.dataset.theme = saved;
+    })();
+
+    document.getElementById('theme-toggle').addEventListener('click', function () {
+      const current = document.documentElement.dataset.theme;
+      const next = current === 'dark' ? 'light' : 'dark';
+      document.documentElement.dataset.theme = next;
+      localStorage.setItem('theme', next);
+    });
+
+    let focusedIdx = -1;
+
+    function getCards() {
+      return Array.from(document.querySelectorAll('.card'));
+    }
+
+    document.addEventListener('keydown', function (e) {
+      const cards = getCards();
+      if (!cards.length) return;
+
+      if (e.key === 'ArrowRight') {
+        focusedIdx = Math.min(focusedIdx + 1, cards.length - 1);
+        cards[focusedIdx].focus();
+      } else if (e.key === 'ArrowLeft') {
+        focusedIdx = Math.max(focusedIdx - 1, 0);
+        cards[focusedIdx].focus();
+      } else if (e.key === 'Escape') {
+        if (focusedIdx >= 0) {
+          cards[focusedIdx].blur();
+          focusedIdx = -1;
+        }
+      }
+    });
+
+    document.addEventListener('focusin', function (e) {
+      const cards = getCards();
+      const idx = cards.indexOf(e.target);
+      if (idx !== -1) focusedIdx = idx;
+    });
+
     async function init() {
       const grid = document.getElementById('grid');
       let pieces;
