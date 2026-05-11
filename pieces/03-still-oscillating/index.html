@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Still Oscillating</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { background: #0a0a0f; display: flex; align-items: center; justify-content: center; height: 100vh; }
+    canvas { display: block; }
+  </style>
+</head>
+<body>
+  <canvas id="canvas" width="600" height="600"></canvas>
+  <script>
+    const W = 600, H = 600;
+    const CX = W / 2, CY = H / 2;
+
+    // Each of the two x-pendulums and two y-pendulums has amplitude 1,
+    // so max displacement = 2. Scale maps that to 90% of the half-canvas.
+    const SCALE = 135;
+    const DECAY = 0.0002;
+    const TOTAL_STEPS = 3000;
+    const STEPS_PER_FRAME = 2;
+    const FADE_FRAMES = 80;
+
+    // Phase offsets give the curve asymmetry that prevents degenerate figures.
+    const P1 = 0, P2 = Math.PI / 2, P3 = Math.PI / 4, P4 = 0;
+
+    // Base frequencies: near-integer ratios (2:3 for x, 1:2 for y) with a small
+    // irrational nudge so the curve drifts slowly rather than closing exactly.
+    const BASE_F = [2.001, 3.001, 1.001, 2.001];
+
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+
+    let step, freqs, mode, fadeCount, prevX, prevY;
+
+    /**
+     * Return new frequency set by perturbing each base frequency by ±0.002.
+     * Called once per loop cycle so no two consecutive loops are identical.
+     */
+    function nextFreqs() {
+      return BASE_F.map(f => f + (Math.random() - 0.5) * 0.004);
+    }
+
+    /**
+     * Compute canvas (x, y) for the given step index using the dual-pendulum
+     * harmonograph equations with exponential amplitude decay.
+     *
+     * x(t) = [sin(f1·t + p1) + sin(f2·t + p2)] · exp(−d·t)
+     * y(t) = [sin(f3·t + p3) + sin(f4·t + p4)] · exp(−d·t)
+     */
+    function xy(t) {
+      const [f1, f2, f3, f4] = freqs;
+      const decay = Math.exp(-DECAY * t);
+      const nx = (Math.sin(f1 * t + P1) + Math.sin(f2 * t + P2)) * decay;
+      const ny = (Math.sin(f3 * t + P3) + Math.sin(f4 * t + P4)) * decay;
+      return [CX + nx * SCALE, CY + ny * SCALE];
+    }
+
+    function startCycle() {
+      step = 0;
+      freqs = nextFreqs();
+      mode = 'draw';
+      fadeCount = 0;
+      [prevX, prevY] = xy(0);
+    }
+
+    function tick() {
+      if (mode === 'draw') {
+        ctx.strokeStyle = 'rgba(220, 200, 255, 0.15)';
+        ctx.lineWidth = 0.8;
+        for (let i = 0; i < STEPS_PER_FRAME; i++) {
+          step++;
+          const [x, y] = xy(step);
+          ctx.beginPath();
+          ctx.moveTo(prevX, prevY);
+          ctx.lineTo(x, y);
+          ctx.stroke();
+          prevX = x;
+          prevY = y;
+        }
+        if (step >= TOTAL_STEPS) {
+          mode = 'fade';
+        }
+      } else {
+        // Overlay semi-transparent background to dissolve the drawn curve.
+        ctx.fillStyle = 'rgba(10, 10, 15, 0.06)';
+        ctx.fillRect(0, 0, W, H);
+        fadeCount++;
+        if (fadeCount >= FADE_FRAMES) {
+          startCycle();
+        }
+      }
+      requestAnimationFrame(tick);
+    }
+
+    ctx.fillStyle = '#0a0a0f';
+    ctx.fillRect(0, 0, W, H);
+    startCycle();
+    requestAnimationFrame(tick);
+  </script>
+</body>
+</html>

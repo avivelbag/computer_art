@@ -7,5 +7,14 @@
     "technique": "canvas / perlin noise",
     "path": "pieces/01-amber-current",
     "thumbnail": "pieces/01-amber-current/thumbnail.svg"
+  },
+  {
+    "id": "03-still-oscillating",
+    "title": "Still Oscillating",
+    "tagline": "Dual-pendulum harmonograph traces decaying Lissajous curves in violet light",
+    "year": 2026,
+    "technique": "canvas / harmonograph / parametric equations",
+    "path": "pieces/03-still-oscillating",
+    "thumbnail": "pieces/03-still-oscillating/thumbnail.svg"
   }
 ]
