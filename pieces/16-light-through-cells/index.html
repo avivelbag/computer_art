@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Light Through Cells</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: #111;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      overflow: hidden;
+    }
+    canvas { display: block; }
+  </style>
+</head>
+<body>
+  <canvas id="canvas" width="600" height="600"></canvas>
+  <script>
+    const W = 600;
+    const H = 600;
+    const RES = 150;
+    const N_SEEDS = 25;
+    const FPS_CAP = 60;
+    const FRAME_MS = 1000 / FPS_CAP;
+
+    const PALETTE = [
+      [0xf5, 0xc0, 0x7a],
+      [0xc9, 0x7d, 0x4e],
+      [0xe8, 0xdc, 0xc8],
+      [0x6b, 0x4c, 0x3b],
+      [0x2e, 0x5c, 0x6e],
+      [0xa8, 0xc5, 0xb5],
+    ];
+
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    ctx.imageSmoothingEnabled = false;
+
+    const off = document.createElement('canvas');
+    off.width = RES;
+    off.height = RES;
+    const offCtx = off.getContext('2d');
+
+    /**
+     * Each seed drifts at a constant velocity and bounces off walls.
+     * Speed kept in [0.2, 0.5] px/frame so cells morph slowly enough
+     * to read as stained-glass rather than chaos.
+     */
+    const seeds = Array.from({ length: N_SEEDS }, (_, i) => ({
+      x: Math.random() * RES,
+      y: Math.random() * RES,
+      dx: (Math.random() < 0.5 ? 1 : -1) * (0.2 + Math.random() * 0.3),
+      dy: (Math.random() < 0.5 ? 1 : -1) * (0.2 + Math.random() * 0.3),
+      colorIdx: i % PALETTE.length,
+    }));
+
+    const nearest = new Int32Array(RES * RES);
+    const imgData = offCtx.createImageData(RES, RES);
+    const pixels = imgData.data;
+
+    let lastFrameTime = 0;
+
+    function updateSeeds() {
+      for (const s of seeds) {
+        s.x += s.dx;
+        s.y += s.dy;
+        if (s.x < 0)    { s.x  = -s.x;           s.dx = -s.dx; }
+        if (s.x >= RES) { s.x  = 2 * RES - s.x;  s.dx = -s.dx; }
+        if (s.y < 0)    { s.y  = -s.y;            s.dy = -s.dy; }
+        if (s.y >= RES) { s.y  = 2 * RES - s.y;  s.dy = -s.dy; }
+      }
+    }
+
+    /**
+     * Brute-force Voronoi: for every pixel find the closest seed by
+     * squared Euclidean distance. O(RES² · N_SEEDS) — fine at 150×150.
+     */
+    function computeVoronoi() {
+      for (let py = 0; py < RES; py++) {
+        for (let px = 0; px < RES; px++) {
+          let minDist = Infinity;
+          let minIdx = 0;
+          for (let s = 0; s < N_SEEDS; s++) {
+            const ddx = px - seeds[s].x;
+            const ddy = py - seeds[s].y;
+            const d = ddx * ddx + ddy * ddy;
+            if (d < minDist) { minDist = d; minIdx = s; }
+          }
+          nearest[py * RES + px] = minIdx;
+        }
+      }
+    }
+
+    /**
+     * Write RGBA values into the ImageData buffer.
+     * Border pixels (where the nearest seed differs from a 4-neighbour)
+     * get the lead-came colour #1a1a1a; cell interiors get the seed's
+     * palette colour.
+     */
+    function buildImage() {
+      for (let py = 0; py < RES; py++) {
+        for (let px = 0; px < RES; px++) {
+          const idx = py * RES + px;
+          const si  = nearest[idx];
+
+          const isBorder = (
+            (px > 0       && nearest[idx - 1]   !== si) ||
+            (px < RES - 1 && nearest[idx + 1]   !== si) ||
+            (py > 0       && nearest[idx - RES]  !== si) ||
+            (py < RES - 1 && nearest[idx + RES]  !== si)
+          );
+
+          const p4 = idx * 4;
+          if (isBorder) {
+            pixels[p4]     = 0x1a;
+            pixels[p4 + 1] = 0x1a;
+            pixels[p4 + 2] = 0x1a;
+          } else {
+            const col = PALETTE[seeds[si].colorIdx];
+            pixels[p4]     = col[0];
+            pixels[p4 + 1] = col[1];
+            pixels[p4 + 2] = col[2];
+          }
+          pixels[p4 + 3] = 255;
+        }
+      }
+    }
+
+    function render(now) {
+      if (now - lastFrameTime >= FRAME_MS) {
+        updateSeeds();
+        computeVoronoi();
+        buildImage();
+        offCtx.putImageData(imgData, 0, 0);
+        ctx.drawImage(off, 0, 0, W, H);
+        lastFrameTime = now;
+      }
+      requestAnimationFrame(render);
+    }
+
+    requestAnimationFrame(render);
+  </script>
+</body>
+</html>
