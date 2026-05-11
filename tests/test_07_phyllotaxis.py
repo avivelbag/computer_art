@@ -4,8 +4,6 @@ import math
 import pathlib
 import sys
 
-import pytest
-
 PIECE_DIR = pathlib.Path(__file__).parent.parent / "pieces" / "07-every-seed-knows"
 sys.path.insert(0, str(PIECE_DIR))
 import generate as gen  # noqa: E402
