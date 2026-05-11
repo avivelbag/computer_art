@@ -61,5 +61,14 @@
     "technique": "canvas / Voronoi diagram / brute-force pixel coloring",
     "path": "pieces/16-light-through-cells",
     "thumbnail": "pieces/16-light-through-cells/thumbnail.svg"
+  },
+  {
+    "id": "17-where-life-begins",
+    "title": "Where Life Begins",
+    "tagline": "Gray-Scott reaction-diffusion grows coral Turing patterns from a single seed — charcoal becomes cream",
+    "year": 2026,
+    "technique": "canvas / reaction-diffusion / Gray-Scott",
+    "path": "pieces/17-where-life-begins",
+    "thumbnail": "pieces/17-where-life-begins/thumbnail.svg"
   }
 ]
