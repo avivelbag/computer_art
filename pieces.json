@@ -70,5 +70,14 @@
     "technique": "canvas / reaction-diffusion / Gray-Scott",
     "path": "pieces/17-where-life-begins",
     "thumbnail": "pieces/17-where-life-begins/thumbnail.svg"
+  },
+  {
+    "id": "21-frequencies-in-common",
+    "title": "Frequencies in Common",
+    "tagline": "56 Lissajous curves — 14 frequency ratios × 4 phase offsets — woven in near-black navy on warm cream",
+    "year": 2026,
+    "technique": "SVG / Lissajous curves / parametric / pen-plotter",
+    "path": "pieces/21-frequencies-in-common",
+    "thumbnail": "pieces/21-frequencies-in-common/thumbnail.svg"
   }
 ]
