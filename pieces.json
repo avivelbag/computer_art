@@ -16,5 +16,14 @@
     "technique": "canvas / harmonograph / parametric equations",
     "path": "pieces/03-still-oscillating",
     "thumbnail": "pieces/03-still-oscillating/thumbnail.svg"
+  },
+  {
+    "id": "04-between-the-tiles",
+    "title": "Between the Tiles",
+    "tagline": "A binary Truchet grid slowly ripples as random tiles flip orientation forever",
+    "year": 2026,
+    "technique": "canvas / truchet tiles / quarter-circle arcs",
+    "path": "pieces/04-between-the-tiles",
+    "thumbnail": "pieces/04-between-the-tiles/thumbnail.svg"
   }
 ]
