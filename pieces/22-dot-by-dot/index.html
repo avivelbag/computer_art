@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dot by Dot the Light Falls</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: #FAF3E0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+    }
+    canvas {
+      display: block;
+      width: 100vmin;
+      height: 100vmin;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="canvas" width="600" height="600"></canvas>
+  <script>
+    const W    = 600;
+    const H    = 600;
+    const COLS = 60;
+    const ROWS = 60;
+
+    const CELL_W  = W / COLS;
+    const CELL_H  = H / ROWS;
+    const MAX_R   = CELL_W * 0.48;
+
+    const BG_COLOR     = '#FAF3E0';
+    const DOT_COLOR    = '#FF6B6B';
+    const SHADOW_COLOR = '#1A1A2E';
+    const SHADOW_DX    = 2;
+    const SHADOW_DY    = 2;
+    const SHADOW_ALPHA = 0.35;
+
+    // One outward ripple cycle every CYCLE_S seconds
+    const CYCLE_S = 8;
+    // Controls how many rings span the canvas; π×12 ≈ 6 rings to the edge
+    const SCALE   = Math.PI * 12;
+
+    const canvas = document.getElementById('canvas');
+    const ctx    = canvas.getContext('2d');
+
+    let phase    = 0;
+    let lastTime = 0;
+
+    /**
+     * Evaluate the damped radial ripple at grid cell (gx, gy) with the given
+     * phase offset. Returns a value in [0, 1] where 1 = largest dot.
+     *
+     * sin(r − phase) / (r + 1) where r = dist × SCALE and dist is the
+     * normalised Euclidean distance from canvas centre. The (r+1) denominator
+     * makes amplitude decay with distance, mimicking a real ripple spreading
+     * from a point source. Subtracting phase causes the rings to expand outward
+     * as phase increases over time.
+     */
+    function evaluate(gx, gy, ph) {
+      const nx   = (gx + 0.5) / COLS - 0.5;
+      const ny   = (gy + 0.5) / ROWS - 0.5;
+      const dist = Math.sqrt(nx * nx + ny * ny);
+      const r    = dist * SCALE;
+      const raw  = Math.sin(r - ph) / (r + 1);
+      return (raw + 1) / 2;
+    }
+
+    function draw(ph) {
+      ctx.fillStyle = BG_COLOR;
+      ctx.fillRect(0, 0, W, H);
+
+      // Shadow pass — navy mis-registration ghost offset by (SHADOW_DX, SHADOW_DY)
+      ctx.fillStyle   = SHADOW_COLOR;
+      ctx.globalAlpha = SHADOW_ALPHA;
+      for (let gy = 0; gy < ROWS; gy++) {
+        for (let gx = 0; gx < COLS; gx++) {
+          const v = evaluate(gx, gy, ph);
+          const r = v * MAX_R;
+          if (r < 0.4) continue;
+          ctx.beginPath();
+          ctx.arc(
+            (gx + 0.5) * CELL_W + SHADOW_DX,
+            (gy + 0.5) * CELL_H + SHADOW_DY,
+            r, 0, Math.PI * 2
+          );
+          ctx.fill();
+        }
+      }
+
+      // Dot pass — coral foreground
+      ctx.fillStyle   = DOT_COLOR;
+      ctx.globalAlpha = 1.0;
+      for (let gy = 0; gy < ROWS; gy++) {
+        for (let gx = 0; gx < COLS; gx++) {
+          const v = evaluate(gx, gy, ph);
+          const r = v * MAX_R;
+          if (r < 0.4) continue;
+          ctx.beginPath();
+          ctx.arc(
+            (gx + 0.5) * CELL_W,
+            (gy + 0.5) * CELL_H,
+            r, 0, Math.PI * 2
+          );
+          ctx.fill();
+        }
+      }
+    }
+
+    function loop(now) {
+      // Cap delta so a backgrounded tab doesn't burst on resume
+      const dt  = Math.min(now - lastTime, 100);
+      lastTime  = now;
+      phase    += (dt / 1000) * (2 * Math.PI / CYCLE_S);
+      if (phase >= 2 * Math.PI) phase -= 2 * Math.PI;
+      draw(phase);
+      requestAnimationFrame(loop);
+    }
+
+    requestAnimationFrame(loop);
+  </script>
+</body>
+</html>
