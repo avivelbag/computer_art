@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Gallery</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <h1>Gallery</h1>
+  <div id="grid"></div>
+
+  <script>
+    async function init() {
+      const grid = document.getElementById('grid');
+      let pieces;
+
+      try {
+        const res = await fetch('./pieces.json');
+        pieces = await res.json();
+      } catch (err) {
+        grid.innerHTML = '<p id="empty-state">Could not load gallery data.</p>';
+        return;
+      }
+
+      if (!pieces.length) {
+        const msg = document.createElement('p');
+        msg.id = 'empty-state';
+        msg.textContent = 'No pieces yet — the gallery is growing.';
+        grid.appendChild(msg);
+        return;
+      }
+
+      for (const piece of pieces) {
+        const card = document.createElement('a');
+        card.className = 'card';
+        card.href = piece.path + '/index.html';
+        card.target = '_blank';
+        card.rel = 'noopener noreferrer';
+
+        const img = document.createElement('img');
+        img.src = piece.thumbnail;
+        img.alt = piece.title;
+        img.loading = 'lazy';
+
+        const body = document.createElement('div');
+        body.className = 'card-body';
+
+        const title = document.createElement('h2');
+        title.className = 'card-title';
+        title.textContent = piece.title;
+
+        const tagline = document.createElement('p');
+        tagline.className = 'card-tagline';
+        tagline.textContent = piece.tagline;
+
+        body.appendChild(title);
+        body.appendChild(tagline);
+        card.appendChild(img);
+        card.appendChild(body);
+        grid.appendChild(card);
+      }
+    }
+
+    init();
+  </script>
+</body>
+</html>
