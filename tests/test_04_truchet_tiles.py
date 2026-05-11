@@ -291,7 +291,6 @@ def test_thumbnail_paths_have_stroke_attribute():
     """Each path in the thumbnail must carry a stroke, not just fill."""
     svg_text = THUMBNAIL.read_text()
     root = ET.fromstring(svg_text)
-    ns = {"svg": "http://www.w3.org/2000/svg"}
     paths = root.findall(".//path") or root.findall(".//{http://www.w3.org/2000/svg}path")
     assert paths, "thumbnail.svg must contain <path> elements"
     for path in paths:
