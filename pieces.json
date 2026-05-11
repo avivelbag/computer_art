@@ -52,5 +52,14 @@
     "technique": "HTML pre / ASCII art / sine-cosine product surface",
     "path": "pieces/15-the-surface-speaks",
     "thumbnail": "pieces/15-the-surface-speaks/thumbnail.svg"
+  },
+  {
+    "id": "16-light-through-cells",
+    "title": "Light Through Cells",
+    "tagline": "25 drifting Voronoi seeds painted in warm amber and teal — a stained-glass window that never settles",
+    "year": 2026,
+    "technique": "canvas / Voronoi diagram / brute-force pixel coloring",
+    "path": "pieces/16-light-through-cells",
+    "thumbnail": "pieces/16-light-through-cells/thumbnail.svg"
   }
 ]

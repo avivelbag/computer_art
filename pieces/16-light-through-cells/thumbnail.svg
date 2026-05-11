@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" width="400" height="400">
+  <rect width="400" height="400" fill="#111"/>
+  <!-- Voronoi cells approximated as polygons with the warm stained-glass palette -->
+  <!-- Cell 1: amber top-left -->
+  <polygon points="0,0 170,0 130,80 60,110 0,70" fill="#f5c07a"/>
+  <!-- Cell 2: sienna top-right -->
+  <polygon points="170,0 400,0 400,90 280,120 200,60 130,80" fill="#c97d4e"/>
+  <!-- Cell 3: cream left -->
+  <polygon points="0,70 60,110 40,220 0,200" fill="#e8dcc8"/>
+  <!-- Cell 4: deep teal center -->
+  <polygon points="130,80 200,60 280,120 260,210 170,230 80,190 60,110" fill="#2e5c6e"/>
+  <!-- Cell 5: dark brown right -->
+  <polygon points="280,120 400,90 400,250 310,260 260,210" fill="#6b4c3b"/>
+  <!-- Cell 6: sage bottom-left -->
+  <polygon points="0,200 40,220 80,190 100,310 30,340 0,320" fill="#a8c5b5"/>
+  <!-- Cell 7: amber lower-center -->
+  <polygon points="80,190 170,230 190,330 100,310" fill="#f5c07a"/>
+  <!-- Cell 8: sienna lower-right -->
+  <polygon points="260,210 310,260 400,250 400,400 200,400 190,330 170,230" fill="#c97d4e"/>
+  <!-- Cell 9: cream bottom-left -->
+  <polygon points="0,320 30,340 100,310 190,330 200,400 0,400" fill="#e8dcc8"/>
+  <!-- Lead-came borders: stroke over all cells -->
+  <polygon points="0,0 170,0 130,80 60,110 0,70" fill="none" stroke="#1a1a1a" stroke-width="2.5"/>
+  <polygon points="170,0 400,0 400,90 280,120 200,60 130,80" fill="none" stroke="#1a1a1a" stroke-width="2.5"/>
+  <polygon points="0,70 60,110 40,220 0,200" fill="none" stroke="#1a1a1a" stroke-width="2.5"/>
+  <polygon points="130,80 200,60 280,120 260,210 170,230 80,190 60,110" fill="none" stroke="#1a1a1a" stroke-width="2.5"/>
+  <polygon points="280,120 400,90 400,250 310,260 260,210" fill="none" stroke="#1a1a1a" stroke-width="2.5"/>
+  <polygon points="0,200 40,220 80,190 100,310 30,340 0,320" fill="none" stroke="#1a1a1a" stroke-width="2.5"/>
+  <polygon points="80,190 170,230 190,330 100,310" fill="none" stroke="#1a1a1a" stroke-width="2.5"/>
+  <polygon points="260,210 310,260 400,250 400,400 200,400 190,330 170,230" fill="none" stroke="#1a1a1a" stroke-width="2.5"/>
+  <polygon points="0,320 30,340 100,310 190,330 200,400 0,400" fill="none" stroke="#1a1a1a" stroke-width="2.5"/>
+</svg>
