@@ -1,8 +1,18 @@
 :root {
-  --bg: #0d0d0d;
-  --card-bg: #1a1a1a;
-  --accent: #e8e0d0;
+  --bg: #f5f0eb;
+  --text: #111;
+  --card-bg: #fff;
+  --card-border: #ddd;
+  --accent: #555;
   --gap: 1.5rem;
+}
+
+[data-theme="dark"] {
+  --bg: #0e0e0e;
+  --text: #e8e8e8;
+  --card-bg: #1a1a1a;
+  --card-border: #333;
+  --accent: #e8e0d0;
 }
 
 * {
@@ -12,17 +22,40 @@
 body {
   margin: 0;
   background: var(--bg);
-  color: var(--accent);
+  color: var(--text);
   font-family: system-ui, sans-serif;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+
+header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--gap);
+  position: relative;
 }
 
 h1 {
-  text-align: center;
-  padding: var(--gap);
   margin: 0;
   font-weight: 300;
   letter-spacing: 0.1em;
   font-size: 1.5rem;
+}
+
+#theme-toggle {
+  position: absolute;
+  right: var(--gap);
+  background: none;
+  border: 1px solid var(--accent);
+  color: var(--text);
+  cursor: pointer;
+  padding: 0.35rem 0.75rem;
+  border-radius: 4px;
+  font-size: 1rem;
+}
+
+#theme-toggle:hover {
+  opacity: 0.75;
 }
 
 #grid {
@@ -36,14 +69,20 @@ h1 {
   #grid {
     grid-template-columns: 1fr;
   }
+
+  #theme-toggle {
+    position: static;
+    margin-left: auto;
+  }
 }
 
 .card {
   background: var(--card-bg);
+  border: 1px solid var(--card-border);
   border-radius: 8px;
   overflow: hidden;
   text-decoration: none;
-  color: var(--accent);
+  color: var(--text);
   display: flex;
   flex-direction: column;
   transition: transform 0.2s ease, box-shadow 0.2s ease;
@@ -51,7 +90,12 @@ h1 {
 
 .card:hover {
   transform: translateY(-3px);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+}
+
+.card:focus {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
 }
 
 .card img {
