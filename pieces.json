@@ -25,5 +25,14 @@
     "technique": "canvas / truchet tiles / quarter-circle arcs",
     "path": "pieces/04-between-the-tiles",
     "thumbnail": "pieces/04-between-the-tiles/thumbnail.svg"
+  },
+  {
+    "id": "07-every-seed-knows",
+    "title": "Every Seed Knows",
+    "tagline": "~800 seeds spiral outward via the golden angle; a static botanical SVG with zero JavaScript",
+    "year": 2026,
+    "technique": "SVG / phyllotaxis / golden angle",
+    "path": "pieces/07-every-seed-knows",
+    "thumbnail": "pieces/07-every-seed-knows/thumbnail.svg"
   }
 ]
