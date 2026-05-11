@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>The Plant That Writes Itself</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: #f5f0e8;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+    }
+    canvas {
+      display: block;
+      width: 100vmin;
+      height: 100vmin;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="canvas" width="600" height="600"></canvas>
+  <script>
+    const W = 600, H = 600;
+    const BG = '#f5f0e8';
+
+    const AXIOM      = 'X';
+    const RULES      = { X: 'F+[[X]-X]-F[-FX]+X', F: 'FF' };
+    const ANGLE_DEG  = 25;
+    const ITERATIONS = 6;
+
+    const PALETTE = ['#2d6a4f', '#74c69d', '#d8f3dc'];
+
+    const GROW_MS = 4000;
+    const HOLD_MS = 1000;
+    const FADE_MS =  500;
+    const PADDING =   40;
+
+    // -----------------------------------------------------------------------
+    // L-system string expansion
+    // -----------------------------------------------------------------------
+
+    /**
+     * Expand axiom by applying rules n times.
+     * Non-terminal symbols not in rules pass through unchanged.
+     */
+    function expand(axiom, rules, n) {
+      let s = axiom;
+      for (let i = 0; i < n; i++) {
+        let t = '';
+        for (const c of s) t += rules[c] !== undefined ? rules[c] : c;
+        s = t;
+      }
+      return s;
+    }
+
+    // -----------------------------------------------------------------------
+    // Turtle-graphics walk — pre-computes all segment geometry once
+    // -----------------------------------------------------------------------
+
+    /**
+     * Interpret the L-system string as turtle-graphics commands.
+     * Returns an array of {x1,y1,x2,y2,depth} objects with unit length.
+     *
+     *   F → draw forward 1 unit
+     *   + → rotate left by angleDeg (counter-clockwise)
+     *   - → rotate right by angleDeg (clockwise)
+     *   [ → push {x, y, angle, depth} onto stack; increment depth
+     *   ] → pop stack; restore turtle state and depth
+     *
+     * depth tracks bracket nesting and is used for color/width selection.
+     */
+    function turtleWalk(str, angleDeg) {
+      const da    = angleDeg * Math.PI / 180;
+      const segs  = [];
+      const stack = [];
+      let x = 0, y = 0, a = -Math.PI / 2, depth = 0;
+
+      for (const c of str) {
+        if (c === 'F') {
+          const nx = x + Math.cos(a);
+          const ny = y + Math.sin(a);
+          segs.push({ x1: x, y1: y, x2: nx, y2: ny, depth });
+          x = nx; y = ny;
+        } else if (c === '+') {
+          a -= da;
+        } else if (c === '-') {
+          a += da;
+        } else if (c === '[') {
+          stack.push({ x, y, a, depth });
+          depth++;
+        } else if (c === ']') {
+          const st = stack.pop();
+          x = st.x; y = st.y; a = st.a; depth = st.depth;
+        }
+      }
+      return segs;
+    }
+
+    // -----------------------------------------------------------------------
+    // Build and scale segment list (done once at startup)
+    // -----------------------------------------------------------------------
+
+    const lsStr  = expand(AXIOM, RULES, ITERATIONS);
+    const rawSegs = turtleWalk(lsStr, ANGLE_DEG);
+
+    let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+    for (const s of rawSegs) {
+      if (s.x1 < minX) minX = s.x1; if (s.x1 > maxX) maxX = s.x1;
+      if (s.x2 < minX) minX = s.x2; if (s.x2 > maxX) maxX = s.x2;
+      if (s.y1 < minY) minY = s.y1; if (s.y1 > maxY) maxY = s.y1;
+      if (s.y2 < minY) minY = s.y2; if (s.y2 > maxY) maxY = s.y2;
+    }
+
+    const treeW = maxX - minX;
+    const treeH = maxY - minY;
+    const scale = Math.min((W - 2 * PADDING) / treeW, (H - 2 * PADDING) / treeH);
+    const offX  = (W - treeW * scale) / 2 - minX * scale;
+    const offY  = H - PADDING - maxY * scale;
+
+    const segs = rawSegs.map(s => ({
+      x1: s.x1 * scale + offX,
+      y1: s.y1 * scale + offY,
+      x2: s.x2 * scale + offX,
+      y2: s.y2 * scale + offY,
+      depth: s.depth,
+    }));
+
+    const TOTAL = segs.length;
+
+    // -----------------------------------------------------------------------
+    // Rendering
+    // -----------------------------------------------------------------------
+
+    const canvas = document.getElementById('canvas');
+    const ctx    = canvas.getContext('2d');
+    ctx.lineCap  = 'round';
+
+    function colorOf(d) {
+      return d <= 1 ? PALETTE[0] : d <= 3 ? PALETTE[1] : PALETTE[2];
+    }
+
+    function widthOf(d) {
+      return d === 0 ? 3 : d <= 2 ? 1.5 : 0.7;
+    }
+
+    /**
+     * Draw the first `count` segments at the given alpha.
+     * Segments are batched by (strokeStyle, lineWidth) to minimise context
+     * state changes — the style is set once per color/width transition
+     * and the entire sub-path is stroked as a single call.
+     */
+    function render(count, alpha) {
+      ctx.globalAlpha = 1;
+      ctx.fillStyle   = BG;
+      ctx.fillRect(0, 0, W, H);
+
+      if (count === 0 || alpha <= 0) return;
+
+      ctx.globalAlpha = alpha;
+      let curColor = null, curWidth = null;
+
+      for (let i = 0; i < count; i++) {
+        const s = segs[i];
+        const c = colorOf(s.depth);
+        const w = widthOf(s.depth);
+
+        if (c !== curColor || w !== curWidth) {
+          if (curColor !== null) ctx.stroke();
+          ctx.beginPath();
+          ctx.strokeStyle = c;
+          ctx.lineWidth   = w;
+          curColor = c; curWidth = w;
+        }
+        ctx.moveTo(s.x1, s.y1);
+        ctx.lineTo(s.x2, s.y2);
+      }
+      if (curColor !== null) ctx.stroke();
+
+      ctx.globalAlpha = 1;
+    }
+
+    // -----------------------------------------------------------------------
+    // Animation state machine: growing → holding → fading → growing …
+    // -----------------------------------------------------------------------
+
+    let phase = 'growing';
+    let growT = 0, holdT = 0, fadeT = 0;
+    let lastT = null;
+
+    function loop(now) {
+      if (lastT === null) lastT = now;
+      // Cap delta so a backgrounded tab doesn't burst on resume
+      const dt = Math.min(now - lastT, 100);
+      lastT = now;
+
+      if (phase === 'growing') {
+        growT += dt;
+        const count = Math.min(Math.floor(TOTAL * growT / GROW_MS), TOTAL);
+        render(count, 1);
+        if (growT >= GROW_MS) { phase = 'holding'; holdT = 0; }
+
+      } else if (phase === 'holding') {
+        holdT += dt;
+        // Canvas preserves content — no redraw needed during hold
+        if (holdT >= HOLD_MS) { phase = 'fading'; fadeT = 0; }
+
+      } else {
+        fadeT += dt;
+        const alpha = Math.max(0, 1 - fadeT / FADE_MS);
+        render(TOTAL, alpha);
+        if (fadeT >= FADE_MS) { phase = 'growing'; growT = 0; }
+      }
+
+      requestAnimationFrame(loop);
+    }
+
+    requestAnimationFrame(loop);
+  </script>
+</body>
+</html>
