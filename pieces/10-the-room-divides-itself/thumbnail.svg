@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <rect x="0.00" y="0.00" width="19.99" height="14.32" fill="#c2644f" stroke="#1a1a1a" stroke-width="1.5"/>
+  <rect x="0.00" y="14.32" width="19.99" height="11.26" fill="#c2644f" stroke="#1a1a1a" stroke-width="1.5"/>
+  <rect x="19.99" y="0.00" width="19.82" height="25.58" fill="#4a6fa5" stroke="#1a1a1a" stroke-width="1.5"/>
+  <rect x="0.00" y="25.58" width="24.83" height="35.11" fill="#8fad75" stroke="#1a1a1a" stroke-width="1.5"/>
+  <rect x="0.00" y="60.69" width="24.83" height="21.31" fill="#5c5c5c" stroke="#1a1a1a" stroke-width="1.5"/>
+  <rect x="24.83" y="25.58" width="14.98" height="56.42" fill="#d4a853" stroke="#1a1a1a" stroke-width="1.5"/>
+  <rect x="39.81" y="0.00" width="79.11" height="18.97" fill="#ede7d9" stroke="#1a1a1a" stroke-width="1.5"/>
+  <rect x="39.81" y="18.97" width="79.11" height="37.03" fill="#4a6fa5" stroke="#1a1a1a" stroke-width="1.5"/>
+  <rect x="39.81" y="56.00" width="79.11" height="26.00" fill="#f5f0e8" stroke="#1a1a1a" stroke-width="1.5"/>
+  <rect x="118.92" y="0.00" width="81.08" height="82.00" fill="#5c5c5c" stroke="#1a1a1a" stroke-width="1.5"/>
+  <rect x="0.00" y="82.00" width="87.09" height="118.00" fill="#5c5c5c" stroke="#1a1a1a" stroke-width="1.5"/>
+  <rect x="87.09" y="82.00" width="50.76" height="118.00" fill="#5c5c5c" stroke="#1a1a1a" stroke-width="1.5"/>
+  <rect x="137.85" y="82.00" width="24.43" height="15.82" fill="#8fad75" stroke="#1a1a1a" stroke-width="1.5"/>
+  <rect x="137.85" y="97.82" width="24.43" height="12.72" fill="#8fad75" stroke="#1a1a1a" stroke-width="1.5"/>
+  <rect x="162.28" y="82.00" width="37.72" height="10.96" fill="#c2644f" stroke="#1a1a1a" stroke-width="1.5"/>
+  <rect x="162.28" y="92.96" width="37.72" height="17.59" fill="#c2644f" stroke="#1a1a1a" stroke-width="1.5"/>
+  <rect x="137.85" y="110.55" width="41.93" height="40.11" fill="#f5f0e8" stroke="#1a1a1a" stroke-width="1.5"/>
+  <rect x="179.78" y="110.55" width="20.22" height="40.11" fill="#4a6fa5" stroke="#1a1a1a" stroke-width="1.5"/>
+  <rect x="137.85" y="150.66" width="22.71" height="34.33" fill="#4a6fa5" stroke="#1a1a1a" stroke-width="1.5"/>
+  <rect x="137.85" y="184.99" width="22.71" height="15.01" fill="#4a6fa5" stroke="#1a1a1a" stroke-width="1.5"/>
+  <rect x="160.56" y="150.66" width="39.44" height="49.34" fill="#5c5c5c" stroke="#1a1a1a" stroke-width="1.5"/>
+</svg>

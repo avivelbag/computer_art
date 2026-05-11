@@ -34,5 +34,14 @@
     "technique": "SVG / phyllotaxis / golden angle",
     "path": "pieces/07-every-seed-knows",
     "thumbnail": "pieces/07-every-seed-knows/thumbnail.svg"
+  },
+  {
+    "id": "10-the-room-divides-itself",
+    "title": "The Room Divides Itself",
+    "tagline": "A square canvas recursively subdivided by a seeded random process — architectural yet organic",
+    "year": 2026,
+    "technique": "SVG / recursive quadtree subdivision",
+    "path": "pieces/10-the-room-divides-itself",
+    "thumbnail": "pieces/10-the-room-divides-itself/thumbnail.svg"
   }
 ]
