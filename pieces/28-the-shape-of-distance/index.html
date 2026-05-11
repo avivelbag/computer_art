@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>The Shape of Distance</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { background: #050d14; overflow: hidden; }
+    canvas { display: block; width: 100vw; height: 100vh; }
+  </style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<script id="vert" type="x-shader/x-vertex">
+attribute vec2 aPos;
+void main() { gl_Position = vec4(aPos, 0.0, 1.0); }
+</script>
+<script id="frag" type="x-shader/x-fragment">
+precision highp float;
+uniform vec2 uRes;
+uniform float uTime;
+
+float sdSphere(vec3 p, float r) {
+  return length(p) - r;
+}
+
+float sdTorus(vec3 p, vec2 t) {
+  return length(vec2(length(p.xz) - t.x, p.y)) - t.y;
+}
+
+float sdBox(vec3 p, vec3 b) {
+  vec3 q = abs(p) - b;
+  return length(max(q, 0.0)) + min(max(q.x, max(q.y, q.z)), 0.0);
+}
+
+float opSmoothUnion(float d1, float d2, float k) {
+  float h = clamp(0.5 + 0.5*(d2-d1)/k, 0.0, 1.0);
+  return mix(d2, d1, h) - k*h*(1.0-h);
+}
+
+vec2 map(vec3 p) {
+  float a     = uTime * 0.35;
+  float morph = sin(uTime * 0.7) * 0.25;
+  float c = cos(a), s = sin(a);
+  vec3 pr = vec3(c*p.x - s*p.z, p.y, s*p.x + c*p.z);
+  float torus  = sdTorus(pr, vec2(1.1, 0.30 + morph*0.12));
+  float sph    = sdSphere(p - vec3(0.0, sin(uTime*0.5)*0.3, 0.0), 0.55 + morph*0.08);
+  float main_d = opSmoothUnion(torus, sph, 0.45);
+  vec2 res = vec2(main_d, 1.0);
+
+  float gnd = p.y + 1.9;
+  if (gnd < res.x) res = vec2(gnd, 2.0);
+
+  float rSph = sdSphere(p - vec3(2.2, -0.9, -0.8), 0.65);
+  if (rSph < res.x) res = vec2(rSph, 3.0);
+
+  float box = sdBox(p - vec3(-1.7, -1.4, 0.8), vec3(0.3, 0.5, 0.3));
+  if (box < res.x) res = vec2(box, 4.0);
+
+  return res;
+}
+
+vec3 calcNormal(vec3 p) {
+  vec2 e = vec2(0.001, 0.0);
+  return normalize(vec3(
+    map(p + e.xyy).x - map(p - e.xyy).x,
+    map(p + e.yxy).x - map(p - e.yxy).x,
+    map(p + e.yyx).x - map(p - e.yyx).x
+  ));
+}
+
+vec2 rayMarch(vec3 ro, vec3 rd) {
+  float t = 0.02;
+  for (int i = 0; i < 72; i++) {
+    vec2 h = map(ro + rd * t);
+    if (h.x < 0.001) return vec2(t, h.y);
+    if (t > 25.0) break;
+    t += h.x;
+  }
+  return vec2(t, -1.0);
+}
+
+float softShadow(vec3 ro, vec3 rd, float mint, float maxt, float k) {
+  float res = 1.0;
+  float t   = mint;
+  for (int i = 0; i < 24; i++) {
+    float d = map(ro + rd * t).x;
+    if (d < 0.001) return 0.0;
+    res  = min(res, k * d / t);
+    t   += clamp(d, 0.02, 0.5);
+    if (t > maxt) break;
+  }
+  return clamp(res, 0.0, 1.0);
+}
+
+float calcAO(vec3 pos, vec3 nor) {
+  float occ = 0.0;
+  float sca = 1.0;
+  for (int i = 0; i < 5; i++) {
+    float h = 0.01 + 0.14 * float(i) / 4.0;
+    occ += (h - map(pos + h * nor).x) * sca;
+    sca *= 0.85;
+  }
+  return clamp(1.0 - 3.0 * occ, 0.0, 1.0);
+}
+
+vec3 skyColor(vec3 rd) {
+  return mix(vec3(0.04, 0.10, 0.16), vec3(0.08, 0.22, 0.38),
+             clamp(rd.y * 0.5 + 0.5, 0.0, 1.0));
+}
+
+vec3 shade(vec3 pos, vec3 rd, float mat, vec3 lpos) {
+  vec3 nor  = calcNormal(pos);
+  vec3 ldir = normalize(lpos - pos);
+  float shd  = softShadow(pos + nor*0.003, ldir, 0.05, 12.0, 14.0);
+  float ao   = calcAO(pos, nor);
+  float diff = max(dot(nor, ldir), 0.0) * shd;
+  float spec = pow(max(dot(reflect(-ldir, nor), -rd), 0.0), 48.0) * shd;
+
+  vec3 base;
+  if (mat < 1.5) {
+    float heat = clamp(length(pos.xz) - 0.6, 0.0, 1.0);
+    base = mix(vec3(0.93, 0.72, 0.22), vec3(0.90, 0.35, 0.20), heat);
+  } else if (mat < 2.5) {
+    float chk = mod(floor(pos.x*0.5) + floor(pos.z*0.5), 2.0);
+    base = vec3(0.10, 0.16, 0.22) + 0.03*chk;
+  } else if (mat < 3.5) {
+    base = vec3(0.72, 0.76, 0.82);
+  } else {
+    base = vec3(0.20, 0.30, 0.40);
+  }
+
+  vec3 amb = vec3(0.04, 0.10, 0.18) * ao;
+  return base * (amb + diff * vec3(1.0, 0.95, 0.85))
+         + spec * vec3(1.0, 0.98, 0.90) * 0.5;
+}
+
+void main() {
+  vec2 uv = (gl_FragCoord.xy * 2.0 - uRes) / min(uRes.x, uRes.y);
+
+  float camA = uTime * 0.15;
+  vec3 ro    = vec3(sin(camA)*4.5, 1.8, cos(camA)*4.5);
+  vec3 ta    = vec3(0.0, -0.3, 0.0);
+  vec3 fwd   = normalize(ta - ro);
+  vec3 right = normalize(cross(vec3(0.0, 1.0, 0.0), fwd));
+  vec3 up    = cross(fwd, right);
+  vec3 rd    = normalize(uv.x*right + uv.y*up + 1.8*fwd);
+
+  vec3 lpos = vec3(4.0, 6.0, 3.0);
+  vec3 sky  = skyColor(rd);
+  vec3 col  = sky;
+
+  vec2 hit = rayMarch(ro, rd);
+  if (hit.y > 0.0) {
+    vec3 pos = ro + rd * hit.x;
+    col = shade(pos, rd, hit.y, lpos);
+
+    if (hit.y > 2.5 && hit.y < 3.5) {
+      vec3 nor     = calcNormal(pos);
+      vec3 reflDir = reflect(rd, nor);
+      vec2 rh      = rayMarch(pos + nor*0.005, reflDir);
+      vec3 reflCol = (rh.y > 0.0)
+        ? shade(pos + nor*0.005 + reflDir*rh.x, reflDir, rh.y, lpos)
+        : skyColor(reflDir);
+      col = mix(col, reflCol, 0.75);
+    }
+
+    float fog = exp(-hit.x * 0.05);
+    col = mix(sky * 0.5, col, fog);
+  }
+
+  col = pow(clamp(col, 0.0, 1.0), vec3(0.4545));
+  gl_FragColor = vec4(col, 1.0);
+}
+</script>
+<script>
+const canvas = document.getElementById('c');
+const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+
+function mkShader(type, src) {
+  const sh = gl.createShader(type);
+  gl.shaderSource(sh, src);
+  gl.compileShader(sh);
+  if (!gl.getShaderParameter(sh, gl.COMPILE_STATUS))
+    console.error(gl.getShaderInfoLog(sh));
+  return sh;
+}
+
+const prog = gl.createProgram();
+gl.attachShader(prog, mkShader(gl.VERTEX_SHADER,   document.getElementById('vert').textContent));
+gl.attachShader(prog, mkShader(gl.FRAGMENT_SHADER, document.getElementById('frag').textContent));
+gl.linkProgram(prog);
+gl.useProgram(prog);
+
+const buf = gl.createBuffer();
+gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+gl.bufferData(gl.ARRAY_BUFFER,
+  new Float32Array([-1,-1, 1,-1, -1,1, 1,-1, 1,1, -1,1]),
+  gl.STATIC_DRAW);
+
+const aPos  = gl.getAttribLocation(prog, 'aPos');
+gl.enableVertexAttribArray(aPos);
+gl.vertexAttribPointer(aPos, 2, gl.FLOAT, false, 0, 0);
+
+const uRes  = gl.getUniformLocation(prog, 'uRes');
+const uTime = gl.getUniformLocation(prog, 'uTime');
+
+function resize() {
+  canvas.width  = window.innerWidth;
+  canvas.height = window.innerHeight;
+  gl.viewport(0, 0, canvas.width, canvas.height);
+  gl.uniform2f(uRes, canvas.width, canvas.height);
+}
+window.addEventListener('resize', resize);
+resize();
+
+const t0 = performance.now();
+function frame() {
+  gl.uniform1f(uTime, (performance.now() - t0) * 0.001);
+  gl.drawArrays(gl.TRIANGLES, 0, 6);
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>

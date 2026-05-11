@@ -97,5 +97,14 @@
     "technique": "canvas / L-system / turtle graphics",
     "path": "pieces/24-lsystem-botanical",
     "thumbnail": "pieces/24-lsystem-botanical/thumbnail.svg"
+  },
+  {
+    "id": "28-the-shape-of-distance",
+    "title": "The Shape of Distance",
+    "tagline": "A WebGL ray-marcher sphere-traces signed-distance fields — torus and sphere blend in warm gold, casting soft shadows and reflected light, driven by pure math",
+    "year": 2026,
+    "technique": "WebGL / SDF ray marching / GLSL fragment shader",
+    "path": "pieces/28-the-shape-of-distance",
+    "thumbnail": "pieces/28-the-shape-of-distance/thumbnail.svg"
   }
 ]
