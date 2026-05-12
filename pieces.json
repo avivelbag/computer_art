@@ -178,5 +178,14 @@
     "technique": "canvas / Hilbert curve / space-filling / recursive subdivision",
     "path": "pieces/47-hilbert-curve",
     "thumbnail": "pieces/47-hilbert-curve/thumbnail.svg"
+  },
+  {
+    "id": "50-spirograph",
+    "title": "Closed and Infinite",
+    "tagline": "Six hypotrochoid presets draw themselves stroke by stroke — petals of 5, 7, 8, 9, 11, and 13 unfold one by one, each in a distinct palette, fading seamlessly into the next",
+    "year": 2026,
+    "technique": "canvas / hypotrochoid / roulette curve / parametric",
+    "path": "pieces/50-spirograph",
+    "thumbnail": "pieces/50-spirograph/thumbnail.svg"
   }
 ]
