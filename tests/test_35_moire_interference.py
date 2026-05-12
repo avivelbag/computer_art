@@ -287,7 +287,6 @@ def test_moire_destructive_yields_zero():
     r_trough = lam * 3 * math.pi / 2  # sin = -1
     # f1 from c1=(0,0): pixel at (r_peak, 0) → sin(r_peak/lam) = +1
     # f2 from c2=(r_peak - r_trough, 0) → distance from c2 = r_trough → sin = -1
-    offset = r_peak - r_trough         # negative: c2 is to the right
     # pixel at x=r_peak, c2 at x=r_peak-r_trough → distance from c2 = r_trough
     v = moire_value(r_peak, 0, 0, 0, r_peak - r_trough, 0, lam)
     assert abs(v) < 1e-12, f"Expected 0.0 at destructive interference, got {v}"
