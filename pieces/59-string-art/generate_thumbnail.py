@@ -47,8 +47,8 @@ svg = (
     f'  <rect width="{SIZE}" height="{SIZE}" fill="#111014"/>\n'
     f'  <g stroke="#c97ca3" stroke-width="0.9" opacity="0.55">\n'
     + "\n".join(lines) + "\n"
-    f"  </g>\n"
-    f"</svg>\n"
+    "  </g>\n"
+    "</svg>\n"
 )
 
 out = pathlib.Path(__file__).parent / "thumbnail.svg"
