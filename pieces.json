@@ -115,5 +115,14 @@
     "technique": "canvas / generative typography / particle system",
     "path": "pieces/31-letters-in-motion",
     "thumbnail": "pieces/31-letters-in-motion/thumbnail.svg"
+  },
+  {
+    "id": "35-two-truths-overlapping",
+    "title": "Two Truths Overlapping",
+    "tagline": "Two families of concentric rings evaluated per-pixel beat against each other — a moiré interference field that breathes and rotates in a seamless 25-second cycle",
+    "year": 2026,
+    "technique": "canvas / ImageData / moiré interference / per-pixel sinusoidal evaluation",
+    "path": "pieces/35-two-truths-overlapping",
+    "thumbnail": "pieces/35-two-truths-overlapping/thumbnail.svg"
   }
 ]

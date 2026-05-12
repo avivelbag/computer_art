@@ -1,0 +1,89 @@
+<svg width="400" height="400" viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <radialGradient id="bg" cx="50%" cy="50%" r="70%">
+      <stop offset="0%" stop-color="#15152a"/>
+      <stop offset="100%" stop-color="#06060e"/>
+    </radialGradient>
+    <radialGradient id="glow1" cx="50%" cy="50%" r="55%">
+      <stop offset="0%" stop-color="#6644cc" stop-opacity="0.30"/>
+      <stop offset="100%" stop-color="#6644cc" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="glow2" cx="66%" cy="66%" r="45%">
+      <stop offset="0%" stop-color="#cc4422" stop-opacity="0.25"/>
+      <stop offset="100%" stop-color="#cc4422" stop-opacity="0"/>
+    </radialGradient>
+    <clipPath id="clip">
+      <rect width="400" height="400"/>
+    </clipPath>
+  </defs>
+
+  <rect width="400" height="400" fill="url(#bg)"/>
+
+  <!-- Family 1: concentric rings centred at (200, 200), half-wavelength = 15 px -->
+  <g clip-path="url(#clip)">
+    <circle cx="200" cy="200" r="400" fill="#050508"/>
+    <circle cx="200" cy="200" r="385" fill="#f0f0f8"/>
+    <circle cx="200" cy="200" r="370" fill="#050508"/>
+    <circle cx="200" cy="200" r="355" fill="#f0f0f8"/>
+    <circle cx="200" cy="200" r="340" fill="#050508"/>
+    <circle cx="200" cy="200" r="325" fill="#f0f0f8"/>
+    <circle cx="200" cy="200" r="310" fill="#050508"/>
+    <circle cx="200" cy="200" r="295" fill="#f0f0f8"/>
+    <circle cx="200" cy="200" r="280" fill="#050508"/>
+    <circle cx="200" cy="200" r="265" fill="#f0f0f8"/>
+    <circle cx="200" cy="200" r="250" fill="#050508"/>
+    <circle cx="200" cy="200" r="235" fill="#f0f0f8"/>
+    <circle cx="200" cy="200" r="220" fill="#050508"/>
+    <circle cx="200" cy="200" r="205" fill="#f0f0f8"/>
+    <circle cx="200" cy="200" r="190" fill="#050508"/>
+    <circle cx="200" cy="200" r="175" fill="#f0f0f8"/>
+    <circle cx="200" cy="200" r="160" fill="#050508"/>
+    <circle cx="200" cy="200" r="145" fill="#f0f0f8"/>
+    <circle cx="200" cy="200" r="130" fill="#050508"/>
+    <circle cx="200" cy="200" r="115" fill="#f0f0f8"/>
+    <circle cx="200" cy="200" r="100" fill="#050508"/>
+    <circle cx="200" cy="200" r="85"  fill="#f0f0f8"/>
+    <circle cx="200" cy="200" r="70"  fill="#050508"/>
+    <circle cx="200" cy="200" r="55"  fill="#f0f0f8"/>
+    <circle cx="200" cy="200" r="40"  fill="#050508"/>
+    <circle cx="200" cy="200" r="25"  fill="#f0f0f8"/>
+    <circle cx="200" cy="200" r="10"  fill="#050508"/>
+  </g>
+
+  <!-- Family 2: concentric rings centred at (264, 264) — mid-orbit at t ≈ 3 s.
+       Multiply blend: only pixels where BOTH families show a bright ring survive,
+       producing the characteristic moiré interference fringes. -->
+  <g clip-path="url(#clip)" style="mix-blend-mode:multiply">
+    <circle cx="264" cy="264" r="400" fill="#050508"/>
+    <circle cx="264" cy="264" r="385" fill="#f0f0f8"/>
+    <circle cx="264" cy="264" r="370" fill="#050508"/>
+    <circle cx="264" cy="264" r="355" fill="#f0f0f8"/>
+    <circle cx="264" cy="264" r="340" fill="#050508"/>
+    <circle cx="264" cy="264" r="325" fill="#f0f0f8"/>
+    <circle cx="264" cy="264" r="310" fill="#050508"/>
+    <circle cx="264" cy="264" r="295" fill="#f0f0f8"/>
+    <circle cx="264" cy="264" r="280" fill="#050508"/>
+    <circle cx="264" cy="264" r="265" fill="#f0f0f8"/>
+    <circle cx="264" cy="264" r="250" fill="#050508"/>
+    <circle cx="264" cy="264" r="235" fill="#f0f0f8"/>
+    <circle cx="264" cy="264" r="220" fill="#050508"/>
+    <circle cx="264" cy="264" r="205" fill="#f0f0f8"/>
+    <circle cx="264" cy="264" r="190" fill="#050508"/>
+    <circle cx="264" cy="264" r="175" fill="#f0f0f8"/>
+    <circle cx="264" cy="264" r="160" fill="#050508"/>
+    <circle cx="264" cy="264" r="145" fill="#f0f0f8"/>
+    <circle cx="264" cy="264" r="130" fill="#050508"/>
+    <circle cx="264" cy="264" r="115" fill="#f0f0f8"/>
+    <circle cx="264" cy="264" r="100" fill="#050508"/>
+    <circle cx="264" cy="264" r="85"  fill="#f0f0f8"/>
+    <circle cx="264" cy="264" r="70"  fill="#050508"/>
+    <circle cx="264" cy="264" r="55"  fill="#f0f0f8"/>
+    <circle cx="264" cy="264" r="40"  fill="#050508"/>
+    <circle cx="264" cy="264" r="25"  fill="#f0f0f8"/>
+    <circle cx="264" cy="264" r="10"  fill="#050508"/>
+  </g>
+
+  <!-- Colour atmosphere hinting at the hsl phase-shift palette in the piece -->
+  <rect width="400" height="400" fill="url(#glow1)"/>
+  <rect width="400" height="400" fill="url(#glow2)"/>
+</svg>

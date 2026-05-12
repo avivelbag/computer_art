@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Two Truths Overlapping</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { background: #000; overflow: hidden; }
+    canvas { display: block; width: 100vw; height: 100vh; }
+  </style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<script>
+const canvas = document.getElementById('c');
+const ctx    = canvas.getContext('2d');
+ctx.imageSmoothingEnabled = false;
+
+// Offscreen buffer at half resolution; upscaled to window via nearest-neighbour
+// to halve the pixel budget while keeping the visual crisp.
+const RW = 400, RH = 300;
+const off    = document.createElement('canvas');
+off.width    = RW;
+off.height   = RH;
+const offCtx = off.getContext('2d');
+const img    = offCtx.createImageData(RW, RH);
+const pix    = img.data;
+
+const ROT_PERIOD = 25;   // seconds — one full orbit of centre-2 around centre-1
+const ORBIT_R   = 90;   // px — orbital radius
+const LAM_MIN   = 20;   // px — minimum wavelength
+const LAM_MAX   = 35;   // px — maximum wavelength
+
+/**
+ * Convert HSL to integer RGB triple.
+ * h ∈ [0, 360), s and l ∈ [0, 1].
+ */
+function hsl2rgb(h, s, l) {
+  const c  = (1 - Math.abs(2 * l - 1)) * s;
+  const h6 = ((h % 360 + 360) % 360) / 60;
+  const x  = c * (1 - Math.abs(h6 % 2 - 1));
+  const m  = l - c / 2;
+  let r, g, b;
+  if      (h6 < 1) { r = c; g = x; b = 0; }
+  else if (h6 < 2) { r = x; g = c; b = 0; }
+  else if (h6 < 3) { r = 0; g = c; b = x; }
+  else if (h6 < 4) { r = 0; g = x; b = c; }
+  else if (h6 < 5) { r = x; g = 0; b = c; }
+  else             { r = c; g = 0; b = x; }
+  return [(r + m) * 255 | 0, (g + m) * 255 | 0, (b + m) * 255 | 0];
+}
+
+function resize() {
+  canvas.width  = window.innerWidth;
+  canvas.height = window.innerHeight;
+}
+window.addEventListener('resize', resize);
+resize();
+
+const t0 = performance.now();
+
+function frame(now) {
+  const t = (now - t0) * 0.001;
+
+  const cx = RW * 0.5;
+  const cy = RH * 0.5;
+
+  // Centre-2 orbits centre-1; one revolution every ROT_PERIOD seconds.
+  const angle = (t / ROT_PERIOD) * 2 * Math.PI;
+  const cx2   = cx + ORBIT_R * Math.cos(angle);
+  const cy2   = cy + ORBIT_R * Math.sin(angle);
+
+  // Wavelength breathes slowly on an incommensurate 27-second period.
+  const lam = LAM_MIN + (LAM_MAX - LAM_MIN) * (0.5 + 0.5 * Math.sin(t * 0.23));
+
+  let i = 0;
+  for (let y = 0; y < RH; y++) {
+    for (let x = 0; x < RW; x++) {
+      const dx1 = x - cx,  dy1 = y - cy;
+      const dx2 = x - cx2, dy2 = y - cy2;
+      const f1  = Math.sin(Math.sqrt(dx1 * dx1 + dy1 * dy1) / lam);
+      const f2  = Math.sin(Math.sqrt(dx2 * dx2 + dy2 * dy2) / lam);
+      const v   = (f1 + f2) * 0.5;   // ∈ [-1, 1]
+
+      // hue = phase angle mapped to [0, 360]; lightness varies ±15% with amplitude.
+      const hue = v * 180 + 180;
+      const [r, g, b] = hsl2rgb(hue, 0.4, 0.5 + v * 0.15);
+
+      pix[i]   = r;
+      pix[i+1] = g;
+      pix[i+2] = b;
+      pix[i+3] = 255;
+      i += 4;
+    }
+  }
+
+  offCtx.putImageData(img, 0, 0);
+  ctx.drawImage(off, 0, 0, canvas.width, canvas.height);
+  requestAnimationFrame(frame);
+}
+
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>
