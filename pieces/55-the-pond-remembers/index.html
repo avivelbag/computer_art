@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Wave Interference — The Pond Remembers Every Stone</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { background: #000; overflow: hidden; }
+    canvas { display: block; width: 100vw; height: 100vh; }
+  </style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<script>
+const canvas = document.getElementById('c');
+const ctx    = canvas.getContext('2d');
+ctx.imageSmoothingEnabled = false;
+
+// Offscreen buffer at half-ish resolution; upscaled via nearest-neighbour.
+// Keeps per-pixel cost manageable while preserving crisp interference fringes.
+const RW = 400, RH = 300;
+const off    = document.createElement('canvas');
+off.width    = RW;
+off.height   = RH;
+const offCtx = off.getContext('2d');
+const img    = offCtx.createImageData(RW, RH);
+const pix    = img.data;
+
+// 256-step palette encoding signed amplitude.
+// index 0 → deepest negative (cool indigo/violet)
+// index 128 → zero crossing (near-black)
+// index 255 → deepest positive (warm gold/amber)
+const PALETTE = new Uint8Array(256 * 3);
+(function buildPalette() {
+  for (let i = 0; i < 256; i++) {
+    const v = (i - 128) / 127.5; // normalised to [-1, 1]
+    if (v < 0) {
+      const t = -v;
+      PALETTE[i * 3]     = (t * 55)  | 0;
+      PALETTE[i * 3 + 1] = (t * 10)  | 0;
+      PALETTE[i * 3 + 2] = (t * 185) | 0;
+    } else {
+      const t = v;
+      PALETTE[i * 3]     = (t * 235) | 0;
+      PALETTE[i * 3 + 1] = (t * 155) | 0;
+      PALETTE[i * 3 + 2] = (t * 18)  | 0;
+    }
+  }
+})();
+
+// wavenumber: fringe spacing = 2π / K ≈ 78 px in the offscreen buffer
+const K     = 0.08;
+// angular frequency in rad/s — one full cycle passes a fixed point every ~5.2 s
+const OMEGA = 1.2;
+const N_SRC = 5;
+
+// Lissajous source parameters.
+// Layout: [cx, cy, rx, ry, ax, ay, phx, phy, wavePhase]
+//   cx, cy   — orbit centre as fraction of offscreen dims
+//   rx, ry   — orbit radii as fraction of offscreen dims
+//   ax, ay   — Lissajous angular frequencies (rad/s); incommensurable ratios give
+//              aperiodic drift so the pattern never settles into a fixed loop
+//   phx, phy — initial Lissajous phase offsets
+//   wavePhase — per-source initial wave phase, staggers the sources
+const SOURCES = [
+  [0.30, 0.30, 0.16, 0.18,  0.11, 0.17,  0.00, 0.30,  0.00],
+  [0.70, 0.25, 0.15, 0.14,  0.19, 0.13,  0.70, 1.10,  1.26],
+  [0.50, 0.65, 0.18, 0.15,  0.13, 0.23,  1.30, 0.50,  2.51],
+  [0.22, 0.70, 0.12, 0.20,  0.17, 0.11,  0.50, 1.80,  3.77],
+  [0.78, 0.72, 0.13, 0.17,  0.23, 0.19,  1.00, 0.20,  5.03],
+];
+
+function resize() {
+  canvas.width  = window.innerWidth;
+  canvas.height = window.innerHeight;
+}
+window.addEventListener('resize', resize);
+resize();
+
+const t0 = performance.now();
+
+// Reusable typed arrays for source positions computed each frame.
+const sx = new Float32Array(N_SRC);
+const sy = new Float32Array(N_SRC);
+// Per-source wave phase accumulator: -OMEGA * t + wavePhase
+const wp = new Float32Array(N_SRC);
+
+function frame(now) {
+  const t = (now - t0) * 0.001; // elapsed seconds
+
+  for (let s = 0; s < N_SRC; s++) {
+    const [cx, cy, rx, ry, ax, ay, phx, phy, wavePhase] = SOURCES[s];
+    sx[s] = (cx + rx * Math.sin(ax * t + phx)) * RW;
+    sy[s] = (cy + ry * Math.sin(ay * t + phy)) * RH;
+    wp[s] = -OMEGA * t + wavePhase;
+  }
+
+  let idx = 0;
+  for (let y = 0; y < RH; y++) {
+    for (let x = 0; x < RW; x++) {
+      let sum = 0;
+      for (let s = 0; s < N_SRC; s++) {
+        const dx   = x - sx[s];
+        const dy   = y - sy[s];
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        sum += Math.sin(K * dist + wp[s]);
+      }
+
+      // tanh compresses [-N_SRC, N_SRC] into (-1, 1), keeping the zero crossing
+      // at index 128 while preserving a smooth gradient across the full palette.
+      const norm = Math.tanh(sum * 0.65) * 127.5 + 127.5;
+      const pi   = norm | 0;
+      const base = pi * 3;
+      pix[idx]     = PALETTE[base];
+      pix[idx + 1] = PALETTE[base + 1];
+      pix[idx + 2] = PALETTE[base + 2];
+      pix[idx + 3] = 255;
+      idx += 4;
+    }
+  }
+
+  offCtx.putImageData(img, 0, 0);
+  ctx.drawImage(off, 0, 0, canvas.width, canvas.height);
+  requestAnimationFrame(frame);
+}
+
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>

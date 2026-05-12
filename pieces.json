@@ -196,5 +196,14 @@
     "technique": "WebGL / Julia set / orbit-trap coloring / GLSL fragment shader",
     "path": "pieces/51-julia-set",
     "thumbnail": "pieces/51-julia-set/thumbnail.svg"
+  },
+  {
+    "id": "55-the-pond-remembers",
+    "title": "The Pond Remembers Every Stone",
+    "tagline": "Five coherent wave sources drift on Lissajous orbits — their superposed wavefronts paint shifting indigo and amber interference fringes across a full-bleed canvas, pixel by pixel, at 60 fps",
+    "year": 2026,
+    "technique": "canvas / wave superposition / interference / ImageData per-pixel",
+    "path": "pieces/55-the-pond-remembers",
+    "thumbnail": "pieces/55-the-pond-remembers/thumbnail.svg"
   }
 ]
