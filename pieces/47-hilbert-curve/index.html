@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Every Point, Once — Hilbert Curve Order 6</title>
+<style>
+html,body{margin:0;padding:0;background:#1a0a2e;display:flex;align-items:center;justify-content:center;min-height:100vh}
+canvas{display:block;max-width:96vmin;max-height:96vmin}
+</style>
+</head>
+<body>
+<canvas id="c" width="800" height="800"></canvas>
+<script>
+const ORDER = 6;
+const N = 1 << ORDER;        // 64
+const TOTAL = N * N;         // 4096 cells
+const SEGMENTS = TOTAL - 1;  // 4095 line segments
+const W = 800, H = 800;
+const CELL = W / N;          // 12.5 px per grid cell
+
+const DRAW_SECS  = 50;       // seconds to draw the full curve
+const PAUSE_SECS = 3;        // seconds to hold the finished curve
+const CYCLE_SECS = DRAW_SECS + PAUSE_SECS;
+
+const BG     = '#1a0a2e';
+const STROKE = '#d4a256';
+
+/**
+ * Convert Hilbert-curve index d to (x, y) on an N×N grid.
+ *
+ * Uses the standard rotate-and-reflect algorithm. At each bit-pair level s,
+ * rx/ry extract the two least-significant bits of d; those bits select one of
+ * four quadrant orientations, and the running (x, y) is reflected/swapped
+ * accordingly before the quadrant offset is added.
+ */
+function d2xy(d) {
+    let x = 0, y = 0, t = d;
+    for (let s = 1; s < N; s <<= 1) {
+        const rx = (t >> 1) & 1;
+        const ry = (t ^ rx) & 1;
+        if (ry === 0) {
+            if (rx === 1) {
+                x = s - 1 - x;
+                y = s - 1 - y;
+            }
+            const tmp = x; x = y; y = tmp;
+        }
+        x += s * rx;
+        y += s * ry;
+        t >>= 2;
+    }
+    return [x, y];
+}
+
+// Precompute all canvas pixel positions once so the animation loop is cheap.
+const pts = new Float32Array(TOTAL * 2);
+for (let d = 0; d < TOTAL; d++) {
+    const [gx, gy] = d2xy(d);
+    pts[d * 2]     = (gx + 0.5) * CELL;
+    pts[d * 2 + 1] = (gy + 0.5) * CELL;
+}
+
+const canvas = document.getElementById('c');
+const ctx    = canvas.getContext('2d');
+
+ctx.fillStyle = BG;
+ctx.fillRect(0, 0, W, H);
+ctx.strokeStyle = STROKE;
+ctx.lineWidth   = 1.3;
+ctx.lineJoin    = 'round';
+ctx.lineCap     = 'round';
+
+let startTime   = null;
+let lastDrawn   = 0;   // index of the last point already on canvas
+
+function frame(ts) {
+    if (startTime === null) startTime = ts;
+    const phase = ((ts - startTime) / 1000) % CYCLE_SECS;
+
+    const target = phase < DRAW_SECS
+        ? Math.floor((phase / DRAW_SECS) * SEGMENTS)
+        : SEGMENTS;
+
+    // A new cycle has begun — wipe the canvas and restart from the origin.
+    if (target < lastDrawn) {
+        ctx.fillStyle = BG;
+        ctx.fillRect(0, 0, W, H);
+        lastDrawn = 0;
+    }
+
+    // Extend the stroke only as far as the new target point.
+    if (target > lastDrawn) {
+        ctx.beginPath();
+        ctx.moveTo(pts[lastDrawn * 2], pts[lastDrawn * 2 + 1]);
+        for (let i = lastDrawn + 1; i <= target; i++) {
+            ctx.lineTo(pts[i * 2], pts[i * 2 + 1]);
+        }
+        ctx.stroke();
+        lastDrawn = target;
+    }
+
+    requestAnimationFrame(frame);
+}
+
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>
