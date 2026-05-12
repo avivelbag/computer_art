@@ -1,7 +1,6 @@
 """Tests for pieces/47-hilbert-curve: Hilbert curve order-6 animation."""
 
 import json
-import math
 import pathlib
 import re
 import xml.etree.ElementTree as ET
