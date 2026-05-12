@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Chladni Figures — Standing Waves Made Visible</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { background: #0d0d2b; display: flex; align-items: center; justify-content: center; height: 100vh; overflow: hidden; }
+    canvas { display: block; image-rendering: pixelated; }
+  </style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<script>
+const MODES  = [[1,2],[2,3],[3,4],[3,5],[4,5],[2,5]];
+const SIZE   = 600;
+const CYCLE  = 5000;   // ms per mode (4s display + 1s crossfade)
+const FADE   = 1000;   // ms crossfade at end of each cycle
+const T_BASE = 0.10;   // base threshold for nodal line visibility
+const T_AMP  = 0.04;   // sinusoidal pulse amplitude (lines "breathe")
+const T_FREQ = 2;      // pulse frequency in Hz
+
+// Deep indigo background (#0d0d2b), cyan glow (#00e5ff)
+const BG_R = 13,  BG_G = 13,  BG_B = 43;
+const GL_R = 0,   GL_G = 229, GL_B = 255;
+
+const canvas = document.getElementById('c');
+const ctx    = canvas.getContext('2d');
+canvas.width = canvas.height = SIZE;
+
+const img  = ctx.createImageData(SIZE, SIZE);
+const data = img.data;
+
+/**
+ * Precompute f(x,y) = cos(m·π·x)·cos(n·π·y) − cos(n·π·x)·cos(m·π·y)
+ * for every pixel in the SIZE×SIZE grid, exploiting separability so only
+ * 4·SIZE trig calls are needed instead of 4·SIZE².
+ *
+ * @param {number} m  first mode index
+ * @param {number} n  second mode index
+ * @returns {Float32Array}  flattened SIZE×SIZE array of signed f values
+ */
+function computeMode(m, n) {
+  const cm = new Float32Array(SIZE);
+  const cn = new Float32Array(SIZE);
+  for (let i = 0; i < SIZE; i++) {
+    const v = (i / (SIZE - 1)) * 2 - 1;
+    cm[i] = Math.cos(m * Math.PI * v);
+    cn[i] = Math.cos(n * Math.PI * v);
+  }
+  const f = new Float32Array(SIZE * SIZE);
+  for (let y = 0; y < SIZE; y++) {
+    const cmY = cm[y], cnY = cn[y];
+    const row = y * SIZE;
+    for (let x = 0; x < SIZE; x++) {
+      f[row + x] = cm[x] * cnY - cn[x] * cmY;
+    }
+  }
+  return f;
+}
+
+// Precompute all mode tables once at startup so each frame is a fast lookup + blend.
+const tables = MODES.map(([m, n]) => computeMode(m, n));
+
+/**
+ * Render one animation frame.
+ *
+ * Brightness for each pixel = max(0, 1 − |f| / threshold), giving a glow
+ * that peaks at f=0 (the nodal line) and falls off to black.  The colour
+ * ramps from background → cyan → white as brightness increases, simulating
+ * a bright core with a wider halo.
+ *
+ * Crossfade: for the last FADE ms of each CYCLE the brightness is a weighted
+ * blend of the current and next mode tables, smoothly morphing the pattern.
+ *
+ * @param {number} time  DOMHighResTimeStamp from requestAnimationFrame
+ */
+function render(time) {
+  const totalCycle = CYCLE * MODES.length;
+  const pos        = time % totalCycle;
+  const modeIdx    = Math.floor(pos / CYCLE) % MODES.length;
+  const nextIdx    = (modeIdx + 1) % MODES.length;
+  const modeTime   = pos % CYCLE;
+
+  // t goes 0→1 during the final FADE ms of each cycle
+  const fadeStart = CYCLE - FADE;
+  const t         = modeTime > fadeStart ? (modeTime - fadeStart) / FADE : 0;
+  const t1        = 1 - t;
+
+  // Threshold pulses sinusoidally so the lines breathe at T_FREQ Hz.
+  const threshold = T_BASE + T_AMP * Math.sin(2 * Math.PI * T_FREQ * time / 1000);
+  const invT      = 1 / Math.max(threshold, 0.01);
+
+  const f0 = tables[modeIdx];
+  const f1 = tables[nextIdx];
+
+  for (let i = 0; i < SIZE * SIZE; i++) {
+    const b0 = Math.max(0, 1 - Math.abs(f0[i]) * invT);
+    const b1 = Math.max(0, 1 - Math.abs(f1[i]) * invT);
+    const b  = t1 * b0 + t * b1;
+
+    const p = i << 2;
+    if (b > 0) {
+      // b²  sharpens towards the line core, creating the white-hot centre.
+      const b2 = b * b;
+      data[p]   = (BG_R + (GL_R - BG_R) * b + (255 - GL_R) * b2) | 0;
+      data[p+1] = (BG_G + (GL_G - BG_G) * b + (255 - GL_G) * b2) | 0;
+      data[p+2] = (BG_B + (GL_B - BG_B) * b + (255 - GL_B) * b2) | 0;
+      data[p+3] = 255;
+    } else {
+      data[p]   = BG_R;
+      data[p+1] = BG_G;
+      data[p+2] = BG_B;
+      data[p+3] = 255;
+    }
+  }
+
+  ctx.putImageData(img, 0, 0);
+  requestAnimationFrame(render);
+}
+
+requestAnimationFrame(render);
+</script>
+</body>
+</html>

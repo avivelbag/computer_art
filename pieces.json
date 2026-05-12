@@ -214,5 +214,14 @@
     "technique": "canvas / cellular automata / Brian's Brain / Uint8Array double-buffer",
     "path": "pieces/56-brians-brain",
     "thumbnail": "pieces/56-brians-brain/thumbnail.svg"
+  },
+  {
+    "id": "57-chladni-figures",
+    "title": "Chladni Figures — Standing Waves Made Visible",
+    "tagline": "Six standing-wave eigenmodes evaluated per pixel reveal glowing nodal lines on deep indigo — the sand patterns of a vibrating plate rendered in pure mathematics at 60 fps",
+    "year": 2026,
+    "technique": "canvas / Chladni eigenmodes / ImageData per-pixel / crossfade animation",
+    "path": "pieces/57-chladni-figures",
+    "thumbnail": "pieces/57-chladni-figures/thumbnail.svg"
   }
 ]
