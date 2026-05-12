@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>String Art — The Curve Lives Between the Lines</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { background: #111014; display: flex; align-items: center; justify-content: center; height: 100vh; overflow: hidden; }
+    canvas { display: block; }
+  </style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<script>
+const N    = 300;
+const SIZE = 600;
+const R    = 270;
+const CX   = SIZE / 2;
+const CY   = SIZE / 2;
+
+const canvas = document.getElementById('c');
+const ctx    = canvas.getContext('2d');
+canvas.width = canvas.height = SIZE;
+
+/*
+ * Precompute all N anchor positions once. Points are indexed 0..N-1 around
+ * the circle so fractional-index interpolation is O(1) per lookup.
+ */
+const pts = new Float64Array(N * 2);
+for (let i = 0; i < N; i++) {
+  const a = (2 * Math.PI * i) / N;
+  pts[i * 2]     = CX + R * Math.cos(a);
+  pts[i * 2 + 1] = CY + R * Math.sin(a);
+}
+
+/*
+ * Given a real-valued index j in [0, N), return the interpolated x or y
+ * coordinate, treating the array as a circular buffer.
+ *
+ * @param {number} j  real-valued index into pts
+ * @param {number} c  coordinate axis: 0 for x, 1 for y
+ * @returns {number}
+ */
+function ptAt(j, c) {
+  const j0   = Math.floor(j) % N;
+  const j1   = (j0 + 1) % N;
+  const frac = j - Math.floor(j);
+  return pts[j0 * 2 + c] * (1 - frac) + pts[j1 * 2 + c] * frac;
+}
+
+/*
+ * Render one animation frame.
+ *
+ * The real-valued multiplier m drives which point each chord connects to:
+ * chord i connects point i to the interpolated position at index (i*m) mod N.
+ * When m is an integer k the chords envelope an epicycloid with (k-1) lobes —
+ * a cardioid at m=2, a nephroid at m=3, and richer forms at higher values.
+ * The sin-based easing keeps the multiplier oscillating continuously so the
+ * transition between forms is seamless.
+ *
+ * @param {number} t  elapsed time in seconds
+ */
+function draw(t) {
+  ctx.fillStyle = '#111014';
+  ctx.fillRect(0, 0, SIZE, SIZE);
+
+  const m = 2 + 48 * (0.5 + 0.5 * Math.sin(t * 0.3));
+
+  ctx.strokeStyle = '#c97ca3';
+  ctx.globalAlpha = 0.35;
+  ctx.lineWidth   = 0.6;
+
+  for (let i = 0; i < N; i++) {
+    const j = (i * m) % N;
+    ctx.beginPath();
+    ctx.moveTo(pts[i * 2], pts[i * 2 + 1]);
+    ctx.lineTo(ptAt(j, 0), ptAt(j, 1));
+    ctx.stroke();
+  }
+
+  ctx.globalAlpha = 1;
+}
+
+let startTime = null;
+
+function frame(ts) {
+  if (startTime === null) startTime = ts;
+  draw((ts - startTime) / 1000);
+  requestAnimationFrame(frame);
+}
+
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>

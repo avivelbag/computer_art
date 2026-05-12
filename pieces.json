@@ -223,5 +223,14 @@
     "technique": "canvas / Chladni eigenmodes / ImageData per-pixel / crossfade animation",
     "path": "pieces/57-chladni-figures",
     "thumbnail": "pieces/57-chladni-figures/thumbnail.svg"
+  },
+  {
+    "id": "59-string-art",
+    "title": "String Art — The Curve Lives Between the Lines",
+    "tagline": "300 chords connect numbered points on a circle; as the real-valued multiplier eases from 2 to 50 the envelope morphs through cardioid, nephroid, and stranger epicycloid families — dusty rose on near-black at 60 fps",
+    "year": 2026,
+    "technique": "canvas / string art / epicycloid envelopes / fractional modulo interpolation",
+    "path": "pieces/59-string-art",
+    "thumbnail": "pieces/59-string-art/thumbnail.svg"
   }
 ]
