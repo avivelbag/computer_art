@@ -81,13 +81,13 @@ class TestMakeSun:
 
     def test_apex_angle_is_36_degrees(self):
         """Each sun triangle must have a 36° apex angle (P3 acute triangle)."""
-        tol = 1e-9
+        tol = 1e-6
         for kind, A, B, C in gen.make_sun(100.0):
             vB = B - A
             vC = C - A
             cos_angle = (vB.real * vC.real + vB.imag * vC.imag) / (abs(vB) * abs(vC))
             angle_deg = math.degrees(math.acos(max(-1.0, min(1.0, cos_angle))))
-            assert abs(angle_deg - 36.0) < 1e-6, f"Apex angle = {angle_deg:.4f}°"
+            assert abs(angle_deg - 36.0) < tol, f"Apex angle = {angle_deg:.4f}°"
 
 
 # ---------------------------------------------------------------------------
