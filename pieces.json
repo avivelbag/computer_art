@@ -151,5 +151,14 @@
     "technique": "canvas / Clifford attractor / density accumulation / chunked setTimeout",
     "path": "pieces/41-dust-of-the-infinite",
     "thumbnail": "pieces/41-dust-of-the-infinite/thumbnail.svg"
+  },
+  {
+    "id": "42-circles-within-circles",
+    "title": "Circles Within Circles",
+    "tagline": "50 rotating epicycles, each spinning at an integer multiple of the base frequency, chain together to trace a glowing heart — Fourier decomposition made visible",
+    "year": 2026,
+    "technique": "canvas / Fourier epicycles / DFT / requestAnimationFrame",
+    "path": "pieces/42-circles-within-circles",
+    "thumbnail": "pieces/42-circles-within-circles/thumbnail.svg"
   }
 ]

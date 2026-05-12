@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Circles Within Circles — Fourier Epicycles</title>
+<style>
+html,body{margin:0;padding:0;background:#07070f;display:flex;align-items:center;justify-content:center;min-height:100vh}
+canvas{display:block;max-width:96vmin;max-height:96vmin}
+</style>
+</head>
+<body>
+<canvas id="c" width="800" height="800"></canvas>
+<script>
+const N = 64;
+const W = 800, H = 800;
+const CX = W / 2, CY = H / 2;
+const TWO_PI = 2 * Math.PI;
+const PERIOD = 8;        // seconds per full revolution
+const SCALE = 16;        // canvas pixels per heart-coordinate unit
+const N_EPICYCLES = 50;  // top coefficients by amplitude
+
+function sampleHeart(n) {
+  const pts = [];
+  for (let i = 0; i < n; i++) {
+    const t = TWO_PI * i / n;
+    const s = Math.sin(t);
+    pts.push({
+      re: 16 * s * s * s,
+      im: -(13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t))
+    });
+  }
+  return pts;
+}
+
+// Forward DFT treating each sample as a complex number (re, im).
+// Returns coefficients sorted by amplitude (largest first).
+function dft(signal) {
+  const n = signal.length;
+  const out = [];
+  for (let k = 0; k < n; k++) {
+    let re = 0, im = 0;
+    for (let j = 0; j < n; j++) {
+      const angle = TWO_PI * k * j / n;
+      const c = Math.cos(angle), s = Math.sin(angle);
+      re += signal[j].re * c + signal[j].im * s;
+      im += -signal[j].re * s + signal[j].im * c;
+    }
+    out.push({ freq: k, amp: Math.sqrt(re * re + im * im) / n, phase: Math.atan2(im, re) });
+  }
+  return out.sort((a, b) => b.amp - a.amp);
+}
+
+const coeffs = dft(sampleHeart(N)).slice(0, N_EPICYCLES);
+
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+
+let t = 0;
+let lastTime = null;
+const path = [];
+
+function frame(ts) {
+  if (lastTime === null) lastTime = ts;
+  const dt = Math.min((ts - lastTime) / 1000, 0.05);
+  lastTime = ts;
+
+  t += (TWO_PI / PERIOD) * dt;
+  if (t >= TWO_PI) {
+    t -= TWO_PI;
+    path.length = 0;
+  }
+
+  ctx.fillStyle = '#07070f';
+  ctx.fillRect(0, 0, W, H);
+
+  // Draw epicycle chain — each circle rotates at integer multiple of base frequency.
+  let x = CX, y = CY;
+  for (const c of coeffs) {
+    const r = c.amp * SCALE;
+    const angle = c.freq * t + c.phase;
+    const nx = x + r * Math.cos(angle);
+    const ny = y + r * Math.sin(angle);
+
+    ctx.strokeStyle = 'rgba(42, 88, 160, 0.55)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.arc(x, y, r, 0, TWO_PI);
+    ctx.stroke();
+
+    ctx.strokeStyle = 'rgba(68, 136, 204, 0.85)';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(x, y);
+    ctx.lineTo(nx, ny);
+    ctx.stroke();
+
+    x = nx;
+    y = ny;
+  }
+
+  path.push({ x, y });
+
+  if (path.length > 1) {
+    ctx.strokeStyle = '#00e5ff';
+    ctx.lineWidth = 2.5;
+    ctx.shadowColor = '#00e5ff';
+    ctx.shadowBlur = 10;
+    ctx.lineJoin = 'round';
+    ctx.beginPath();
+    ctx.moveTo(path[0].x, path[0].y);
+    for (let i = 1; i < path.length; i++) ctx.lineTo(path[i].x, path[i].y);
+    ctx.stroke();
+    ctx.shadowBlur = 0;
+  }
+
+  requestAnimationFrame(frame);
+}
+
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>
