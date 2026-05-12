@@ -187,5 +187,14 @@
     "technique": "canvas / hypotrochoid / roulette curve / parametric",
     "path": "pieces/50-spirograph",
     "thumbnail": "pieces/50-spirograph/thumbnail.svg"
+  },
+  {
+    "id": "51-julia-set",
+    "title": "Julia Set — Orbit-Trap Coloring",
+    "tagline": "Each pixel's orbit under z→z²+c is trap-coloured from deep indigo to amber to ivory — a jewel-like fractal that morphs in real time as c drifts along a slow closed path",
+    "year": 2026,
+    "technique": "WebGL / Julia set / orbit-trap coloring / GLSL fragment shader",
+    "path": "pieces/51-julia-set",
+    "thumbnail": "pieces/51-julia-set/thumbnail.svg"
   }
 ]
