@@ -232,5 +232,14 @@
     "technique": "canvas / string art / epicycloid envelopes / fractional modulo interpolation",
     "path": "pieces/59-string-art",
     "thumbnail": "pieces/59-string-art/thumbnail.svg"
+  },
+  {
+    "id": "63-rhodonea",
+    "title": "Rhodonea — The Petal Count Is Always a Surprise",
+    "tagline": "Three concentric rose curves r = cos(k·θ) morph continuously as k sweeps 1→6, doubling or halving petal count at each rational — gold on deep charcoal with motion-blur ghosting at 30 fps",
+    "year": 2026,
+    "technique": "canvas / rhodonea polar curves / rational k morphing / motion-blur ghosting",
+    "path": "pieces/63-rhodonea",
+    "thumbnail": "pieces/63-rhodonea/thumbnail.svg"
   }
 ]

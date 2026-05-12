@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Rhodonea — The Petal Count Is Always a Surprise</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { background: #1a1208; display: flex; align-items: center; justify-content: center; height: 100vh; overflow: hidden; }
+    canvas { display: block; }
+  </style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<script>
+const SIZE   = 800;
+const CX     = SIZE / 2;
+const CY     = SIZE / 2;
+const RADIUS = 360;
+const POINTS = 3000;
+
+const canvas = document.getElementById('c');
+const ctx    = canvas.getContext('2d');
+canvas.width = canvas.height = SIZE;
+
+/*
+ * Compute the full petal sweep range for a rhodonea r = cos(k·θ).
+ * For rational k = n/d (in lowest terms), one complete rose needs θ ∈ [0, π·d]
+ * when n·d is odd, or [0, 2π·d] otherwise.  We use 2π·d unconditionally to
+ * avoid parity bookkeeping — the extra pass merely retraces the curve.
+ *
+ * @param {number} d  denominator of k (must be a positive integer)
+ * @returns {number}  sweep end in radians
+ */
+function sweepEnd(d) {
+  return 2 * Math.PI * d;
+}
+
+/*
+ * Greatest common divisor (Euclidean), returning a positive integer.
+ *
+ * @param {number} a
+ * @param {number} b
+ * @returns {number}
+ */
+function gcd(a, b) {
+  a = Math.abs(Math.round(a));
+  b = Math.abs(Math.round(b));
+  while (b) { const t = b; b = a % b; a = t; }
+  return a || 1;
+}
+
+/*
+ * Draw a single rhodonea r = cos(k·θ) centred at (cx, cy) with outer radius R.
+ * Three slightly-offset k values are stroked per call to generate moiré-like
+ * petal beating — the near-resonance between k, k+dk, k−dk makes petals appear
+ * to breathe independently.
+ *
+ * @param {number} k      rose parameter (rational, n/d)
+ * @param {number} R      outer radius in pixels
+ * @param {number} alpha  global transparency for this rose
+ * @param {number} dk     k offset for the two satellite curves
+ */
+function drawRose(k, R, alpha, dk) {
+  const n  = Math.round(k * 12);
+  const d  = Math.round(12);
+  const g  = gcd(n, d);
+  const nd = Math.max(1, d / g);
+  const end = sweepEnd(nd);
+  const step = end / POINTS;
+
+  ctx.globalAlpha = alpha;
+  ctx.lineWidth   = 1.0;
+
+  const ks = [k - dk, k, k + dk];
+  for (let ci = 0; ci < ks.length; ci++) {
+    const kk = ks[ci];
+    ctx.beginPath();
+    for (let i = 0; i <= POINTS; i++) {
+      const theta = i * step;
+      const r     = R * Math.cos(kk * theta);
+      const x     = CX + r * Math.cos(theta);
+      const y     = CY + r * Math.sin(theta);
+      if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+    }
+    ctx.stroke();
+  }
+}
+
+/*
+ * Render one animation frame.  k advances slowly from 1 to 6 over ~30 s,
+ * then oscillates back so the loop is seamless.  Three concentric roses at
+ * radii RADIUS, RADIUS*0.72, RADIUS*0.44 give visual depth; each gets its own
+ * alpha so the inner rings are slightly fainter.
+ *
+ * Motion-blur ghosting is achieved by painting the background with a low-alpha
+ * fill each frame — recent curves stay bright while old ones fade naturally.
+ *
+ * @param {number} t  elapsed time in seconds
+ */
+function draw(t) {
+  ctx.fillStyle = 'rgba(26, 18, 8, 0.04)';
+  ctx.fillRect(0, 0, SIZE, SIZE);
+
+  const k = 1 + 5 * (0.5 + 0.5 * Math.sin(t * (2 * Math.PI / 30)));
+
+  ctx.strokeStyle = '#d4a84b';
+
+  drawRose(k,        RADIUS,       0.18, 0.008);
+  drawRose(k + 0.05, RADIUS * 0.72, 0.14, 0.008);
+  drawRose(k - 0.05, RADIUS * 0.44, 0.10, 0.008);
+
+  ctx.globalAlpha = 1;
+}
+
+let startTime = null;
+
+function frame(ts) {
+  if (startTime === null) startTime = ts;
+  draw((ts - startTime) / 1000);
+  requestAnimationFrame(frame);
+}
+
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>
