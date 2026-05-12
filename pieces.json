@@ -106,5 +106,14 @@
     "technique": "WebGL / SDF ray marching / GLSL fragment shader",
     "path": "pieces/28-the-shape-of-distance",
     "thumbnail": "pieces/28-the-shape-of-distance/thumbnail.svg"
+  },
+  {
+    "id": "31-letters-in-motion",
+    "title": "Letters in Motion",
+    "tagline": "The word DRIFT rasterised into ~3 000 particles that assemble, hold, then scatter and fade in a seamless loop — generative typography via canvas pixel-sampling",
+    "year": 2026,
+    "technique": "canvas / generative typography / particle system",
+    "path": "pieces/31-letters-in-motion",
+    "thumbnail": "pieces/31-letters-in-motion/thumbnail.svg"
   }
 ]
