@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dust of the Infinite — Clifford Strange Attractor</title>
+<style>
+html,body{margin:0;padding:0;background:#0a0600;display:flex;align-items:center;justify-content:center;min-height:100vh}
+canvas{display:block;max-width:96vmin;max-height:96vmin}
+</style>
+</head>
+<body>
+<canvas id="c" width="800" height="800"></canvas>
+<script>
+const A = -1.4, B = 1.6, C = 1.0, D = 0.7;
+const W = 800, H = 800;
+const TOTAL = 2_000_000;
+const CHUNK = 50_000;
+const COORD_MIN = -2.5;
+const COORD_RANGE = 5.0;
+
+// Warm amber-to-rose gradient: near-black → dark amber → amber → bright amber → rose
+const PALETTE = [
+  [10, 6, 0],
+  [50, 12, 0],
+  [120, 35, 0],
+  [210, 85, 0],
+  [255, 168, 10],
+  [255, 130, 70],
+  [255, 80, 130],
+];
+
+function colorAt(t) {
+  if (t <= 0) return PALETTE[0];
+  // Gamma-compress t so low-density regions get colour faster
+  const s = Math.pow(t, 0.3) * (PALETTE.length - 1);
+  const i = Math.min(Math.floor(s), PALETTE.length - 2);
+  const f = s - i;
+  const lo = PALETTE[i], hi = PALETTE[i + 1];
+  return [
+    (lo[0] + f * (hi[0] - lo[0])) | 0,
+    (lo[1] + f * (hi[1] - lo[1])) | 0,
+    (lo[2] + f * (hi[2] - lo[2])) | 0,
+  ];
+}
+
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+
+// Accumulation buffer — counts how many attractor points fall in each pixel
+const buf = new Float32Array(W * H);
+
+let x = 0.5, y = 0.5, done = 0;
+
+function render() {
+  let mx = 0;
+  for (let i = 0; i < buf.length; i++) if (buf[i] > mx) mx = buf[i];
+  if (mx === 0) return;
+
+  // Logarithmic normalisation compresses the huge density range into [0,1]
+  const logMx = Math.log(mx + 1);
+  const img = ctx.createImageData(W, H);
+  const d = img.data;
+  for (let i = 0; i < W * H; i++) {
+    const t = buf[i] > 0 ? Math.log(buf[i] + 1) / logMx : 0;
+    const [r, g, b] = colorAt(t);
+    const j = i << 2;
+    d[j] = r; d[j + 1] = g; d[j + 2] = b; d[j + 3] = 255;
+  }
+  ctx.putImageData(img, 0, 0);
+}
+
+function iterate() {
+  const end = Math.min(done + CHUNK, TOTAL);
+  for (let k = done; k < end; k++) {
+    const xn = Math.sin(A * y) + C * Math.cos(A * x);
+    const yn = Math.sin(B * x) + D * Math.cos(B * y);
+    x = xn; y = yn;
+    const px = ((x - COORD_MIN) / COORD_RANGE * W) | 0;
+    const py = ((y - COORD_MIN) / COORD_RANGE * H) | 0;
+    if (px >= 0 && px < W && py >= 0 && py < H) buf[py * W + px]++;
+  }
+  done = end;
+  render();
+  if (done < TOTAL) setTimeout(iterate, 0);
+}
+
+ctx.fillStyle = '#0a0600';
+ctx.fillRect(0, 0, W, H);
+iterate();
+</script>
+</body>
+</html>
