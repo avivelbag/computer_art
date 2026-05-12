@@ -142,5 +142,14 @@
     "technique": "SVG / Apollonian gasket / Descartes' Circle Theorem / Apollonian reflection",
     "path": "pieces/39-apollonian-gasket",
     "thumbnail": "pieces/39-apollonian-gasket/thumbnail.svg"
+  },
+  {
+    "id": "41-dust-of-the-infinite",
+    "title": "Dust of the Infinite",
+    "tagline": "2 million iterations of the Clifford strange attractor accumulate as fractal dust — amber filaments and rose peaks emerge from deterministic chaos on a near-black canvas",
+    "year": 2026,
+    "technique": "canvas / Clifford attractor / density accumulation / chunked setTimeout",
+    "path": "pieces/41-dust-of-the-infinite",
+    "thumbnail": "pieces/41-dust-of-the-infinite/thumbnail.svg"
   }
 ]
