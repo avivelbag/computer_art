@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300" width="400" height="300">
+  <rect width="400" height="300" fill="#0d0d0b"/>
+
+  <!-- Deep indigo sea-level contours -->
+  <ellipse cx="200" cy="150" rx="195" ry="145" fill="none" stroke="#1a1040" stroke-width="1.8"/>
+  <ellipse cx="200" cy="150" rx="182" ry="133" fill="none" stroke="#1a1040" stroke-width="0.8"/>
+  <ellipse cx="200" cy="150" rx="170" ry="121" fill="none" stroke="#1e2860" stroke-width="0.8"/>
+
+  <!-- Teal ocean contours -->
+  <ellipse cx="200" cy="150" rx="155" ry="109" fill="none" stroke="#1b4470" stroke-width="1.8"/>
+  <ellipse cx="200" cy="150" rx="141" ry="97"  fill="none" stroke="#1b4470" stroke-width="0.8"/>
+  <ellipse cx="200" cy="150" rx="127" ry="85"  fill="none" stroke="#1a6680" stroke-width="0.8"/>
+
+  <!-- Green/olive mid-elevation -->
+  <ellipse cx="200" cy="150" rx="112" ry="73"  fill="none" stroke="#218075" stroke-width="1.8"/>
+  <ellipse cx="200" cy="150" rx="97"  ry="61"  fill="none" stroke="#218075" stroke-width="0.8"/>
+  <ellipse cx="200" cy="150" rx="82"  ry="49"  fill="none" stroke="#2a7c5e" stroke-width="0.8"/>
+
+  <!-- Khaki/sand high ground -->
+  <ellipse cx="200" cy="150" rx="67"  ry="38"  fill="none" stroke="#6b7c3a" stroke-width="1.8"/>
+  <ellipse cx="200" cy="150" rx="52"  ry="28"  fill="none" stroke="#a09050" stroke-width="0.8"/>
+  <ellipse cx="200" cy="150" rx="37"  ry="19"  fill="none" stroke="#c4a86a" stroke-width="0.8"/>
+
+  <!-- Sand/cream peak -->
+  <ellipse cx="200" cy="150" rx="22"  ry="11"  fill="none" stroke="#d8c48a" stroke-width="1.8"/>
+  <ellipse cx="200" cy="150" rx="10"  ry="5"   fill="none" stroke="#ede0b5" stroke-width="0.8"/>
+
+  <!-- Secondary ridge, lower left -->
+  <ellipse cx="90"  cy="220" rx="70"  ry="50"  fill="none" stroke="#1a6680" stroke-width="0.8"/>
+  <ellipse cx="90"  cy="220" rx="52"  ry="36"  fill="none" stroke="#218075" stroke-width="0.8"/>
+  <ellipse cx="90"  cy="220" rx="36"  ry="23"  fill="none" stroke="#2a7c5e" stroke-width="1.8"/>
+  <ellipse cx="90"  cy="220" rx="20"  ry="12"  fill="none" stroke="#6b7c3a" stroke-width="0.8"/>
+
+  <!-- Secondary ridge, upper right -->
+  <ellipse cx="320" cy="65"  rx="65"  ry="48"  fill="none" stroke="#1b4470" stroke-width="0.8"/>
+  <ellipse cx="320" cy="65"  rx="48"  ry="34"  fill="none" stroke="#1a6680" stroke-width="0.8"/>
+  <ellipse cx="320" cy="65"  rx="33"  ry="22"  fill="none" stroke="#218075" stroke-width="1.8"/>
+  <ellipse cx="320" cy="65"  rx="18"  ry="11"  fill="none" stroke="#2a7c5e" stroke-width="0.8"/>
+</svg>

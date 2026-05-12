@@ -241,5 +241,14 @@
     "technique": "canvas / rhodonea polar curves / rational k morphing / motion-blur ghosting",
     "path": "pieces/63-rhodonea",
     "thumbnail": "pieces/63-rhodonea/thumbnail.svg"
+  },
+  {
+    "id": "64-topographic-contours",
+    "title": "The Land Before Memory — Contours of a Dreamed Terrain",
+    "tagline": "A 3-D value-noise heightfield sampled at 120×90 evolves slowly over time; marching squares extracts 12 isolines in a geological palette — deep indigo sea floor to cream snowcap — with thicker index contours every 5th level at 60 fps",
+    "year": 2026,
+    "technique": "canvas / marching squares / 3-D value noise / fBm / topographic contours",
+    "path": "pieces/64-topographic-contours",
+    "thumbnail": "pieces/64-topographic-contours/thumbnail.svg"
   }
 ]

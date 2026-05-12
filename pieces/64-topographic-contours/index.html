@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>The Land Before Memory — Contours of a Dreamed Terrain</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { background: #0d0d0b; display: flex; align-items: center; justify-content: center; height: 100vh; overflow: hidden; }
+    canvas { display: block; }
+  </style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<script>
+// ─── canvas setup ──────────────────────────────────────────────────────────────
+const W = 1200, H = 900;
+const canvas = document.getElementById('c');
+const ctx    = canvas.getContext('2d');
+canvas.width = W; canvas.height = H;
+
+// ─── noise ─────────────────────────────────────────────────────────────────────
+// Minimal 3-D value noise using a permutation table.
+// Returns a value in [0, 1] for any (x, y, z).
+
+const PERM = new Uint8Array(512);
+(function buildPerm() {
+  const p = new Uint8Array(256);
+  for (let i = 0; i < 256; i++) p[i] = i;
+  // deterministic Fisher-Yates using a fixed LCG seed
+  let s = 0x9e3779b9 | 0;
+  for (let i = 255; i > 0; i--) {
+    s = (Math.imul(s, 0x6c62272e) + 0x9b3779b9) | 0;
+    const j = ((s >>> 0) % (i + 1));
+    const tmp = p[i]; p[i] = p[j]; p[j] = tmp;
+  }
+  for (let i = 0; i < 512; i++) PERM[i] = p[i & 255];
+})();
+
+function fade(t) { return t * t * t * (t * (t * 6 - 15) + 10); }
+function lerp(a, b, t) { return a + t * (b - a); }
+
+// Gradient hash for value noise: maps integer lattice point to [0,1].
+function g(ix, iy, iz) {
+  return PERM[PERM[PERM[ix & 255] + (iy & 255)] + (iz & 255)] / 255;
+}
+
+/**
+ * 3-D value noise at (x, y, z), output in [0, 1].
+ * Uses tri-linear interpolation between the 8 surrounding integer lattice
+ * values, each of which is mapped to a pseudorandom scalar via PERM.
+ */
+function noise3(x, y, z) {
+  const x0 = Math.floor(x), y0 = Math.floor(y), z0 = Math.floor(z);
+  const dx = x - x0, dy = y - y0, dz = z - z0;
+  const fx = fade(dx), fy = fade(dy), fz = fade(dz);
+
+  return lerp(
+    lerp(lerp(g(x0,   y0,   z0),   g(x0+1, y0,   z0),   fx),
+         lerp(g(x0,   y0+1, z0),   g(x0+1, y0+1, z0),   fx), fy),
+    lerp(lerp(g(x0,   y0,   z0+1), g(x0+1, y0,   z0+1), fx),
+         lerp(g(x0,   y0+1, z0+1), g(x0+1, y0+1, z0+1), fx), fy),
+    fz
+  );
+}
+
+/**
+ * Fractal Brownian Motion: 4 octaves of noise summed with halving amplitude.
+ * Produces natural-looking terrain heights in [~0.1, ~0.9] for typical inputs.
+ */
+function fbm(x, y, z) {
+  let v = 0, amp = 0.5, freq = 1;
+  for (let o = 0; o < 4; o++) {
+    v   += amp * noise3(x * freq, y * freq, z * freq);
+    amp  *= 0.5;
+    freq *= 2;
+  }
+  return v;
+}
+
+// ─── grid ──────────────────────────────────────────────────────────────────────
+const COLS = 120, ROWS = 90;
+const CELL_W = W / COLS, CELL_H = H / ROWS;
+
+// Pre-allocate height grid (cols+1 × rows+1 nodes so cells have all 4 corners).
+const grid = new Float32Array((COLS + 1) * (ROWS + 1));
+
+function idx(col, row) { return row * (COLS + 1) + col; }
+
+/**
+ * Sample the noise field into `grid` at the given time slice `t`.
+ * Spatial frequency 0.035 gives ~3–5 hills across the canvas.
+ */
+function sampleGrid(t) {
+  const FREQ = 0.035;
+  for (let r = 0; r <= ROWS; r++) {
+    for (let c = 0; c <= COLS; c++) {
+      grid[idx(c, r)] = fbm(c * FREQ, r * FREQ, t);
+    }
+  }
+}
+
+// ─── color palette ─────────────────────────────────────────────────────────────
+// 12 geological colors from deep-ocean indigo → teal → khaki → sand → snow.
+const PALETTE = [
+  '#1a1040', // level 0  — deep indigo (ocean floor)
+  '#1e2860', // level 1
+  '#1b4470', // level 2
+  '#1a6680', // level 3  — deep teal
+  '#218075', // level 4
+  '#2a7c5e', // level 5  — forest green
+  '#6b7c3a', // level 6  — olive
+  '#a09050', // level 7  — khaki
+  '#c4a86a', // level 8  — warm sand
+  '#d8c48a', // level 9  — pale sand
+  '#ede0b5', // level 10 — cream
+  '#f5f0e0', // level 11 — near-white snow
+];
+
+const N_LEVELS = PALETTE.length; // 12
+
+// ─── marching squares ──────────────────────────────────────────────────────────
+
+/**
+ * Linear interpolation to find where an edge crosses a threshold.
+ * Returns a position along the edge [0,1].
+ */
+function interp(a, b, thr) {
+  if (Math.abs(b - a) < 1e-9) return 0.5;
+  return (thr - a) / (b - a);
+}
+
+/**
+ * Draw all isolines for one height threshold on the current grid.
+ * Uses marching squares: each 2×2 cell of grid nodes is classified by the
+ * above/below pattern of its 4 corners (16 cases) and the appropriate
+ * edge-crossing segments are interpolated and stroked.
+ *
+ * @param {number} thr       height value in [0,1]
+ * @param {string} color     CSS color string
+ * @param {number} lineWidth stroke width in pixels
+ */
+function marchLevel(thr, color, lineWidth) {
+  ctx.strokeStyle = color;
+  ctx.lineWidth   = lineWidth;
+  ctx.beginPath();
+
+  for (let r = 0; r < ROWS; r++) {
+    for (let c = 0; c < COLS; c++) {
+      const v00 = grid[idx(c,   r)];
+      const v10 = grid[idx(c+1, r)];
+      const v01 = grid[idx(c,   r+1)];
+      const v11 = grid[idx(c+1, r+1)];
+
+      // classify corners: 1 if above threshold
+      const b00 = v00 >= thr ? 1 : 0;
+      const b10 = v10 >= thr ? 1 : 0;
+      const b01 = v01 >= thr ? 1 : 0;
+      const b11 = v11 >= thr ? 1 : 0;
+
+      // 4-bit case index: top-left, top-right, bottom-left, bottom-right
+      const caseIdx = (b00 << 3) | (b10 << 2) | (b01 << 1) | b11;
+
+      if (caseIdx === 0 || caseIdx === 15) continue; // fully below/above
+
+      // pixel coords of the 4 corners of this cell
+      const x0 = c * CELL_W, x1 = (c + 1) * CELL_W;
+      const y0 = r * CELL_H, y1 = (r + 1) * CELL_H;
+
+      // interpolated crossing points on each edge
+      // top: between (c,r) and (c+1,r)
+      const tT = interp(v00, v10, thr);
+      const pTx = x0 + tT * CELL_W, pTy = y0;
+      // right: between (c+1,r) and (c+1,r+1)
+      const tR = interp(v10, v11, thr);
+      const pRx = x1, pRy = y0 + tR * CELL_H;
+      // bottom: between (c,r+1) and (c+1,r+1)
+      const tB = interp(v01, v11, thr);
+      const pBx = x0 + tB * CELL_W, pBy = y1;
+      // left: between (c,r) and (c,r+1)
+      const tL = interp(v00, v01, thr);
+      const pLx = x0, pLy = y0 + tL * CELL_H;
+
+      // segment table: pairs of edge endpoints per case.
+      // Edges: T=top, R=right, B=bottom, L=left
+      // Saddle cases (caseIdx 5, 10) use midpoint disambiguation.
+      switch (caseIdx) {
+        case  1: ctx.moveTo(pBx,pBy); ctx.lineTo(pRx,pRy); break;
+        case  2: ctx.moveTo(pLx,pLy); ctx.lineTo(pBx,pBy); break;
+        case  3: ctx.moveTo(pLx,pLy); ctx.lineTo(pRx,pRy); break;
+        case  4: ctx.moveTo(pTx,pTy); ctx.lineTo(pRx,pRy); break;
+        case  5:
+          // saddle: two segments — use average height to disambiguate
+          if ((v00 + v10 + v01 + v11) * 0.25 >= thr) {
+            ctx.moveTo(pTx,pTy); ctx.lineTo(pLx,pLy);
+            ctx.moveTo(pBx,pBy); ctx.lineTo(pRx,pRy);
+          } else {
+            ctx.moveTo(pTx,pTy); ctx.lineTo(pRx,pRy);
+            ctx.moveTo(pBx,pBy); ctx.lineTo(pLx,pLy);
+          }
+          break;
+        case  6: ctx.moveTo(pTx,pTy); ctx.lineTo(pBx,pBy); break;
+        case  7: ctx.moveTo(pTx,pTy); ctx.lineTo(pLx,pLy); break;
+        case  8: ctx.moveTo(pTx,pTy); ctx.lineTo(pLx,pLy); break;
+        case  9: ctx.moveTo(pTx,pTy); ctx.lineTo(pBx,pBy); break;
+        case 10:
+          if ((v00 + v10 + v01 + v11) * 0.25 >= thr) {
+            ctx.moveTo(pTx,pTy); ctx.lineTo(pRx,pRy);
+            ctx.moveTo(pBx,pBy); ctx.lineTo(pLx,pLy);
+          } else {
+            ctx.moveTo(pTx,pTy); ctx.lineTo(pLx,pLy);
+            ctx.moveTo(pBx,pBy); ctx.lineTo(pRx,pRy);
+          }
+          break;
+        case 11: ctx.moveTo(pTx,pTy); ctx.lineTo(pRx,pRy); break;
+        case 12: ctx.moveTo(pLx,pLy); ctx.lineTo(pRx,pRy); break;
+        case 13: ctx.moveTo(pLx,pLy); ctx.lineTo(pBx,pBy); break;
+        case 14: ctx.moveTo(pBx,pBy); ctx.lineTo(pRx,pRy); break;
+      }
+    }
+  }
+
+  ctx.stroke();
+}
+
+// ─── render loop ───────────────────────────────────────────────────────────────
+
+// Evenly spaced thresholds dividing [0.15, 0.85] so they sit in the terrain's
+// active range rather than at noise-flat extremes.
+const THRESHOLDS = Array.from({ length: N_LEVELS }, (_, i) =>
+  0.15 + (i / (N_LEVELS - 1)) * 0.70
+);
+
+let startTime = null;
+let t = 0; // noise time slice (increments ~0.003 per frame at 60 fps)
+
+function frame(ts) {
+  if (startTime === null) startTime = ts;
+  const dt = (ts - startTime) / 1000;
+  startTime = ts;
+
+  t += Math.min(dt, 0.05) * 0.18; // ≈0.003 per frame at 60 fps; cap dt to avoid jump on tab-hide
+
+  ctx.clearRect(0, 0, W, H);
+  ctx.fillStyle = '#0d0d0b';
+  ctx.fillRect(0, 0, W, H);
+
+  sampleGrid(t);
+
+  for (let i = 0; i < N_LEVELS; i++) {
+    // Every 5th level is a thicker "index contour" (i % 5 === 0).
+    const isIndex = (i % 5 === 0);
+    marchLevel(THRESHOLDS[i], PALETTE[i], isIndex ? 1.8 : 0.8);
+  }
+
+  requestAnimationFrame(frame);
+}
+
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>
