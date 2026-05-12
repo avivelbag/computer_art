@@ -133,5 +133,14 @@
     "technique": "SVG / Penrose P3 tiling / substitution deflation",
     "path": "pieces/38-no-pattern-repeats",
     "thumbnail": "pieces/38-no-pattern-repeats/thumbnail.svg"
+  },
+  {
+    "id": "39-apollonian-gasket",
+    "title": "Circles All the Way Down",
+    "tagline": "376 circles packed by Descartes' theorem fill every interstice of an Apollonian gasket — deep teal outermost, warming through gold and coral to cream at the finest scale",
+    "year": 2026,
+    "technique": "SVG / Apollonian gasket / Descartes' Circle Theorem / Apollonian reflection",
+    "path": "pieces/39-apollonian-gasket",
+    "thumbnail": "pieces/39-apollonian-gasket/thumbnail.svg"
   }
 ]
