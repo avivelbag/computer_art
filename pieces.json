@@ -160,5 +160,14 @@
     "technique": "canvas / Fourier epicycles / DFT / requestAnimationFrame",
     "path": "pieces/42-circles-within-circles",
     "thumbnail": "pieces/42-circles-within-circles/thumbnail.svg"
+  },
+  {
+    "id": "46-superformula-bloom",
+    "title": "Superformula Bloom",
+    "tagline": "The Gielis superformula morphs through six natural archetypes — flower, star, snowflake, leaf — in a seamless 30-second botanical loop",
+    "year": 2026,
+    "technique": "canvas / Gielis superformula / parametric morphing / requestAnimationFrame",
+    "path": "pieces/46-superformula-bloom",
+    "thumbnail": "pieces/46-superformula-bloom/thumbnail.svg"
   }
 ]

@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Superformula Bloom — Gielis Parametric Morphing</title>
+<style>
+html,body{margin:0;padding:0;background:#fdf6f0;display:flex;align-items:center;justify-content:center;min-height:100vh}
+canvas{display:block;max-width:96vmin;max-height:96vmin}
+</style>
+</head>
+<body>
+<canvas id="c" width="800" height="800"></canvas>
+<script>
+const TWO_PI  = 2 * Math.PI;
+const SAMPLES = 512;
+const W = 800, H = 800;
+const CX = W / 2, CY = H / 2;
+const RADIUS = Math.min(W, H) * 0.44;
+const CYCLE  = 30; // seconds per full morphing cycle
+
+// Six waypoints — smoothly interpolated over CYCLE seconds.
+const WAYPOINTS = [
+  { m: 5, n1: 3,   n2: 3,   n3: 3   }, // 5-petal flower
+  { m: 6, n1: 2,   n2: 4,   n3: 4   }, // 6-point star
+  { m: 4, n1: 100, n2: 100, n3: 100 }, // near-circle (Lp unit ball, p→∞)
+  { m: 6, n1: 1,   n2: 0.5, n3: 0.5 }, // spiky snowflake
+  { m: 2, n1: 1,   n2: 1,   n3: 0.5 }, // asymmetric leaf
+  { m: 8, n1: 3,   n2: 0.5, n3: 0.5 }, // Koch-like 8-fold star
+];
+
+// Three concentric copies at decreasing scale.
+const SCALES  = [1.0, 0.70, 0.45];
+const STROKES = [
+  'rgba(196,112,138,0.38)',
+  'rgba(160,78,110,0.60)',
+  'rgba(122,52,86,0.82)',
+];
+const WIDTHS   = [1.2, 2.0, 2.8];
+const FILL_IN  = 'rgba(196,112,138,0.07)'; // innermost wash
+
+// Smoothstep gives zero velocity at waypoint boundaries → seamless loop.
+function smoothstep(t) { return t * t * (3 - 2 * t); }
+function lerp(a, b, t) { return a + (b - a) * t; }
+
+function getParams(elapsed) {
+  const t   = (elapsed % CYCLE) / CYCLE;
+  const fi  = t * WAYPOINTS.length;
+  const idx = Math.floor(fi) % WAYPOINTS.length;
+  const s   = smoothstep(fi - Math.floor(fi));
+  const A   = WAYPOINTS[idx];
+  const B   = WAYPOINTS[(idx + 1) % WAYPOINTS.length];
+  return {
+    m:  lerp(A.m,  B.m,  s),
+    n1: lerp(A.n1, B.n1, s),
+    n2: lerp(A.n2, B.n2, s),
+    n3: lerp(A.n3, B.n3, s),
+  };
+}
+
+// Gielis superformula r(θ) with a=b=1.
+function r_super(theta, m, n1, n2, n3) {
+  const t1  = Math.pow(Math.abs(Math.cos(m * theta / 4)), n2);
+  const t2  = Math.pow(Math.abs(Math.sin(m * theta / 4)), n3);
+  const sum = t1 + t2;
+  return sum === 0 ? 0 : Math.pow(sum, -1 / n1);
+}
+
+function buildPath(m, n1, n2, n3, radius) {
+  const rs = new Float64Array(SAMPLES + 1);
+  let maxR = 0;
+  for (let i = 0; i <= SAMPLES; i++) {
+    const rv = r_super(TWO_PI * i / SAMPLES, m, n1, n2, n3);
+    rs[i] = rv;
+    if (rv > maxR) maxR = rv;
+  }
+  const sc = maxR > 0 ? radius / maxR : 0;
+  const pts = new Float64Array((SAMPLES + 1) * 2);
+  for (let i = 0; i <= SAMPLES; i++) {
+    const theta   = TWO_PI * i / SAMPLES;
+    pts[i * 2]     = CX + rs[i] * sc * Math.cos(theta);
+    pts[i * 2 + 1] = CY + rs[i] * sc * Math.sin(theta);
+  }
+  return pts;
+}
+
+function drawShape(ctx, pts, strokeColor, lineWidth, fillColor) {
+  ctx.beginPath();
+  ctx.moveTo(pts[0], pts[1]);
+  for (let i = 1; i <= SAMPLES; i++) ctx.lineTo(pts[i * 2], pts[i * 2 + 1]);
+  ctx.closePath();
+  if (fillColor) { ctx.fillStyle = fillColor; ctx.fill(); }
+  ctx.strokeStyle = strokeColor;
+  ctx.lineWidth   = lineWidth;
+  ctx.lineJoin    = 'round';
+  ctx.stroke();
+}
+
+const canvas = document.getElementById('c');
+const ctx    = canvas.getContext('2d');
+let startTime = null;
+
+function frame(ts) {
+  if (startTime === null) startTime = ts;
+  const elapsed        = (ts - startTime) / 1000;
+  const { m, n1, n2, n3 } = getParams(elapsed);
+
+  ctx.fillStyle = '#fdf6f0';
+  ctx.fillRect(0, 0, W, H);
+
+  // Outermost drawn first (background), innermost last (foreground).
+  for (let i = 0; i < SCALES.length; i++) {
+    const pts  = buildPath(m, n1, n2, n3, RADIUS * SCALES[i]);
+    const fill = i === SCALES.length - 1 ? FILL_IN : null;
+    drawShape(ctx, pts, STROKES[i], WIDTHS[i], fill);
+  }
+
+  requestAnimationFrame(frame);
+}
+
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>
