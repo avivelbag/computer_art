@@ -183,14 +183,16 @@ function marchLevel(thr, color, lineWidth) {
 
       // segment table: pairs of edge endpoints per case.
       // Edges: T=top, R=right, B=bottom, L=left
-      // Saddle cases (caseIdx 5, 10) use midpoint disambiguation.
+      // Encoding: (b00<<3)|(b10<<2)|(b01<<1)|b11 → TL=bit3,TR=bit2,BL=bit1,BR=bit0
+      // Saddle cases (caseIdx 6, 9) use midpoint disambiguation.
       switch (caseIdx) {
         case  1: ctx.moveTo(pBx,pBy); ctx.lineTo(pRx,pRy); break;
         case  2: ctx.moveTo(pLx,pLy); ctx.lineTo(pBx,pBy); break;
         case  3: ctx.moveTo(pLx,pLy); ctx.lineTo(pRx,pRy); break;
         case  4: ctx.moveTo(pTx,pTy); ctx.lineTo(pRx,pRy); break;
-        case  5:
-          // saddle: two segments — use average height to disambiguate
+        case  5: ctx.moveTo(pTx,pTy); ctx.lineTo(pBx,pBy); break; // right col (TR+BR)
+        case  6:
+          // saddle: TR+BL above — use average height to disambiguate
           if ((v00 + v10 + v01 + v11) * 0.25 >= thr) {
             ctx.moveTo(pTx,pTy); ctx.lineTo(pLx,pLy);
             ctx.moveTo(pBx,pBy); ctx.lineTo(pRx,pRy);
@@ -199,11 +201,10 @@ function marchLevel(thr, color, lineWidth) {
             ctx.moveTo(pBx,pBy); ctx.lineTo(pLx,pLy);
           }
           break;
-        case  6: ctx.moveTo(pTx,pTy); ctx.lineTo(pBx,pBy); break;
         case  7: ctx.moveTo(pTx,pTy); ctx.lineTo(pLx,pLy); break;
         case  8: ctx.moveTo(pTx,pTy); ctx.lineTo(pLx,pLy); break;
-        case  9: ctx.moveTo(pTx,pTy); ctx.lineTo(pBx,pBy); break;
-        case 10:
+        case  9:
+          // saddle: TL+BR above — use average height to disambiguate
           if ((v00 + v10 + v01 + v11) * 0.25 >= thr) {
             ctx.moveTo(pTx,pTy); ctx.lineTo(pRx,pRy);
             ctx.moveTo(pBx,pBy); ctx.lineTo(pLx,pLy);
@@ -212,6 +213,7 @@ function marchLevel(thr, color, lineWidth) {
             ctx.moveTo(pBx,pBy); ctx.lineTo(pRx,pRy);
           }
           break;
+        case 10: ctx.moveTo(pTx,pTy); ctx.lineTo(pBx,pBy); break; // left col (TL+BL)
         case 11: ctx.moveTo(pTx,pTy); ctx.lineTo(pRx,pRy); break;
         case 12: ctx.moveTo(pLx,pLy); ctx.lineTo(pRx,pRy); break;
         case 13: ctx.moveTo(pLx,pLy); ctx.lineTo(pBx,pBy); break;

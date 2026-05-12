@@ -101,11 +101,23 @@ def test_marching_squares_case_table():
 
 
 def test_saddle_cases_disambiguated():
-    """Saddle cases 5 and 10 require midpoint disambiguation logic."""
+    """Saddle cases 6 and 9 require midpoint disambiguation logic.
+
+    With encoding (b00<<3)|(b10<<2)|(b01<<1)|b11:
+      case 6 = TR+BL above (0110) and case 9 = TL+BR above (1001) are the
+      true diagonal saddles that need disambiguation; cases 5 and 10 are
+      simple column cases (T→B).
+    """
     src = html_source()
-    # Both saddle cases must appear
-    assert 'case  5:' in src or 'case 5:' in src
-    assert 'case 10:' in src
+    assert 'case  6:' in src or 'case 6:' in src
+    assert 'case  9:' in src or 'case 9:' in src
+    # Verify the disambiguation block (average height check) follows case 6 / case 9
+    case6_pos = src.find('case  6:')
+    if case6_pos == -1:
+        case6_pos = src.find('case 6:')
+    assert case6_pos != -1
+    snippet = src[case6_pos:case6_pos + 300]
+    assert '0.25' in snippet, "No average-height disambiguation found near case 6"
 
 
 # ─── noise field ──────────────────────────────────────────────────────────────
