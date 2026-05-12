@@ -169,5 +169,14 @@
     "technique": "canvas / Gielis superformula / parametric morphing / requestAnimationFrame",
     "path": "pieces/46-superformula-bloom",
     "thumbnail": "pieces/46-superformula-bloom/thumbnail.svg"
+  },
+  {
+    "id": "47-hilbert-curve",
+    "title": "Every Point, Once",
+    "tagline": "A Hilbert curve of order 6 threads 4,095 segments through a 64×64 grid — drawn stroke by stroke in copper on near-black, visiting every cell exactly once",
+    "year": 2026,
+    "technique": "canvas / Hilbert curve / space-filling / recursive subdivision",
+    "path": "pieces/47-hilbert-curve",
+    "thumbnail": "pieces/47-hilbert-curve/thumbnail.svg"
   }
 ]
