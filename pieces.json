@@ -124,5 +124,14 @@
     "technique": "canvas / ImageData / moiré interference / per-pixel sinusoidal evaluation",
     "path": "pieces/35-two-truths-overlapping",
     "thumbnail": "pieces/35-two-truths-overlapping/thumbnail.svg"
+  },
+  {
+    "id": "38-no-pattern-repeats",
+    "title": "No Pattern Repeats",
+    "tagline": "2,330 thick and thin rhombi grown from a ten-triangle sun by six generations of golden-ratio deflation — an aperiodic Penrose P3 tiling in deep indigo and warm amber",
+    "year": 2026,
+    "technique": "SVG / Penrose P3 tiling / substitution deflation",
+    "path": "pieces/38-no-pattern-repeats",
+    "thumbnail": "pieces/38-no-pattern-repeats/thumbnail.svg"
   }
 ]
