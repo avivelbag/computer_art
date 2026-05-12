@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Brian's Brain — The Spark That Cannot Rest</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { background: #0f0f14; overflow: hidden; cursor: pointer; }
+    canvas { display: block; }
+  </style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<script>
+const canvas = document.getElementById('c');
+const ctx    = canvas.getContext('2d');
+
+const OFF   = 0;
+const ON    = 1;
+const DYING = 2;
+
+// 7 px per cell gives ~137 cols × ~86 rows on a 960×600 viewport —
+// dense enough for gliders to be visible, large enough to read.
+const CELL        = 7;
+const BG          = '#0f0f14';
+const COLOR_ON    = '#00e5cc'; // electric teal
+const COLOR_DYING = '#5a2d82'; // deep violet
+const MS_PER_FRAME = 40;       // ~25 fps — slow enough to track gliders
+
+let cols, rows, cur, nxt, timer;
+
+/**
+ * Allocate two Uint8Array buffers sized to the current viewport and fill
+ * the current buffer with a random initial state: ~15% ON, ~15% DYING,
+ * ~70% OFF.  The ratios give a lively start that converges to glider swarms
+ * within a dozen generations.
+ */
+function setup() {
+  canvas.width  = window.innerWidth;
+  canvas.height = window.innerHeight;
+  cols = Math.floor(canvas.width  / CELL);
+  rows = Math.floor(canvas.height / CELL);
+  cur  = new Uint8Array(cols * rows);
+  nxt  = new Uint8Array(cols * rows);
+  for (let i = 0; i < cur.length; i++) {
+    const r = Math.random();
+    cur[i]  = r < 0.15 ? ON : r < 0.30 ? DYING : OFF;
+  }
+}
+
+/**
+ * Advance one Brian's Brain generation into nxt, then swap the buffers.
+ *
+ * Rules (applied simultaneously to every cell):
+ *   OFF   → ON    if exactly 2 of the 8 Moore neighbours are ON
+ *   ON    → DYING (unconditionally)
+ *   DYING → OFF   (unconditionally)
+ *
+ * The grid wraps toroidally so gliders travel across edges without clipping.
+ */
+function step() {
+  for (let y = 0; y < rows; y++) {
+    for (let x = 0; x < cols; x++) {
+      const state = cur[y * cols + x];
+      if (state === ON) {
+        nxt[y * cols + x] = DYING;
+      } else if (state === DYING) {
+        nxt[y * cols + x] = OFF;
+      } else {
+        let onCount = 0;
+        for (let dy = -1; dy <= 1; dy++) {
+          for (let dx = -1; dx <= 1; dx++) {
+            if (dx === 0 && dy === 0) continue;
+            const nx = (x + dx + cols) % cols;
+            const ny = (y + dy + rows) % rows;
+            if (cur[ny * cols + nx] === ON) onCount++;
+          }
+        }
+        nxt[y * cols + x] = onCount === 2 ? ON : OFF;
+      }
+    }
+  }
+  // Swap buffers — avoids allocating a new array each generation.
+  const tmp = cur; cur = nxt; nxt = tmp;
+}
+
+/**
+ * Paint the current buffer to the canvas.  OFF cells are not drawn (they
+ * take the body background colour).  Two separate fill-style passes avoid
+ * per-cell style changes, which are expensive in Canvas 2D.
+ */
+function render() {
+  ctx.fillStyle = BG;
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  ctx.fillStyle = COLOR_ON;
+  for (let y = 0; y < rows; y++) {
+    for (let x = 0; x < cols; x++) {
+      if (cur[y * cols + x] === ON) {
+        ctx.fillRect(x * CELL, y * CELL, CELL, CELL);
+      }
+    }
+  }
+
+  ctx.fillStyle = COLOR_DYING;
+  for (let y = 0; y < rows; y++) {
+    for (let x = 0; x < cols; x++) {
+      if (cur[y * cols + x] === DYING) {
+        ctx.fillRect(x * CELL, y * CELL, CELL, CELL);
+      }
+    }
+  }
+}
+
+function loop() {
+  step();
+  render();
+  timer = setTimeout(loop, MS_PER_FRAME);
+}
+
+/** Tear down the running loop, reinitialise, and restart. */
+function restart() {
+  clearTimeout(timer);
+  setup();
+  render();
+  timer = setTimeout(loop, MS_PER_FRAME);
+}
+
+window.addEventListener('resize', restart);
+window.addEventListener('click',  restart);
+
+restart();
+</script>
+</body>
+</html>

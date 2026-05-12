@@ -1,0 +1,189 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="400" height="400" viewBox="0 0 400 400">
+  <defs>
+    <filter id="glow" x="-60%" y="-60%" width="220%" height="220%">
+      <feGaussianBlur stdDeviation="2.2" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+
+  <!-- Background: near-black #0f0f14 -->
+  <rect width="400" height="400" fill="#0f0f14"/>
+
+  <!-- DYING state cells — deep violet #5a2d82 — scattered glider trails -->
+  <g fill="#5a2d82">
+    <!-- cluster 1 trail (→↓) -->
+    <rect x="35" y="35" width="5" height="5"/>
+    <rect x="40" y="35" width="5" height="5"/>
+    <rect x="40" y="40" width="5" height="5"/>
+    <!-- cluster 2 trail (←↓) -->
+    <rect x="145" y="25" width="5" height="5"/>
+    <rect x="140" y="25" width="5" height="5"/>
+    <rect x="140" y="30" width="5" height="5"/>
+    <!-- cluster 3 trail (→↑) -->
+    <rect x="255" y="35" width="5" height="5"/>
+    <rect x="260" y="35" width="5" height="5"/>
+    <rect x="260" y="30" width="5" height="5"/>
+    <!-- cluster 4 trail (←↑) -->
+    <rect x="365" y="10" width="5" height="5"/>
+    <rect x="360" y="10" width="5" height="5"/>
+    <rect x="360" y="5"  width="5" height="5"/>
+    <!-- cluster 5 trail (→↓) -->
+    <rect x="55"  y="95"  width="5" height="5"/>
+    <rect x="60"  y="95"  width="5" height="5"/>
+    <rect x="60"  y="100" width="5" height="5"/>
+    <!-- cluster 6 trail (←↓) -->
+    <rect x="180" y="75" width="5" height="5"/>
+    <rect x="175" y="75" width="5" height="5"/>
+    <rect x="175" y="80" width="5" height="5"/>
+    <!-- cluster 7 trail (→↑) -->
+    <rect x="285" y="95" width="5" height="5"/>
+    <rect x="290" y="95" width="5" height="5"/>
+    <rect x="290" y="90" width="5" height="5"/>
+    <!-- cluster 8 trail (←↑) -->
+    <rect x="30"  y="135" width="5" height="5"/>
+    <rect x="25"  y="135" width="5" height="5"/>
+    <rect x="25"  y="130" width="5" height="5"/>
+    <!-- cluster 9 trail (→↓) -->
+    <rect x="120" y="130" width="5" height="5"/>
+    <rect x="125" y="130" width="5" height="5"/>
+    <rect x="125" y="135" width="5" height="5"/>
+    <!-- cluster 10 trail (←↓) -->
+    <rect x="245" y="155" width="5" height="5"/>
+    <rect x="240" y="155" width="5" height="5"/>
+    <rect x="240" y="160" width="5" height="5"/>
+    <!-- cluster 11 trail (→↑) -->
+    <rect x="345" y="125" width="5" height="5"/>
+    <rect x="350" y="125" width="5" height="5"/>
+    <rect x="350" y="120" width="5" height="5"/>
+    <!-- cluster 12 trail (←↑) -->
+    <rect x="80"  y="195" width="5" height="5"/>
+    <rect x="75"  y="195" width="5" height="5"/>
+    <rect x="75"  y="190" width="5" height="5"/>
+    <!-- cluster 13 trail (→↓) -->
+    <rect x="185" y="185" width="5" height="5"/>
+    <rect x="190" y="185" width="5" height="5"/>
+    <rect x="190" y="190" width="5" height="5"/>
+    <!-- cluster 14 trail (←↓) -->
+    <rect x="305" y="215" width="5" height="5"/>
+    <rect x="300" y="215" width="5" height="5"/>
+    <rect x="300" y="220" width="5" height="5"/>
+    <!-- cluster 15 trail (→↑) -->
+    <rect x="35"  y="255" width="5" height="5"/>
+    <rect x="40"  y="255" width="5" height="5"/>
+    <rect x="40"  y="250" width="5" height="5"/>
+    <!-- cluster 16 trail (←↑) -->
+    <rect x="155" y="235" width="5" height="5"/>
+    <rect x="150" y="235" width="5" height="5"/>
+    <rect x="150" y="230" width="5" height="5"/>
+    <!-- cluster 17 trail (→↓) -->
+    <rect x="270" y="275" width="5" height="5"/>
+    <rect x="275" y="275" width="5" height="5"/>
+    <rect x="275" y="280" width="5" height="5"/>
+    <!-- cluster 18 trail (←↓) -->
+    <rect x="380" y="255" width="5" height="5"/>
+    <rect x="375" y="255" width="5" height="5"/>
+    <rect x="375" y="260" width="5" height="5"/>
+    <!-- cluster 19 trail (→↑) -->
+    <rect x="95"  y="315" width="5" height="5"/>
+    <rect x="100" y="315" width="5" height="5"/>
+    <rect x="100" y="310" width="5" height="5"/>
+    <!-- cluster 20 trail (←↑) -->
+    <rect x="225" y="295" width="5" height="5"/>
+    <rect x="220" y="295" width="5" height="5"/>
+    <rect x="220" y="290" width="5" height="5"/>
+    <!-- cluster 21 trail (→↓) -->
+    <rect x="335" y="335" width="5" height="5"/>
+    <rect x="340" y="335" width="5" height="5"/>
+    <rect x="340" y="340" width="5" height="5"/>
+    <!-- isolated dying cells — spent gliders and noise -->
+    <rect x="80"  y="50"  width="5" height="5"/>
+    <rect x="195" y="30"  width="5" height="5"/>
+    <rect x="320" y="55"  width="5" height="5"/>
+    <rect x="45"  y="165" width="5" height="5"/>
+    <rect x="270" y="145" width="5" height="5"/>
+    <rect x="390" y="170" width="5" height="5"/>
+    <rect x="170" y="215" width="5" height="5"/>
+    <rect x="380" y="195" width="5" height="5"/>
+    <rect x="65"  y="285" width="5" height="5"/>
+    <rect x="245" y="310" width="5" height="5"/>
+    <rect x="330" y="290" width="5" height="5"/>
+    <rect x="160" y="355" width="5" height="5"/>
+    <rect x="290" y="350" width="5" height="5"/>
+    <rect x="385" y="325" width="5" height="5"/>
+    <rect x="10"  y="80"  width="5" height="5"/>
+    <rect x="250" y="65"  width="5" height="5"/>
+    <rect x="375" y="85"  width="5" height="5"/>
+    <rect x="130" y="175" width="5" height="5"/>
+    <rect x="390" y="235" width="5" height="5"/>
+    <rect x="20"  y="200" width="5" height="5"/>
+    <rect x="340" y="265" width="5" height="5"/>
+    <rect x="175" y="300" width="5" height="5"/>
+  </g>
+
+  <!-- ON state cells — electric teal #00e5cc — glider heads, with glow -->
+  <g fill="#00e5cc" filter="url(#glow)">
+    <!-- cluster 1 head -->
+    <rect x="40" y="30" width="5" height="5"/>
+    <rect x="45" y="30" width="5" height="5"/>
+    <!-- cluster 2 head -->
+    <rect x="140" y="20" width="5" height="5"/>
+    <rect x="135" y="20" width="5" height="5"/>
+    <!-- cluster 3 head -->
+    <rect x="260" y="40" width="5" height="5"/>
+    <rect x="265" y="40" width="5" height="5"/>
+    <!-- cluster 4 head -->
+    <rect x="360" y="15" width="5" height="5"/>
+    <rect x="355" y="15" width="5" height="5"/>
+    <!-- cluster 5 head -->
+    <rect x="60"  y="90" width="5" height="5"/>
+    <rect x="65"  y="90" width="5" height="5"/>
+    <!-- cluster 6 head -->
+    <rect x="175" y="70" width="5" height="5"/>
+    <rect x="170" y="70" width="5" height="5"/>
+    <!-- cluster 7 head -->
+    <rect x="290" y="100" width="5" height="5"/>
+    <rect x="295" y="100" width="5" height="5"/>
+    <!-- cluster 8 head -->
+    <rect x="25"  y="140" width="5" height="5"/>
+    <rect x="20"  y="140" width="5" height="5"/>
+    <!-- cluster 9 head -->
+    <rect x="125" y="125" width="5" height="5"/>
+    <rect x="130" y="125" width="5" height="5"/>
+    <!-- cluster 10 head -->
+    <rect x="240" y="150" width="5" height="5"/>
+    <rect x="235" y="150" width="5" height="5"/>
+    <!-- cluster 11 head -->
+    <rect x="350" y="130" width="5" height="5"/>
+    <rect x="355" y="130" width="5" height="5"/>
+    <!-- cluster 12 head -->
+    <rect x="75"  y="200" width="5" height="5"/>
+    <rect x="70"  y="200" width="5" height="5"/>
+    <!-- cluster 13 head -->
+    <rect x="190" y="180" width="5" height="5"/>
+    <rect x="195" y="180" width="5" height="5"/>
+    <!-- cluster 14 head -->
+    <rect x="300" y="210" width="5" height="5"/>
+    <rect x="295" y="210" width="5" height="5"/>
+    <!-- cluster 15 head -->
+    <rect x="40"  y="260" width="5" height="5"/>
+    <rect x="45"  y="260" width="5" height="5"/>
+    <!-- cluster 16 head -->
+    <rect x="150" y="240" width="5" height="5"/>
+    <rect x="145" y="240" width="5" height="5"/>
+    <!-- cluster 17 head -->
+    <rect x="275" y="270" width="5" height="5"/>
+    <rect x="280" y="270" width="5" height="5"/>
+    <!-- cluster 18 head -->
+    <rect x="375" y="250" width="5" height="5"/>
+    <rect x="370" y="250" width="5" height="5"/>
+    <!-- cluster 19 head -->
+    <rect x="100" y="320" width="5" height="5"/>
+    <rect x="105" y="320" width="5" height="5"/>
+    <!-- cluster 20 head -->
+    <rect x="220" y="300" width="5" height="5"/>
+    <rect x="215" y="300" width="5" height="5"/>
+    <!-- cluster 21 head -->
+    <rect x="340" y="330" width="5" height="5"/>
+    <rect x="345" y="330" width="5" height="5"/>
+  </g>
+</svg>

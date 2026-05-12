@@ -205,5 +205,14 @@
     "technique": "canvas / wave superposition / interference / ImageData per-pixel",
     "path": "pieces/55-the-pond-remembers",
     "thumbnail": "pieces/55-the-pond-remembers/thumbnail.svg"
+  },
+  {
+    "id": "56-brians-brain",
+    "title": "Brian's Brain: The Spark That Cannot Rest",
+    "tagline": "Three-state cellular automata — OFF, ON, DYING — generate glider swarms racing across a toroidal grid; electric teal sparks and violet trails on a near-black canvas at 25 fps",
+    "year": 2026,
+    "technique": "canvas / cellular automata / Brian's Brain / Uint8Array double-buffer",
+    "path": "pieces/56-brians-brain",
+    "thumbnail": "pieces/56-brians-brain/thumbnail.svg"
   }
 ]
