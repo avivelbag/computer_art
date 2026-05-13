@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Torus Knot Curves</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#0d0a14;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;font-family:monospace}
+#ctrl{display:flex;gap:14px;align-items:center;margin-bottom:10px}
+#kname{color:#f5c830;font-size:13px;min-width:140px;text-align:right}
+button{background:#1a1525;color:#e88c1a;border:1px solid #e88c1a;padding:6px 14px;cursor:pointer;font-family:monospace;font-size:13px;border-radius:2px}
+button:hover{background:#2a1f35}
+canvas{display:block;width:min(100vw,100vh);height:min(100vw,100vh)}
+</style>
+</head>
+<body>
+<div id="ctrl"><span id="kname">Trefoil (2,3)</span><button onclick="nextKnot()">Next Knot</button></div>
+<canvas id="c" width="700" height="700"></canvas>
+<script>(function(){
+'use strict';
+const W=700,H=700,CX=W/2,CY=H/2;
+const R=200,r=70;
+const N=720;
+const TILT=0.45;
+const SPD=3;
+const BG='#0d0a14';
+// Depth bands far→near: rose, amber, gold
+const COLORS=['#c8405a','#e88c1a','#f5c830'];
+
+const KNOTS=[
+  {p:2,q:3,name:'Trefoil (2,3)'},
+  {p:2,q:5,name:'Cinquefoil (2,5)'},
+  {p:3,q:5,name:'Star (3,5)'},
+  {p:2,q:7,name:'Septafoil (2,7)'}
+];
+let ki=0;
+
+const canvas=document.getElementById('c');
+const ctx=canvas.getContext('2d');
+let pts=[],drawn=0,paused=false,pauseAt=0;
+
+function buildPts(p,q){
+  const ct=Math.cos(TILT),st=Math.sin(TILT);
+  pts=[];
+  for(let i=0;i<=N;i++){
+    const t=i/N*Math.PI*2;
+    const rho=R+r*Math.cos(q*t);
+    const x=rho*Math.cos(p*t),y=rho*Math.sin(p*t),z=r*Math.sin(q*t);
+    // x-axis tilt so z encodes screen depth
+    pts.push({x:x+CX,y:y*ct-z*st+CY,z:y*st+z*ct});
+  }
+}
+
+function nextKnot(){
+  ki=(ki+1)%KNOTS.length;
+  reset();
+}
+
+function reset(){
+  const k=KNOTS[ki];
+  document.getElementById('kname').textContent=k.name;
+  buildPts(k.p,k.q);
+  drawn=0;
+  ctx.fillStyle=BG;
+  ctx.fillRect(0,0,W,H);
+}
+
+function colorForDepth(depth){
+  return COLORS[Math.min(2,Math.floor(depth*3))];
+}
+
+function frame(ts){
+  if(drawn>=N){
+    if(!paused){paused=true;pauseAt=ts;}
+    if(ts-pauseAt<600){requestAnimationFrame(frame);return;}
+    paused=false;
+    drawn=0;
+    ctx.fillStyle=BG;
+    ctx.fillRect(0,0,W,H);
+  }
+  ctx.lineCap='round';
+  for(let s=0;s<SPD&&drawn<N;s++,drawn++){
+    const a=pts[drawn],b=pts[drawn+1];
+    // z is r*sin(q*t) — sinusoidal, normalized to [0,1] for depth
+    const depth=((a.z+b.z)*0.5+r)/(2*r);
+    ctx.lineWidth=1.5+4*depth;
+    ctx.strokeStyle=colorForDepth(depth);
+    ctx.beginPath();
+    ctx.moveTo(a.x,a.y);
+    ctx.lineTo(b.x,b.y);
+    ctx.stroke();
+  }
+  requestAnimationFrame(frame);
+}
+
+reset();
+requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>

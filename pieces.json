@@ -457,5 +457,14 @@
     "technique": "canvas / paper marbling / Ebru / ImageData per-pixel / inverse warp / Gaussian comb drag",
     "path": "pieces/122-paper-marbling",
     "thumbnail": "pieces/122-paper-marbling/thumbnail.png"
+  },
+  {
+    "id": "123-torus-knot",
+    "title": "Torus Knot Curves",
+    "tagline": "A (p,q) torus knot traced stroke-by-stroke on a dark canvas — line weight varies sinusoidally by depth to fake near/far occlusion; four classic knots cycle on demand: trefoil, cinquefoil, star, and septafoil",
+    "year": 2026,
+    "technique": "parametric-3d-curves",
+    "path": "pieces/123-torus-knot",
+    "thumbnail": "pieces/123-torus-knot/thumbnail.svg"
   }
 ]
