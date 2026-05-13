@@ -3,8 +3,6 @@ import json
 import pathlib
 import re
 
-import pytest
-
 REPO = pathlib.Path(__file__).parent.parent
 PIECE_ID = "101-sdf-metaballs"
 PIECE_DIR = REPO / "pieces" / PIECE_ID
