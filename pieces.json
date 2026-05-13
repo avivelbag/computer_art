@@ -268,5 +268,14 @@
     "technique": "canvas / ImageData / glitch art / scanline displacement / chromatic aberration / block copy",
     "path": "pieces/70-signal-disagrees",
     "thumbnail": "pieces/70-signal-disagrees/thumbnail.png"
+  },
+  {
+    "id": "75-ifs-fern",
+    "title": "The Fern That Was Always Equations",
+    "tagline": "Barnsley fern rendered via the chaos game — four weighted affine transforms accumulate 2 million random points into an emergent botanical fractal; emerald, lime, gold, and pearl palette morphs between fern, tree, and spiral presets on a 12-second cycle",
+    "year": 2026,
+    "technique": "canvas / IFS chaos game / affine transforms / log-density rendering / morphing animation",
+    "path": "pieces/75-ifs-fern",
+    "thumbnail": "pieces/75-ifs-fern/thumbnail.svg"
   }
 ]
