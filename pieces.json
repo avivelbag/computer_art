@@ -322,5 +322,14 @@
     "technique": "canvas / space colonization / Runions algorithm / incremental stroke rendering",
     "path": "pieces/83-space-colonization",
     "thumbnail": "pieces/83-space-colonization/thumbnail.svg"
+  },
+  {
+    "id": "84-bz-spirals",
+    "title": "Belousov-Zhabotinsky — Oscillating Spiral Waves",
+    "tagline": "A 300 × 300 Greenberg-Hastings cellular automaton on a toroidal grid — quiescent, excited, and 4-step refractory states self-organise into counter-rotating spiral waves, rendered cell-by-cell into an ImageData buffer in electric teal fading to coral on deep navy",
+    "year": 2026,
+    "technique": "canvas / cellular automaton / Greenberg-Hastings / ImageData / requestAnimationFrame",
+    "path": "pieces/84-bz-spirals",
+    "thumbnail": "pieces/84-bz-spirals/thumbnail.svg"
   }
 ]

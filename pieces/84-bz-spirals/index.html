@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Belousov-Zhabotinsky — Oscillating Spiral Waves</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: #0a0e1a;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      overflow: hidden;
+    }
+    canvas { display: block; image-rendering: pixelated; width: 100vmin; height: 100vmin; }
+  </style>
+</head>
+<body>
+<canvas id="canvas" width="600" height="600"></canvas>
+<script>
+const canvas = document.getElementById('canvas');
+const ctx    = canvas.getContext('2d');
+
+const COLS        = 300;
+const ROWS        = 300;
+const CELL        = 2;           // pixels per cell side
+const THRESHOLD   = 2;           // excited Moore-neighbours required to ignite quiescent cell
+const REF_STEPS   = 4;           // refractory ticks before a cell returns to quiescent
+const TOTAL_STATES = 2 + REF_STEPS; // 0=quiescent 1=excited 2..5=refractory
+
+/**
+ * Build a flat Uint8ClampedArray of RGBA values, one entry per state.
+ *
+ * State 0 (quiescent): deep navy #0a0e1a — the resting medium.
+ * State 1 (excited):   electric teal #00e5c0 — the oxidation wavefront.
+ * States 2–5 (refractory): linear RGB gradient teal → coral #c44b4b,
+ *   representing the inhibitory refractory period during which the cell
+ *   cannot be re-excited.
+ */
+function buildColorTable() {
+  const t = new Uint8ClampedArray(TOTAL_STATES * 4);
+  function set(s, r, g, b) { t[s*4]=r; t[s*4+1]=g; t[s*4+2]=b; t[s*4+3]=255; }
+  set(0, 0x0a, 0x0e, 0x1a);
+  set(1, 0x00, 0xe5, 0xc0);
+  for (let i = 0; i < REF_STEPS; i++) {
+    const f = REF_STEPS > 1 ? i / (REF_STEPS - 1) : 0;
+    set(2 + i,
+      Math.round(0x00 + f * (0xc4 - 0x00)),
+      Math.round(0xe5 + f * (0x4b - 0xe5)),
+      Math.round(0xc0 + f * (0x4b - 0xc0))
+    );
+  }
+  return t;
+}
+
+const COLORS  = buildColorTable();
+let   cur     = new Uint8Array(COLS * ROWS);
+let   nxt     = new Uint8Array(COLS * ROWS);
+const imgData = ctx.createImageData(COLS * CELL, ROWS * CELL);
+const px      = imgData.data;
+const STRIDE  = COLS * CELL * 4; // bytes per canvas row = 2400
+
+/**
+ * Fill both buffers from scratch with a sparse random initial state:
+ * ~8 % excited, ~12 % refractory at random sub-step, ~80 % quiescent.
+ * The density of broken wavefronts ensures spirals form within a few
+ * seconds without any hand-planted seed points.
+ */
+function seed() {
+  cur.fill(0);
+  for (let i = 0; i < cur.length; i++) {
+    const r = Math.random();
+    if      (r < 0.08) cur[i] = 1;
+    else if (r < 0.20) cur[i] = 2 + Math.floor(Math.random() * REF_STEPS);
+  }
+}
+
+/**
+ * Advance one Greenberg-Hastings generation into nxt, then swap buffers.
+ *
+ * Rules applied simultaneously to every cell:
+ *   quiescent (0)  → excited (1)        if ≥ THRESHOLD Moore neighbours are excited
+ *   excited   (1)  → refractory step 2  unconditionally
+ *   refractory (2..TOTAL_STATES-2) → next refractory step
+ *   refractory (TOTAL_STATES-1)    → quiescent (0)
+ *
+ * Toroidal wrap: (x ± 1 + COLS) % COLS prevents boundary artefacts and
+ * allows spiral arms to cross edges without clipping.
+ */
+function step() {
+  for (let y = 0; y < ROWS; y++) {
+    const yn = (y - 1 + ROWS) % ROWS;
+    const yp = (y + 1) % ROWS;
+    for (let x = 0; x < COLS; x++) {
+      const state = cur[y * COLS + x];
+      if (state === 1) {
+        nxt[y * COLS + x] = 2;
+      } else if (state >= 2) {
+        nxt[y * COLS + x] = state === TOTAL_STATES - 1 ? 0 : state + 1;
+      } else {
+        const xn = (x - 1 + COLS) % COLS;
+        const xp = (x + 1) % COLS;
+        let excited = 0;
+        if (cur[yn * COLS + xn] === 1) excited++;
+        if (cur[yn * COLS + x ] === 1) excited++;
+        if (cur[yn * COLS + xp] === 1) excited++;
+        if (cur[y  * COLS + xn] === 1) excited++;
+        if (cur[y  * COLS + xp] === 1) excited++;
+        if (cur[yp * COLS + xn] === 1) excited++;
+        if (cur[yp * COLS + x ] === 1) excited++;
+        if (cur[yp * COLS + xp] === 1) excited++;
+        nxt[y * COLS + x] = excited >= THRESHOLD ? 1 : 0;
+      }
+    }
+  }
+  const tmp = cur; cur = nxt; nxt = tmp;
+}
+
+/**
+ * Write the current grid state into a shared ImageData buffer and push it
+ * to the canvas with a single putImageData call.
+ *
+ * Each grid cell maps to a CELL×CELL (2×2) pixel block.  Colours are
+ * looked up from the pre-computed COLORS table; alpha is always 255.
+ * Two rows of the block are written in one inner iteration to avoid
+ * redundant address arithmetic.
+ */
+function render() {
+  for (let cy = 0; cy < ROWS; cy++) {
+    const rowBase = cy * CELL * STRIDE;
+    for (let cx = 0; cx < COLS; cx++) {
+      const state = cur[cy * COLS + cx];
+      const r = COLORS[state * 4];
+      const g = COLORS[state * 4 + 1];
+      const b = COLORS[state * 4 + 2];
+      const p0 = rowBase + cx * CELL * 4;
+      // Top row of 2×2 block
+      px[p0]   = px[p0+4] = r;
+      px[p0+1] = px[p0+5] = g;
+      px[p0+2] = px[p0+6] = b;
+      px[p0+3] = px[p0+7] = 255;
+      // Bottom row of 2×2 block
+      const p2 = p0 + STRIDE;
+      px[p2]   = px[p2+4] = r;
+      px[p2+1] = px[p2+5] = g;
+      px[p2+2] = px[p2+6] = b;
+      px[p2+3] = px[p2+7] = 255;
+    }
+  }
+  ctx.putImageData(imgData, 0, 0);
+}
+
+function loop() {
+  step();
+  render();
+  requestAnimationFrame(loop);
+}
+
+/** Re-seed and restart from a new random initial state. */
+function restart() {
+  seed();
+  render();
+}
+
+canvas.addEventListener('click', restart);
+
+seed();
+render();
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>
