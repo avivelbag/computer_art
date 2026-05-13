@@ -394,5 +394,14 @@
     "technique": "canvas / signed-distance field / metaballs / ImageData / finite-difference gradient",
     "path": "pieces/101-sdf-metaballs",
     "thumbnail": "pieces/101-sdf-metaballs/thumbnail.svg"
+  },
+  {
+    "id": "102-hyperbolic-tiling",
+    "title": "Hyperbolic Tiling — Poincaré Disk",
+    "tagline": "A {5,4} hyperbolic tessellation of pentagons fills the Poincaré disk, slowly rotating via Möbius transform — amber tiles on deep indigo converge to the boundary in Escher-like recursive symmetry",
+    "year": 2026,
+    "technique": "canvas / hyperbolic geometry / Poincaré disk / Möbius transforms / BFS tile generation",
+    "path": "pieces/102-hyperbolic-tiling",
+    "thumbnail": "pieces/102-hyperbolic-tiling/thumbnail.svg"
   }
 ]
