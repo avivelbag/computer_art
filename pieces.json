@@ -286,5 +286,14 @@
     "technique": "canvas / diffusion-limited aggregation / ImageData / Uint8Array occupancy grid / requestAnimationFrame",
     "path": "pieces/76-dla-crystal",
     "thumbnail": "pieces/76-dla-crystal/thumbnail.svg"
+  },
+  {
+    "id": "78-wolfram-ca",
+    "title": "Wolfram Elementary CA — Rule 30 / 90 / 110",
+    "tagline": "Three Wolfram elementary rules — chaotic Rule 30, Sierpiński-fractal Rule 90, Turing-complete Rule 110 — each grow from a single center cell and scroll downward in amber, teal, and rose on near-black, cycling with smooth cross-fades every nine seconds",
+    "year": 2026,
+    "technique": "canvas / cellular automata / Wolfram elementary rules / ImageData / Uint8Array scrolling / requestAnimationFrame",
+    "path": "pieces/78-wolfram-ca",
+    "thumbnail": "pieces/78-wolfram-ca/thumbnail.svg"
   }
 ]
