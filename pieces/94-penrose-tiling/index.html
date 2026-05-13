@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Penrose Tiling — Fivefold Symmetry</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: #f5f0e8;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      overflow: hidden;
+    }
+    canvas { display: block; width: 100vmin; height: 100vmin; }
+  </style>
+</head>
+<body>
+<canvas id="canvas" width="800" height="800"></canvas>
+<script>
+const PHI = (1 + Math.sqrt(5)) / 2;
+
+const BG        = '#f5f0e8';
+const THICK     = '#c84b31';
+const THIN      = '#7a9e7e';
+const STROKE    = '#3d2b1f';
+const SIZE      = 800;
+const CX        = SIZE / 2;
+const CY        = SIZE / 2;
+const GENERATIONS = 6;
+
+// A triangle is {kind: 'A'|'B', A: {x,y}, B: {x,y}, C: {x,y}}
+// 'A' = acute 36-degree apex (half of thick rhombus)
+// 'B' = obtuse 108-degree apex (half of thin rhombus)
+
+function lerp(p, q, t) {
+  return { x: p.x + t * (q.x - p.x), y: p.y + t * (q.y - p.y) };
+}
+
+function makeSun(radius) {
+  const tris = [];
+  for (let i = 0; i < 10; i++) {
+    let B = {
+      x: radius * Math.cos((2 * i - 1) * Math.PI / 10),
+      y: radius * Math.sin((2 * i - 1) * Math.PI / 10),
+    };
+    let C = {
+      x: radius * Math.cos((2 * i + 1) * Math.PI / 10),
+      y: radius * Math.sin((2 * i + 1) * Math.PI / 10),
+    };
+    if (i % 2 === 0) { const tmp = B; B = C; C = tmp; }
+    tris.push({ kind: 'A', A: { x: 0, y: 0 }, B, C });
+  }
+  return tris;
+}
+
+function deflate(tris) {
+  const out = [];
+  for (const { kind, A, B, C } of tris) {
+    if (kind === 'A') {
+      // P = A + (B-A)/phi = lerp(A, B, 1/phi)
+      const P = lerp(A, B, 1 / PHI);
+      out.push({ kind: 'A', A: C, B: P, C: B });
+      out.push({ kind: 'B', A: P, B: C, C: A });
+    } else {
+      // Q = B + (A-B)/phi = lerp(B, A, 1/phi)
+      // R = B + (C-B)/phi = lerp(B, C, 1/phi)
+      const Q = lerp(B, A, 1 / PHI);
+      const R = lerp(B, C, 1 / PHI);
+      out.push({ kind: 'B', A: R, B: C, C: A });
+      out.push({ kind: 'B', A: Q, B: R, C: B });
+      out.push({ kind: 'A', A: R, B: Q, C: A });
+    }
+  }
+  return out;
+}
+
+// Build tiling
+let tris = makeSun(SIZE * 0.52);
+for (let i = 0; i < GENERATIONS; i++) {
+  tris = deflate(tris);
+}
+
+const canvas = document.getElementById('canvas');
+const ctx    = canvas.getContext('2d');
+
+// Partition into two groups once — avoids re-scanning on every frame
+const thick = tris.filter(t => t.kind === 'A');
+const thin  = tris.filter(t => t.kind === 'B');
+
+function drawGroup(group, fill) {
+  ctx.fillStyle = fill;
+  ctx.beginPath();
+  for (const { A, B, C } of group) {
+    ctx.moveTo(A.x + CX, A.y + CY);
+    ctx.lineTo(B.x + CX, B.y + CY);
+    ctx.lineTo(C.x + CX, C.y + CY);
+    ctx.closePath();
+  }
+  ctx.fill();
+  ctx.stroke();
+}
+
+function draw() {
+  ctx.fillStyle = BG;
+  ctx.fillRect(0, 0, SIZE, SIZE);
+
+  ctx.strokeStyle = STROKE;
+  ctx.lineWidth   = 0.4;
+  ctx.lineJoin    = 'round';
+
+  drawGroup(thick, THICK);
+  drawGroup(thin,  THIN);
+}
+
+draw();
+</script>
+</body>
+</html>

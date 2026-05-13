@@ -358,5 +358,14 @@
     "technique": "canvas / 3D perspective projection / rotation matrices / wireframe",
     "path": "pieces/91-rotating-polyhedra",
     "thumbnail": "pieces/91-rotating-polyhedra/thumbnail.svg"
+  },
+  {
+    "id": "94-penrose-tiling",
+    "title": "Penrose Tiling — Fivefold Symmetry",
+    "tagline": "2 120 thick and thin rhombi grown from a ten-triangle sun by six generations of golden-ratio deflation — an aperiodic P3 Penrose tiling in terracotta and dusty sage on parchment, evoking Islamic geometric tilework",
+    "year": 2026,
+    "technique": "canvas / Penrose P3 tiling / substitution deflation / golden ratio",
+    "path": "pieces/94-penrose-tiling",
+    "thumbnail": "pieces/94-penrose-tiling/thumbnail.svg"
   }
 ]
