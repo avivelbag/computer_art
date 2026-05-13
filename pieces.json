@@ -367,5 +367,14 @@
     "technique": "canvas / Penrose P3 tiling / substitution deflation / golden ratio",
     "path": "pieces/94-penrose-tiling",
     "thumbnail": "pieces/94-penrose-tiling/thumbnail.svg"
+  },
+  {
+    "id": "95-dragon-fold",
+    "title": "Dragon Curve — The Fold That Never Repeats",
+    "tagline": "32 768 segments of an order-15 dragon curve grow one by one from a single point — each segment coloured teal through rose by the bit-sequence paper-folding algorithm, filling an 800 × 800 canvas in a seamless 27-second loop",
+    "year": 2026,
+    "technique": "canvas / dragon curve / paper-folding / bit-sequence algorithm / requestAnimationFrame",
+    "path": "pieces/95-dragon-fold",
+    "thumbnail": "pieces/95-dragon-fold/thumbnail.svg"
   }
 ]

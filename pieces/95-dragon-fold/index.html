@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dragon Curve — The Fold That Never Repeats</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: #0a1628;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      overflow: hidden;
+    }
+    canvas { display: block; width: 100vmin; height: 100vmin; }
+  </style>
+</head>
+<body>
+<canvas id="canvas" width="800" height="800"></canvas>
+<script>
+const ITERATIONS    = 15;
+const TOTAL         = 1 << ITERATIONS; // 32768 segments
+const W = 800, H = 800;
+const MARGIN        = 0.075;
+const BG            = '#0a1628';
+const TEAL          = [13, 115, 119];
+const ROSE          = [196, 92, 142];
+const DRAW_SECS     = 22;
+const HOLD_SECS     = 3;
+const FADE_SECS     = 2;
+const CYCLE_SECS    = DRAW_SECS + HOLD_SECS + FADE_SECS;
+
+// Count trailing zero bits of positive integer n.
+// Used by turnLeft to locate the lowest set bit without O(log n) division.
+function ctz(n) {
+  let c = 0;
+  while ((n & 1) === 0) { n >>>= 1; c++; }
+  return c;
+}
+
+// Dragon curve bit-sequence rule: at segment boundary n (1-indexed), the
+// fold direction is encoded in the bit immediately above n's lowest set bit.
+// Bit 0 → turn left (ccw); bit 1 → turn right (cw).
+function turnLeft(n) {
+  return ((n >>> (ctz(n) + 1)) & 1) === 0;
+}
+
+// Pre-compute all 32769 integer-grid points for the iteration-15 dragon curve.
+// Int16 is sufficient: the bounding box stays within ±300 grid units.
+function computePoints() {
+  const pts = new Int16Array((TOTAL + 1) * 2);
+  // Screen-coord directions: 0=East, 1=North(y-1), 2=West, 3=South(y+1)
+  const DX = [1, 0, -1, 0];
+  const DY = [0, -1, 0, 1];
+  let x = 0, y = 0, dir = 0;
+  pts[0] = x; pts[1] = y;
+  for (let i = 1; i <= TOTAL; i++) {
+    x += DX[dir]; y += DY[dir];
+    pts[i * 2] = x; pts[i * 2 + 1] = y;
+    if (i < TOTAL) {
+      dir = turnLeft(i) ? (dir + 1) & 3 : (dir + 3) & 3;
+    }
+  }
+  return pts;
+}
+
+// Fit the integer-grid bounding box to an 85%-filled canvas, returning
+// the affine coefficients (scale, ox, oy) for x_canvas = x_grid*scale + ox.
+function computeTransform(pts) {
+  let xMin = pts[0], xMax = pts[0], yMin = pts[1], yMax = pts[1];
+  for (let i = 0; i <= TOTAL * 2; i += 2) {
+    if (pts[i]     < xMin) xMin = pts[i];
+    if (pts[i]     > xMax) xMax = pts[i];
+    if (pts[i + 1] < yMin) yMin = pts[i + 1];
+    if (pts[i + 1] > yMax) yMax = pts[i + 1];
+  }
+  const fw = xMax - xMin, fh = yMax - yMin;
+  const fill = W * (1 - 2 * MARGIN);
+  const scale = fill / Math.max(fw, fh);
+  const ox = (W - fw * scale) / 2 - xMin * scale;
+  const oy = (H - fh * scale) / 2 - yMin * scale;
+  return { scale, ox, oy };
+}
+
+// Convert the precomputed integer points to canvas coordinates once.
+function toCanvas(rawPts, { scale, ox, oy }) {
+  const out = new Float32Array((TOTAL + 1) * 2);
+  for (let i = 0; i <= TOTAL; i++) {
+    out[i * 2]     = rawPts[i * 2]     * scale + ox;
+    out[i * 2 + 1] = rawPts[i * 2 + 1] * scale + oy;
+  }
+  return out;
+}
+
+// Interpolate teal→rose at position t ∈ [0,1] and return an rgb() string.
+function segColor(t) {
+  const r = (TEAL[0] + (ROSE[0] - TEAL[0]) * t) | 0;
+  const g = (TEAL[1] + (ROSE[1] - TEAL[1]) * t) | 0;
+  const b = (TEAL[2] + (ROSE[2] - TEAL[2]) * t) | 0;
+  return `rgb(${r},${g},${b})`;
+}
+
+const rawPts    = computePoints();
+const transform = computeTransform(rawPts);
+const pts       = toCanvas(rawPts, transform);
+
+const canvas = document.getElementById('canvas');
+const ctx    = canvas.getContext('2d');
+ctx.lineWidth = 1.0;
+ctx.lineJoin  = 'round';
+ctx.lineCap   = 'round';
+
+let startTime = null;
+let lastDrawn = 0;
+
+function clearCanvas() {
+  ctx.fillStyle = BG;
+  ctx.fillRect(0, 0, W, H);
+  lastDrawn = 0;
+}
+clearCanvas();
+
+function drawSegments(from, to) {
+  const end = Math.min(to, TOTAL);
+  for (let i = from; i < end; i++) {
+    ctx.strokeStyle = segColor(i / (TOTAL - 1));
+    ctx.beginPath();
+    ctx.moveTo(pts[i * 2],       pts[i * 2 + 1]);
+    ctx.lineTo(pts[(i + 1) * 2], pts[(i + 1) * 2 + 1]);
+    ctx.stroke();
+  }
+  return end;
+}
+
+function frame(ts) {
+  if (startTime === null) startTime = ts;
+  const phase = ((ts - startTime) / 1000) % CYCLE_SECS;
+
+  if (phase < DRAW_SECS) {
+    const target = Math.floor((phase / DRAW_SECS) * TOTAL);
+    if (target > lastDrawn) {
+      lastDrawn = drawSegments(lastDrawn, target);
+    }
+  } else if (phase < DRAW_SECS + HOLD_SECS) {
+    // Finish the last few segments that the final draw frame may have missed.
+    if (lastDrawn < TOTAL) {
+      lastDrawn = drawSegments(lastDrawn, TOTAL);
+    }
+  } else {
+    const t = (phase - DRAW_SECS - HOLD_SECS) / FADE_SECS;
+    ctx.fillStyle = `rgba(10,22,40,${Math.min(t, 1)})`;
+    ctx.fillRect(0, 0, W, H);
+    if (t >= 1) {
+      clearCanvas();
+      startTime = ts;
+    }
+  }
+
+  requestAnimationFrame(frame);
+}
+
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>
