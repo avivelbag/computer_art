@@ -20,21 +20,27 @@ PIECE_ID = "76-dla-crystal"
 # Python mirrors of the core DLA math for white-box testing
 # ---------------------------------------------------------------------------
 
-def hsl_to_rgb(h: float, s: float, l: float):
-    """Convert HSL (h,s,l all in [0,1]) to (r,g,b) each in [0,255].
+def hsl_to_rgb(h: float, s: float, lt: float):
+    """Convert HSL (h,s,lt all in [0,1]) to (r,g,b) each in [0,255].
 
     Mirrors the hslToRgb function in index.html so we can test the
     color-mapping logic in pure Python without a browser.
     """
-    c = (1 - abs(2 * l - 1)) * s
+    c = (1 - abs(2 * lt - 1)) * s
     x = c * (1 - abs(h * 6 % 2 - 1))
-    m = l - c / 2
-    if   h < 1/6: r, g, b = c, x, 0
-    elif h < 2/6: r, g, b = x, c, 0
-    elif h < 3/6: r, g, b = 0, c, x
-    elif h < 4/6: r, g, b = 0, x, c
-    elif h < 5/6: r, g, b = x, 0, c
-    else:         r, g, b = c, 0, x
+    m = lt - c / 2
+    if h < 1/6:
+        r, g, b = c, x, 0
+    elif h < 2/6:
+        r, g, b = x, c, 0
+    elif h < 3/6:
+        r, g, b = 0, c, x
+    elif h < 4/6:
+        r, g, b = 0, x, c
+    elif h < 5/6:
+        r, g, b = x, 0, c
+    else:
+        r, g, b = c, 0, x
     return int((r + m) * 255), int((g + m) * 255), int((b + m) * 255)
 
 
@@ -65,10 +71,14 @@ def lut_index_for_frozen_count(frozen_count: int, max_frozen: int = 40_000) -> i
 def cardinal_neighbors(x: int, y: int, w: int, h: int):
     """Return the valid cardinal neighbors of (x,y) within a w×h grid."""
     neighbors = []
-    if x > 0:   neighbors.append((x - 1, y))
-    if x < w-1: neighbors.append((x + 1, y))
-    if y > 0:   neighbors.append((x, y - 1))
-    if y < h-1: neighbors.append((x, y + 1))
+    if x > 0:
+        neighbors.append((x - 1, y))
+    if x < w - 1:
+        neighbors.append((x + 1, y))
+    if y > 0:
+        neighbors.append((x, y - 1))
+    if y < h - 1:
+        neighbors.append((x, y + 1))
     return neighbors
 
 
@@ -97,10 +107,14 @@ def simulate_dla_small(w: int = 20, h: int = 20, max_frozen: int = 30, seed: int
 
         for _ in range(10_000):
             direction = rng.randint(0, 3)
-            if   direction == 0: wx += 1
-            elif direction == 1: wx -= 1
-            elif direction == 2: wy += 1
-            else:                wy -= 1
+            if direction == 0:
+                wx += 1
+            elif direction == 1:
+                wx -= 1
+            elif direction == 2:
+                wy += 1
+            else:
+                wy -= 1
 
             dx, dy = wx - cx, wy - cy
             if dx * dx + dy * dy > (cluster_r + 6) ** 2:
@@ -427,9 +441,9 @@ def test_hsl_to_rgb_channels_in_range():
     """All RGB channels must be in [0, 255] for a range of inputs."""
     for h in [0.0, 0.1, 0.25, 0.5, 0.75, 1.0]:
         for s in [0.0, 0.5, 1.0]:
-            for l in [0.0, 0.25, 0.5, 0.75, 1.0]:
-                r, g, b = hsl_to_rgb(h, s, l)
-                assert 0 <= r <= 255, f"r={r} out of range at h={h},s={s},l={l}"
+            for lt in [0.0, 0.25, 0.5, 0.75, 1.0]:
+                r, g, b = hsl_to_rgb(h, s, lt)
+                assert 0 <= r <= 255, f"r={r} out of range at h={h},s={s},lt={lt}"
                 assert 0 <= g <= 255, f"g={g} out of range"
                 assert 0 <= b <= 255, f"b={b} out of range"
 
@@ -719,10 +733,10 @@ def test_wrong_piece_id_not_in_json():
 
 def test_hsl_to_rgb_saturation_zero_is_grey():
     """Zero saturation produces equal R=G=B (grey)."""
-    for l in [0.0, 0.25, 0.5, 0.75, 1.0]:
-        r, g, b = hsl_to_rgb(0.5, 0.0, l)
-        expected = int(l * 255)
-        assert abs(r - expected) <= 1, f"r={r} expected≈{expected} at l={l}"
+    for lt in [0.0, 0.25, 0.5, 0.75, 1.0]:
+        r, g, b = hsl_to_rgb(0.5, 0.0, lt)
+        expected = int(lt * 255)
+        assert abs(r - expected) <= 1, f"r={r} expected≈{expected} at lt={lt}"
         assert abs(g - expected) <= 1
         assert abs(b - expected) <= 1
 
