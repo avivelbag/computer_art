@@ -385,5 +385,14 @@
     "technique": "canvas / reaction-diffusion / Gray-Scott / Float32Array double-buffer / ImageData",
     "path": "pieces/96-gray-scott",
     "thumbnail": "pieces/96-gray-scott/thumbnail.svg"
+  },
+  {
+    "id": "101-sdf-metaballs",
+    "title": "SDF Metaballs — Blobscape",
+    "tagline": "Eight metaballs drift on irrational-frequency Lissajous paths, merging and separating through a per-pixel SDF field — deep violet cores bleed to cyan edges with a specular highlight at every iso-surface boundary",
+    "year": 2026,
+    "technique": "canvas / signed-distance field / metaballs / ImageData / finite-difference gradient",
+    "path": "pieces/101-sdf-metaballs",
+    "thumbnail": "pieces/101-sdf-metaballs/thumbnail.svg"
   }
 ]

@@ -1,0 +1,61 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" width="400" height="400">
+  <defs>
+    <!-- Core-to-edge gradient: deep violet core → cyan edge -->
+    <radialGradient id="rg1" cx="38%" cy="38%" r="62%">
+      <stop offset="0%"   stop-color="#1c0050"/>
+      <stop offset="45%"  stop-color="#060030"/>
+      <stop offset="75%"  stop-color="#004455"/>
+      <stop offset="100%" stop-color="#00cccc"/>
+    </radialGradient>
+    <radialGradient id="rg2" cx="35%" cy="35%" r="65%">
+      <stop offset="0%"   stop-color="#180048"/>
+      <stop offset="50%"  stop-color="#040025"/>
+      <stop offset="80%"  stop-color="#003355"/>
+      <stop offset="100%" stop-color="#00aacc"/>
+    </radialGradient>
+    <!-- Soft outer-glow halo -->
+    <filter id="halo" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="10"/>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="400" height="400" fill="#030007"/>
+
+  <!-- Ambient halo for main cluster -->
+  <ellipse cx="188" cy="192" rx="148" ry="130" fill="#0a001a" filter="url(#halo)"/>
+
+  <!-- Main merged cluster — three overlapping blobs -->
+  <ellipse cx="168" cy="188" rx="85"  ry="75"  fill="url(#rg1)"/>
+  <ellipse cx="225" cy="165" rx="70"  ry="64"  fill="url(#rg1)" opacity="0.88"/>
+  <ellipse cx="198" cy="228" rx="63"  ry="58"  fill="url(#rg1)" opacity="0.82"/>
+
+  <!-- Specular highlight arc, upper-left face of main cluster -->
+  <ellipse cx="142" cy="152" rx="56" ry="33" fill="none" stroke="#55eeff"
+           stroke-width="2.2" opacity="0.50" transform="rotate(-22,142,152)"/>
+  <ellipse cx="142" cy="152" rx="44" ry="24" fill="none" stroke="#ccffff"
+           stroke-width="1.2" opacity="0.35" transform="rotate(-22,142,152)"/>
+
+  <!-- Halo for secondary cluster -->
+  <ellipse cx="318" cy="298" rx="98" ry="92" fill="#060018" filter="url(#halo)"/>
+
+  <!-- Secondary merged pair, lower-right -->
+  <ellipse cx="318" cy="300" rx="56" ry="50" fill="url(#rg2)"/>
+  <ellipse cx="350" cy="272" rx="48" ry="44" fill="url(#rg2)" opacity="0.85"/>
+
+  <!-- Specular on secondary cluster -->
+  <ellipse cx="298" cy="265" rx="40" ry="24" fill="none" stroke="#44ccdd"
+           stroke-width="1.8" opacity="0.50" transform="rotate(-15,298,265)"/>
+
+  <!-- Lone ball, upper-right -->
+  <circle cx="338" cy="82" r="38" fill="#040012" filter="url(#halo)"/>
+  <circle cx="338" cy="82" r="38" fill="url(#rg2)"/>
+  <ellipse cx="322" cy="67" rx="17" ry="11" fill="none" stroke="#55ddee"
+           stroke-width="1.6" opacity="0.50" transform="rotate(-12,322,67)"/>
+
+  <!-- Lone ball, lower-left -->
+  <circle cx="66" cy="322" r="34" fill="#040012" filter="url(#halo)"/>
+  <circle cx="66" cy="322" r="34" fill="url(#rg2)"/>
+  <ellipse cx="51" cy="307" rx="15" ry="10" fill="none" stroke="#55ddee"
+           stroke-width="1.5" opacity="0.50" transform="rotate(-8,51,307)"/>
+</svg>

@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SDF Metaballs — Blobscape</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: #030007;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      overflow: hidden;
+    }
+    canvas {
+      display: block;
+      width: 100vmin;
+      height: 100vmin;
+      image-rendering: pixelated;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="c" width="300" height="300"></canvas>
+  <script>
+    const W = 300, H = 300, THR = 1.0, EPS = 1.5;
+    const PHI = 1.6180339887, S2 = 1.4142135623, S3 = 1.7320508075;
+
+    // Each ball: cx/cy = center fraction, ax/ay = amplitude fraction,
+    // fx/fy = angular frequencies (irrational ratios so paths never close),
+    // phx/phy = phase offsets, r = influence radius in pixels.
+    const BALLS = [
+      { cx: .5, cy: .5, ax: .32, ay: .28, fx: 1.0,    fy: PHI,  phx: 0.0, phy: 1.1, r: 38 },
+      { cx: .5, cy: .5, ax: .30, ay: .35, fx: S2,      fy: 1.3,  phx: 0.7, phy: 0.3, r: 34 },
+      { cx: .5, cy: .5, ax: .28, ay: .22, fx: S3,      fy: 0.8,  phx: 2.1, phy: 1.7, r: 30 },
+      { cx: .5, cy: .5, ax: .35, ay: .30, fx: 1.5,     fy: S2,   phx: 0.4, phy: 2.5, r: 32 },
+      { cx: .5, cy: .5, ax: .25, ay: .38, fx: PHI*S2,  fy: 1.1,  phx: 1.3, phy: 0.9, r: 28 },
+      { cx: .5, cy: .5, ax: .33, ay: .26, fx: 0.7,     fy: S3,   phx: 3.0, phy: 0.6, r: 36 },
+      { cx: .5, cy: .5, ax: .22, ay: .32, fx: 1.2,     fy: PHI,  phx: 1.8, phy: 3.2, r: 26 },
+      { cx: .5, cy: .5, ax: .29, ay: .24, fx: S2*.9,   fy: 1.7,  phx: 0.5, phy: 1.4, r: 29 },
+    ];
+
+    const canvas = document.getElementById('c');
+    const ctx = canvas.getContext('2d');
+    ctx.imageSmoothingEnabled = false;
+    const img = ctx.createImageData(W, H);
+    const buf = img.data;
+
+    // Pre-allocated array for current ball screen positions — avoids per-frame GC.
+    const bpos = BALLS.map(b => ({ bx: 0, by: 0, r: b.r }));
+
+    /**
+     * Evaluates the metaball field at pixel (x, y).
+     * Field = Σ r_i / dist(pixel, center_i).  Iso-surface is at field == THR.
+     * Distance is clamped to 0.5 to avoid division by zero when a pixel sits
+     * exactly on a ball center.
+     */
+    function sdf(x, y) {
+      let f = 0;
+      for (let i = 0; i < bpos.length; i++) {
+        const b = bpos[i];
+        const dx = x - b.bx, dy = y - b.by;
+        const d = Math.sqrt(dx * dx + dy * dy);
+        f += b.r / (d < .5 ? .5 : d);
+      }
+      return f;
+    }
+
+    let t0 = null;
+
+    function draw(ts) {
+      if (!t0) t0 = ts;
+      const t = (ts - t0) * 4e-4;  // one fx=1 oscillation ≈ 15.7 s
+
+      for (let i = 0; i < BALLS.length; i++) {
+        const b = BALLS[i];
+        bpos[i].bx = (b.cx + b.ax * Math.sin(b.fx * t + b.phx)) * W;
+        bpos[i].by = (b.cy + b.ay * Math.sin(b.fy * t + b.phy)) * H;
+      }
+
+      for (let iy = 0; iy < H; iy++) {
+        for (let ix = 0; ix < W; ix++) {
+          const f = sdf(ix, iy);
+          let rv, gv, bv;
+
+          if (f >= THR) {
+            // inner == 0 at iso-surface, reaches 1.0 at depth = THR above threshold.
+            const inner = Math.min((f - THR) / THR, 1.0);
+            let spec = 0;
+            if (inner < 0.3) {
+              // Finite-difference SDF gradient ≈ surface normal direction.
+              // Light arrives from upper-left: L = (-0.707, -0.707) in screen space.
+              // Outward normal = -∇field/|∇field|, so N·L = 0.707*nx + 0.707*ny
+              // where (nx,ny) = normalize(∇field).
+              const gx = sdf(ix + EPS, iy) - sdf(ix - EPS, iy);
+              const gy = sdf(ix, iy + EPS) - sdf(ix, iy - EPS);
+              const gl = Math.sqrt(gx * gx + gy * gy) || 1;
+              const ndotl = Math.max(0.707 * (gx / gl) + 0.707 * (gy / gl), 0);
+              // bnd fades specular to zero 30% inside the surface.
+              const bnd = 1 - inner / 0.3;
+              spec = Math.pow(ndotl, 3) * bnd * 0.85;
+            }
+            // Color gradient: deep violet core (#1c0050) → cyan edge (#00dcdc).
+            rv = Math.min((28 * inner          + spec * 255) | 0, 255);
+            gv = Math.min((220 * (1 - inner)   + spec * 200) | 0, 255);
+            bv = Math.min((80 * inner + 220 * (1 - inner) + spec * 255) | 0, 255);
+          } else {
+            // Outside: near-black with a faint violet glow that falls off steeply.
+            const glow = Math.pow(f / THR, 5) * 0.35;
+            rv = (glow * 30) | 0;
+            gv = (glow * 5)  | 0;
+            bv = (glow * 110) | 0;
+          }
+
+          const p = (iy * W + ix) << 2;
+          buf[p] = rv; buf[p + 1] = gv; buf[p + 2] = bv; buf[p + 3] = 255;
+        }
+      }
+
+      ctx.putImageData(img, 0, 0);
+      requestAnimationFrame(draw);
+    }
+
+    requestAnimationFrame(draw);
+  </script>
+</body>
+</html>
