@@ -421,5 +421,14 @@
     "technique": "canvas / logistic map / bifurcation diagram / ImageData per-pixel / requestAnimationFrame",
     "path": "pieces/111-bifurcation",
     "thumbnail": "pieces/111-bifurcation/thumbnail.png"
+  },
+  {
+    "id": "113-boids-flocking",
+    "title": "Murmuration: Three Rules and a Sky",
+    "tagline": "300 boids follow separation, alignment, and cohesion — three local rules produce the fluid murmurations of starlings on a deep midnight-blue canvas at 60 fps",
+    "year": 2026,
+    "technique": "Boids / Particle System",
+    "path": "pieces/113-boids-flocking",
+    "thumbnail": "pieces/113-boids-flocking/thumbnail.svg"
   }
 ]

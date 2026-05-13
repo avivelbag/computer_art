@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Murmuration: Three Rules and a Sky</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { background: #060614; display: flex; align-items: center; justify-content: center; min-height: 100vh; overflow: hidden; }
+    canvas { display: block; width: min(100vw, calc(100vh * 8/5)); height: min(calc(100vw * 5/8), 100vh); }
+  </style>
+</head>
+<body>
+  <canvas id="c" width="800" height="500"></canvas>
+  <script>
+    const W = 800, H = 500, N = 300;
+    const PERCEPTION = 60, SEP_DIST = 20;
+    const MAX_SPEED = 2.5, MIN_SPEED = 0.8;
+    const W_SEP = 1.5, W_ALI = 1.0, W_COH = 0.8;
+
+    const canvas = document.getElementById('c');
+    const ctx = canvas.getContext('2d');
+
+    const boids = Array.from({length: N}, () => {
+      const a = Math.random() * 6.283;
+      const s = MIN_SPEED + Math.random() * (MAX_SPEED - MIN_SPEED);
+      return {x: Math.random()*W, y: Math.random()*H, vx: Math.cos(a)*s, vy: Math.sin(a)*s};
+    });
+
+    function clampSpeed(vx, vy, max) {
+      const s = Math.hypot(vx, vy);
+      return s > max ? [vx*max/s, vy*max/s] : [vx, vy];
+    }
+
+    function tick() {
+      const acc = boids.map(b => {
+        let sx=0,sy=0,sn=0, ax=0,ay=0, cx=0,cy=0, pn=0;
+        for (const o of boids) {
+          if (o===b) continue;
+          let dx=o.x-b.x, dy=o.y-b.y;
+          if (dx> W/2) dx-=W; if (dx<-W/2) dx+=W;
+          if (dy> H/2) dy-=H; if (dy<-H/2) dy+=H;
+          const d = Math.hypot(dx,dy);
+          if (d>0 && d<PERCEPTION) {
+            if (d<SEP_DIST) {sx-=dx/d; sy-=dy/d; sn++;}
+            ax+=o.vx; ay+=o.vy; cx+=dx; cy+=dy; pn++;
+          }
+        }
+        let fx=0, fy=0;
+        if (sn>0) {fx+=W_SEP*sx/sn; fy+=W_SEP*sy/sn;}
+        if (pn>0) {
+          fx+=W_ALI*(ax/pn-b.vx); fy+=W_ALI*(ay/pn-b.vy);
+          fx+=W_COH*cx/pn/30;     fy+=W_COH*cy/pn/30;
+        }
+        return [fx, fy];
+      });
+      boids.forEach((b, i) => {
+        let vx=b.vx+acc[i][0], vy=b.vy+acc[i][1];
+        [vx,vy] = clampSpeed(vx, vy, MAX_SPEED);
+        const s = Math.hypot(vx,vy);
+        if (s<MIN_SPEED) {vx=vx/s*MIN_SPEED; vy=vy/s*MIN_SPEED;}
+        b.vx=vx; b.vy=vy;
+        b.x=(b.x+vx+W)%W; b.y=(b.y+vy+H)%H;
+      });
+    }
+
+    function drawBoid(b) {
+      const a = Math.atan2(b.vy, b.vx);
+      ctx.save();
+      ctx.translate(b.x, b.y);
+      ctx.rotate(a);
+      ctx.beginPath();
+      ctx.moveTo(7,0); ctx.lineTo(-4,-3); ctx.lineTo(-4,3);
+      ctx.closePath();
+      ctx.fill();
+      ctx.restore();
+    }
+
+    function frame() {
+      ctx.fillStyle='rgba(6,6,20,0.25)';
+      ctx.fillRect(0,0,W,H);
+      ctx.fillStyle='rgba(220,230,255,0.85)';
+      tick();
+      for (const b of boids) drawBoid(b);
+      requestAnimationFrame(frame);
+    }
+
+    ctx.fillStyle='#060614';
+    ctx.fillRect(0,0,W,H);
+    requestAnimationFrame(frame);
+  </script>
+</body>
+</html>
