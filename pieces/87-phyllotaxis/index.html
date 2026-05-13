@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Phyllotaxis — The Angle the Sunflower Chose</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: #1a0800;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      overflow: hidden;
+    }
+    canvas { display: block; width: 100vmin; height: 100vmin; }
+  </style>
+</head>
+<body>
+<canvas id="canvas" width="800" height="800"></canvas>
+<script>
+const canvas = document.getElementById('canvas');
+const ctx    = canvas.getContext('2d');
+
+const W  = 800, H = 800;
+const CX = W / 2, CY = H / 2;
+const TAU = Math.PI * 2;
+
+// Golden angle: 2π / φ² where φ = (1 + √5) / 2 — ≈ 2.39996 rad ≈ 137.508°
+const GOLDEN_ANGLE = Math.PI * (3 - Math.sqrt(5));
+
+const MAX_DOTS    = 1500;
+const SPACING     = 10;                          // r = SPACING * sqrt(n)
+const MAX_RADIUS  = SPACING * Math.sqrt(MAX_DOTS);
+const MORPH_DELTA = 10 * Math.PI / 180;          // ±10° morph range
+const MORPH_PERIOD = 480;                        // frames for full morph cycle
+const DOT_R_MAX   = 6;                           // dot radius at centre (px)
+const DOT_R_MIN   = 1.5;                         // dot radius at edge (px)
+
+// Palette: saffron (#F5A623) → copper (#C0562A) → dark rust (#501400)
+const PALETTE = [
+  [245, 166,  35],
+  [192,  86,  42],
+  [ 80,  20,   0],
+];
+
+let phase   = 'growing';  // 'growing' | 'morphing'
+let n       = 0;
+let morph_t = 0;
+
+function colorAt(norm) {
+  const t   = Math.max(0, Math.min(1, norm));
+  const seg = (PALETTE.length - 1) * t;
+  const i   = Math.min(Math.floor(seg), PALETTE.length - 2);
+  const lt  = seg - i;
+  const c0  = PALETTE[i], c1 = PALETTE[i + 1];
+  return [
+    Math.round(c0[0] + (c1[0] - c0[0]) * lt),
+    Math.round(c0[1] + (c1[1] - c0[1]) * lt),
+    Math.round(c0[2] + (c1[2] - c0[2]) * lt),
+  ];
+}
+
+function draw(angle) {
+  ctx.fillStyle = '#1a0800';
+  ctx.fillRect(0, 0, W, H);
+
+  for (let i = 0; i < n; i++) {
+    const r     = SPACING * Math.sqrt(i);
+    const th    = i * angle;
+    const x     = CX + r * Math.cos(th);
+    const y     = CY + r * Math.sin(th);
+    const nr    = r / MAX_RADIUS;
+    const [cr, cg, cb] = colorAt(nr);
+    const dr    = DOT_R_MAX + (DOT_R_MIN - DOT_R_MAX) * nr;
+
+    ctx.beginPath();
+    ctx.arc(x, y, Math.max(dr, 0.5), 0, TAU);
+    ctx.fillStyle = `rgb(${cr},${cg},${cb})`;
+    ctx.fill();
+  }
+}
+
+function tick() {
+  let angle;
+
+  if (phase === 'growing') {
+    n++;
+    angle = GOLDEN_ANGLE;
+    if (n >= MAX_DOTS) {
+      phase   = 'morphing';
+      morph_t = 0;
+    }
+  } else {
+    // morph_t: 0→1 over MORPH_PERIOD frames.
+    // sin(morph_t * TAU) oscillates: 0 → +DELTA → 0 → −DELTA → 0,
+    // showing both directions of non-golden packing.
+    morph_t += 1 / MORPH_PERIOD;
+    angle    = GOLDEN_ANGLE + MORPH_DELTA * Math.sin(morph_t * TAU);
+    if (morph_t >= 1) {
+      phase   = 'growing';
+      n       = 0;
+      morph_t = 0;
+    }
+  }
+
+  draw(angle);
+  requestAnimationFrame(tick);
+}
+
+requestAnimationFrame(tick);
+</script>
+</body>
+</html>

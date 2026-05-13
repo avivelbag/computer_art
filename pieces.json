@@ -331,5 +331,14 @@
     "technique": "canvas / cellular automaton / Greenberg-Hastings / ImageData / requestAnimationFrame",
     "path": "pieces/84-bz-spirals",
     "thumbnail": "pieces/84-bz-spirals/thumbnail.svg"
+  },
+  {
+    "id": "87-phyllotaxis",
+    "title": "Phyllotaxis — The Angle the Sunflower Chose",
+    "tagline": "1 500 seeds grow outward one per frame at the golden angle (137.508°), then the angle morphs ±10° revealing visible spokes before recovering the dense irrational packing — saffron-to-rust palette on near-black",
+    "year": 2026,
+    "technique": "canvas / phyllotaxis / golden angle / Fermat spiral / morphing animation / requestAnimationFrame",
+    "path": "pieces/87-phyllotaxis",
+    "thumbnail": "pieces/87-phyllotaxis/thumbnail.svg"
   }
 ]
