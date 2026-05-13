@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>The Grain That Broke the Symmetry</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: #1a1a2e;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      overflow: hidden;
+    }
+    canvas {
+      display: block;
+      image-rendering: pixelated;
+      width: 600px;
+      height: 600px;
+    }
+  </style>
+</head>
+<body>
+<canvas id="canvas" width="401" height="401"></canvas>
+<script>
+const W = 401, H = 401;
+const CX = (W - 1) >> 1;   // 200 — exact centre pixel
+const CY = (H - 1) >> 1;   // 200
+const INITIAL_GRAINS  = 65536;
+const STEPS_PER_FRAME = 100;  // toppling passes budgeted per animation frame
+
+/**
+ * Four-entry RGBA colour table: one row of 4 bytes per grain-height 0–3.
+ *   0: #1a1a2e — deep navy (background / empty cells)
+ *   1: #c97b7b — dusty rose
+ *   2: #7ba87b — sage green
+ *   3: #f0ede0 — warm white
+ * In-progress cells (value >3) are clamped to index 3 during animation.
+ */
+const COLORS = new Uint8Array([
+  0x1a, 0x1a, 0x2e, 0xff,
+  0xc9, 0x7b, 0x7b, 0xff,
+  0x7b, 0xa8, 0x7b, 0xff,
+  0xf0, 0xed, 0xe0, 0xff,
+]);
+
+const canvas  = document.getElementById('canvas');
+const ctx     = canvas.getContext('2d');
+const imgData = ctx.createImageData(W, H);
+const px      = imgData.data;
+
+/**
+ * Flat Int32Array of W×H grain counts, indexed row-major.
+ * Int32 is required because the initial centre cell holds 65536 grains,
+ * which overflows Uint8Array (max 255) and Uint16Array (max 65535).
+ */
+const grid = new Int32Array(W * H);
+let stable = false;
+
+/**
+ * Reset the grid to the single-pile initial state and clear stable flag.
+ */
+function init() {
+  grid.fill(0);
+  grid[CY * W + CX] = INITIAL_GRAINS;
+  stable = false;
+}
+
+/**
+ * Run up to STEPS_PER_FRAME toppling sweeps across the interior of the grid.
+ *
+ * Each cell with v ≥ 4 fires floor(v/4) times atomically: it loses 4·t
+ * grains and donates t to each von-Neumann neighbour (up/down/left/right).
+ * Boundary rows and columns (y=0, y=H-1, x=0, x=W-1) act as sinks — they
+ * receive grains from adjacent interior cells but never topple, so any grain
+ * that drifts to the edge is effectively absorbed.  In practice the 65 536-
+ * grain pile stabilises well within the 401×401 interior, so boundary
+ * absorption is zero for this configuration.
+ *
+ * Returns true when no interior cell has ≥4 grains (the pile is stable).
+ */
+function toppleChunk() {
+  for (let s = 0; s < STEPS_PER_FRAME; s++) {
+    let any = false;
+    for (let y = 1; y < H - 1; y++) {
+      for (let x = 1; x < W - 1; x++) {
+        const i = y * W + x;
+        const v = grid[i];
+        if (v >= 4) {
+          const t   = v >> 2;          // floor(v / 4) — batch all topplings at once
+          grid[i]   = v - (t << 2);   // remainder: v mod 4
+          grid[i - 1] += t;
+          grid[i + 1] += t;
+          grid[i - W] += t;
+          grid[i + W] += t;
+          any = true;
+        }
+      }
+    }
+    if (!any) return true;
+  }
+  return false;
+}
+
+/**
+ * Write the current grid state into the shared ImageData buffer and flush
+ * it to the canvas with one putImageData call.
+ *
+ * Values ≥4 (cells mid-topple at frame boundary) are clamped to palette
+ * index 3 so they render as warm white during animation.  They will display
+ * their correct final height (0–3) once fully toppled.
+ */
+function render() {
+  for (let i = 0; i < W * H; i++) {
+    const h = grid[i] > 3 ? 3 : grid[i];  // clamp to 0–3
+    const c = h << 2;                       // offset into COLORS (4 bytes per entry)
+    const p = i << 2;                       // offset into px (4 bytes per pixel)
+    px[p]     = COLORS[c];
+    px[p + 1] = COLORS[c + 1];
+    px[p + 2] = COLORS[c + 2];
+    px[p + 3] = 255;
+  }
+  ctx.putImageData(imgData, 0, 0);
+}
+
+function loop() {
+  if (!stable) {
+    stable = toppleChunk();
+    render();
+    requestAnimationFrame(loop);
+  }
+}
+
+canvas.addEventListener('click', () => {
+  init();
+  render();
+  requestAnimationFrame(loop);
+});
+
+init();
+render();
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>
