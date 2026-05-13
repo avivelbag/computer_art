@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>IFS: The Fern That Was Always Equations</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { background: #050a05; overflow: hidden; }
+    canvas { display: block; width: 100vw; height: 100vh; }
+  </style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<script>
+// Barnsley fern IFS: each row is [a, b, c, d, e, f, p]
+// Transform: x' = a*x + b*y + e,  y' = c*x + d*y + f
+// p = selection probability (must sum to 1.0 across all transforms)
+const PRESETS = [
+  // Barnsley fern
+  [
+    [ 0.00,  0.00,  0.00,  0.16,  0.00,  0.00,  0.01],
+    [ 0.85,  0.04, -0.04,  0.85,  0.00,  1.60,  0.85],
+    [ 0.20, -0.26,  0.23,  0.22,  0.00,  1.60,  0.07],
+    [-0.15,  0.28,  0.26,  0.24,  0.00,  0.44,  0.07],
+  ],
+  // Tree variant (taller, more branching)
+  [
+    [ 0.00,  0.00,  0.00,  0.50,  0.00,  0.00,  0.05],
+    [ 0.42, -0.42,  0.42,  0.42,  0.00,  0.20,  0.40],
+    [ 0.42,  0.42, -0.42,  0.42,  0.00,  0.20,  0.40],
+    [ 0.10,  0.00,  0.00,  0.10,  0.00,  0.20,  0.15],
+  ],
+  // Spiral fern
+  [
+    [ 0.00,  0.00,  0.00,  0.25,  0.00, -0.14,  0.02],
+    [ 0.85,  0.02, -0.02,  0.83,  0.00,  1.00,  0.84],
+    [ 0.09, -0.28,  0.30,  0.11,  0.00,  0.60,  0.07],
+    [-0.09,  0.28, -0.30,  0.09,  0.00,  0.70,  0.07],
+  ],
+];
+
+// Per-transform colors: emerald, lime, gold, white-green
+const PALETTE = [
+  [16, 185, 80],
+  [132, 230, 90],
+  [251, 191, 36],
+  [220, 255, 200],
+];
+
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+
+let W, H;
+// hit-count buffers: one Float32Array per transform, indexed [y * W + x]
+let counts = [];
+// tracks the maximum hit count across all buffers for tone-mapping
+let maxCount = 1;
+let imageData;
+
+// morphing state
+let presetA = 0;
+let presetB = 1;
+// t in [0,1] position within the morph cycle
+let morphT = 0;
+// direction: +1 forward, -1 backward
+let morphDir = 1;
+// total morph cycle duration in ms (one full A→B→A round trip = 2 × MORPH_MS)
+const MORPH_MS = 6000;
+let lastMorphTime = null;
+
+// current point in IFS iteration
+let px = 0, py = 0;
+
+// points plotted since last frame (used to gate first-frame display)
+let totalPoints = 0;
+const MIN_POINTS = 2_000_000;
+
+// Whether we've shown the first frame yet
+let firstFrameShown = false;
+
+function resize() {
+  W = canvas.width = window.innerWidth;
+  H = canvas.height = window.innerHeight;
+  resetBuffers();
+  imageData = ctx.createImageData(W, H);
+}
+
+function resetBuffers() {
+  const n = W * H;
+  counts = [
+    new Float32Array(n),
+    new Float32Array(n),
+    new Float32Array(n),
+    new Float32Array(n),
+  ];
+  maxCount = 1;
+  totalPoints = 0;
+  firstFrameShown = false;
+  px = 0;
+  py = 0;
+}
+
+/**
+ * Linearly interpolate between two IFS parameter sets at position t.
+ * Returns a new 4×7 array of transform coefficients.
+ */
+function lerpIFS(a, b, t) {
+  const result = [];
+  for (let i = 0; i < 4; i++) {
+    const row = [];
+    for (let j = 0; j < 7; j++) {
+      row.push(a[i][j] * (1 - t) + b[i][j] * t);
+    }
+    result.push(row);
+  }
+  return result;
+}
+
+/**
+ * Build cumulative probability array from IFS rows for weighted random selection.
+ * Returns array of 4 cumulative thresholds summing to 1.
+ */
+function buildCumProbs(ifs) {
+  const cum = [];
+  let sum = 0;
+  for (let i = 0; i < ifs.length; i++) {
+    sum += ifs[i][6];
+    cum.push(sum);
+  }
+  return cum;
+}
+
+/**
+ * Run BATCH_SIZE chaos-game iterations, accumulating hit counts.
+ * Maps IFS coordinate space (roughly x∈[-3,3], y∈[0,10]) onto canvas pixels.
+ */
+function iterate(ifs, cumProbs, batchSize) {
+  // IFS coordinate bounds for Barnsley fern: x in [-2.8, 2.8], y in [0, 10]
+  // We map y upward (canvas y is flipped), with padding
+  const scaleX = W * 0.16;
+  const scaleY = H * 0.095;
+  const offX = W * 0.5;
+  const offY = H * 0.97;
+
+  let lx = px, ly = py;
+
+  for (let i = 0; i < batchSize; i++) {
+    const r = Math.random();
+    let ti = 0;
+    while (ti < 3 && r > cumProbs[ti]) ti++;
+
+    const [a, b, c, d, e, f] = ifs[ti];
+    const nx = a * lx + b * ly + e;
+    const ny = c * lx + d * ly + f;
+    lx = nx;
+    ly = ny;
+
+    // Map to canvas: y is inverted
+    const cx = Math.round(lx * scaleX + offX);
+    const cy = Math.round(offY - ly * scaleY);
+
+    if (cx >= 0 && cx < W && cy >= 0 && cy < H) {
+      const idx = cy * W + cx;
+      const v = counts[ti][idx] + 1;
+      counts[ti][idx] = v;
+      if (v > maxCount) maxCount = v;
+    }
+  }
+
+  px = lx;
+  py = ly;
+  totalPoints += batchSize;
+}
+
+/**
+ * Render all hit-count buffers to the canvas ImageData using log-density mapping.
+ * Each pixel color is the weighted sum of per-transform palette colors,
+ * weighted by each transform's hit count at that pixel.
+ * Alpha uses log(1 + total_hits) / log(1 + maxCount) for perceptual density.
+ */
+function render() {
+  const data = imageData.data;
+  const logMax = Math.log1p(maxCount);
+
+  for (let i = 0; i < W * H; i++) {
+    const c0 = counts[0][i];
+    const c1 = counts[1][i];
+    const c2 = counts[2][i];
+    const c3 = counts[3][i];
+    const total = c0 + c1 + c2 + c3;
+
+    if (total === 0) {
+      data[i * 4]     = 5;
+      data[i * 4 + 1] = 10;
+      data[i * 4 + 2] = 5;
+      data[i * 4 + 3] = 255;
+      continue;
+    }
+
+    // weighted color by which transform contributed most
+    let r = 0, g = 0, b = 0;
+    r += PALETTE[0][0] * c0;
+    g += PALETTE[0][1] * c0;
+    b += PALETTE[0][2] * c0;
+    r += PALETTE[1][0] * c1;
+    g += PALETTE[1][1] * c1;
+    b += PALETTE[1][2] * c1;
+    r += PALETTE[2][0] * c2;
+    g += PALETTE[2][1] * c2;
+    b += PALETTE[2][2] * c2;
+    r += PALETTE[3][0] * c3;
+    g += PALETTE[3][1] * c3;
+    b += PALETTE[3][2] * c3;
+
+    const alpha = Math.log1p(total) / logMax;
+    const bright = Math.pow(alpha, 0.45);
+
+    data[i * 4]     = Math.round(r / total * bright);
+    data[i * 4 + 1] = Math.round(g / total * bright);
+    data[i * 4 + 2] = Math.round(b / total * bright);
+    data[i * 4 + 3] = 255;
+  }
+
+  ctx.putImageData(imageData, 0, 0);
+}
+
+// Points to plot per animation frame
+const BATCH = 40_000;
+// Points to plot in the pre-render bootstrap (before first frame)
+const BOOTSTRAP_BATCH = 50_000;
+
+function frame(ts) {
+  requestAnimationFrame(frame);
+
+  // Bootstrap: plot 2M points before showing anything
+  if (!firstFrameShown) {
+    while (totalPoints < MIN_POINTS) {
+      const ifs = lerpIFS(PRESETS[presetA], PRESETS[presetB], morphT);
+      const cum = buildCumProbs(ifs);
+      iterate(ifs, cum, BOOTSTRAP_BATCH);
+    }
+    render();
+    firstFrameShown = true;
+    lastMorphTime = ts;
+    return;
+  }
+
+  // Advance morph timer
+  const dt = ts - lastMorphTime;
+  lastMorphTime = ts;
+  morphT += morphDir * (dt / MORPH_MS);
+
+  if (morphT >= 1) {
+    // Arrived at preset B; swap and reverse toward next preset
+    morphT = 1;
+    morphDir = -1;
+    presetA = presetB;
+    presetB = (presetB + 1) % PRESETS.length;
+  } else if (morphT <= 0) {
+    morphT = 0;
+    morphDir = 1;
+    presetB = (presetB + 1) % PRESETS.length;
+  }
+
+  // When morph moves significantly, fade existing counts to blend old and new shape
+  // multiply by 0.98 to decay old points rather than hard-clearing
+  if (Math.abs(dt) > 16) {
+    for (let b = 0; b < 4; b++) {
+      const buf = counts[b];
+      for (let i = 0; i < buf.length; i++) buf[i] *= 0.97;
+    }
+    // recompute maxCount after decay
+    maxCount = 1;
+    for (let b = 0; b < 4; b++) {
+      const buf = counts[b];
+      for (let i = 0; i < buf.length; i++) {
+        if (buf[i] > maxCount) maxCount = buf[i];
+      }
+    }
+  }
+
+  const ifs = lerpIFS(PRESETS[presetA], PRESETS[presetB], morphT);
+  const cum = buildCumProbs(ifs);
+  iterate(ifs, cum, BATCH);
+  render();
+}
+
+window.addEventListener('resize', () => {
+  resize();
+});
+
+resize();
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>
