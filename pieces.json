@@ -439,5 +439,14 @@
     "technique": "canvas / flow field / Perlin noise / particle trails",
     "path": "pieces/115-the-field-remembers",
     "thumbnail": "pieces/115-the-field-remembers/thumbnail.png"
+  },
+  {
+    "id": "120-celtic-knotwork",
+    "title": "Celtic Knotwork: Over, Under, Forever",
+    "tagline": "A (3,5) torus knot projected to 2D — one bronze strand weaves over and under itself ten times on deep forest green, rendered with correct over-under crossings and a subtle oscillating tilt",
+    "year": 2026,
+    "technique": "canvas / torus knot / parametric curve / over-under crossing / painter's algorithm",
+    "path": "pieces/120-celtic-knotwork",
+    "thumbnail": "pieces/120-celtic-knotwork/thumbnail.png"
   }
 ]

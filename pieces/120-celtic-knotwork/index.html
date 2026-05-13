@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Celtic Knotwork: Over, Under, Forever</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#1f3320;display:flex;align-items:center;justify-content:center;min-height:100vh}
+canvas{display:block;width:100vmin;height:100vmin}
+</style>
+</head>
+<body>
+<canvas id="c" width="700" height="700"></canvas>
+<script>
+// (3,5) torus knot projected to 2D with correct over-under crossing rendering.
+// At each crossing the "under" strand is erased with a background-coloured gap;
+// the "over" strand (higher z after x-axis tilt) is redrawn on top.
+const W=700,H=700,CX=W/2,CY=H/2;
+const P=3,Q=5,R=200,r=62;
+const N=500,SKIP=25;
+const SW=22,HW=5,GW=SW*1.85;
+const BG='#1f3320',STRAND='#c8860a',HILIT='#f5e6b0',SHAD='#7a4500';
+const CROSS_R2=(SW*0.6)**2;
+const MERGE_R2=(SW*2.8)**2;
+
+const canvas=document.getElementById('c');
+const ctx=canvas.getContext('2d');
+
+/** Compute torus knot points in screen space, tilted around the x-axis by *tilt* radians. */
+function computePoints(tilt){
+  const ct=Math.cos(tilt),st=Math.sin(tilt);
+  const a=new Array(N+1);
+  for(let i=0;i<=N;i++){
+    const t=i/N*Math.PI*2;
+    const cp=Math.cos(P*t),sp=Math.sin(P*t);
+    const cq=Math.cos(Q*t),sq=Math.sin(Q*t);
+    const rho=R+r*cq;
+    const x=rho*cp, y=rho*sp, z=r*sq;
+    a[i]={x:x+CX, y:y*ct-z*st+CY, z:y*st+z*ct};
+  }
+  return a;
+}
+
+/** Find (over, under) crossing pairs by comparing 2D midpoint proximity.
+ *  Pairs within SKIP indices in parameter space are excluded (they are
+ *  neighbours on the curve, not crossings).  Nearby detections of the same
+ *  physical crossing are deduplicated by MERGE_R2. */
+function detectCrossings(pts){
+  const mx=new Float64Array(N),my=new Float64Array(N),mz=new Float64Array(N);
+  for(let i=0;i<N;i++){
+    mx[i]=(pts[i].x+pts[i+1].x)*0.5;
+    my[i]=(pts[i].y+pts[i+1].y)*0.5;
+    mz[i]=(pts[i].z+pts[i+1].z)*0.5;
+  }
+  const raw=[];
+  for(let i=0;i<N;i++){
+    const lim=N-SKIP+i;
+    const mxi=mx[i],myi=my[i],mzi=mz[i];
+    for(let j=i+SKIP;j<N;j++){
+      if(j>=lim) continue;
+      const dx=mxi-mx[j],dy=myi-my[j];
+      if(dx*dx+dy*dy<=CROSS_R2){
+        const[ov,un]=mzi>=mz[j]?[i,j]:[j,i];
+        raw.push({ov,un,cx:(mxi+mx[j])*0.5,cy:(myi+my[j])*0.5});
+      }
+    }
+  }
+  // Merge detections that refer to the same physical crossing
+  const out=[];
+  for(const c of raw){
+    let dup=false;
+    for(const m of out){
+      const dx=m.cx-c.cx,dy=m.cy-c.cy;
+      if(dx*dx+dy*dy<MERGE_R2){dup=true;break;}
+    }
+    if(!dup) out.push(c);
+  }
+  return out;
+}
+
+/** Draw segment i → i+1 with current ctx style. */
+function seg(pts,i){
+  ctx.beginPath();
+  ctx.moveTo(pts[i].x,pts[i].y);
+  ctx.lineTo(pts[i+1].x,pts[i+1].y);
+  ctx.stroke();
+}
+
+/** Draw the full closed strand as a single polyline. */
+function fullStrand(pts,w,col){
+  ctx.lineWidth=w;ctx.strokeStyle=col;ctx.lineCap='round';ctx.lineJoin='round';
+  ctx.beginPath();ctx.moveTo(pts[0].x,pts[0].y);
+  for(let i=1;i<=N;i++) ctx.lineTo(pts[i].x,pts[i].y);
+  ctx.stroke();
+}
+
+function frame(ts){
+  // Subtle oscillating tilt makes the knot slowly breathe/rock
+  const tilt=0.45+Math.sin(ts*0.00025)*0.15;
+  const pts=computePoints(tilt);
+  const cr=detectCrossings(pts);
+
+  ctx.fillStyle=BG;
+  ctx.fillRect(0,0,W,H);
+
+  // Layer 1: full strand — shadow, main colour, cream highlight
+  fullStrand(pts,SW+8,SHAD);
+  fullStrand(pts,SW,STRAND);
+  fullStrand(pts,HW,HILIT);
+
+  // Layer 2: at each crossing, erase the under-strand then redraw the over-strand
+  ctx.lineCap='butt';
+  for(const{ov,un} of cr){
+    // Erase under-strand (gap shows background)
+    ctx.lineWidth=GW;ctx.strokeStyle=BG;seg(pts,un);
+    // Restore full 3D rope look for the over-strand
+    ctx.lineCap='round';
+    ctx.lineWidth=SW+8;ctx.strokeStyle=SHAD;seg(pts,ov);
+    ctx.lineWidth=SW;ctx.strokeStyle=STRAND;seg(pts,ov);
+    ctx.lineWidth=HW;ctx.strokeStyle=HILIT;seg(pts,ov);
+    ctx.lineCap='butt';
+  }
+
+  requestAnimationFrame(frame);
+}
+
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>
