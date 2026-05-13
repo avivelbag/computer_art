@@ -304,5 +304,14 @@
     "technique": "canvas / harmonograph / damped pendulum / Lissajous / requestAnimationFrame",
     "path": "pieces/80-harmonograph",
     "thumbnail": "pieces/80-harmonograph/thumbnail.svg"
+  },
+  {
+    "id": "81-newtons-basin",
+    "title": "Newton's Basin — Fractal Roots",
+    "tagline": "Four polynomials (z³−1, z⁴−1, z⁵−1, z³−2z+2) iterated via Newton's method in a WebGL fragment shader — each pixel colours to the root it converges to, brightness falling toward fractal boundaries, cycling every 8 seconds through triskelion, checkerboard, flower, and asymmetric swirl",
+    "year": 2026,
+    "technique": "WebGL / Newton fractal / complex iteration / GLSL",
+    "path": "pieces/81-newtons-basin",
+    "thumbnail": "pieces/81-newtons-basin/thumbnail.svg"
   }
 ]
