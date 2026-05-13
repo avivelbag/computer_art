@@ -233,9 +233,6 @@ class TestTurmiteLogic:
             ant = self._make_ant("RLR", x=x, y=y, direction=0)
             turmite_step(grid, W, H, ant)
             assert grid[y * W + x] == expected_after
-            # Reset ant back to same cell for next iteration
-            x_new, y_new = ant['x'], ant['y']
-            # Move ant back manually to re-visit same cell
             ant['x'] = x
             ant['y'] = y
 
@@ -243,14 +240,9 @@ class TestTurmiteLogic:
         """Ant stepping east off the right edge must reappear at x=0."""
         W, H = 10, 10
         grid = [0] * (W * H)
-        ant = self._make_ant("RL", x=W - 1, y=5, direction=1)  # facing E
-        # White cell → turn right (to S), move south; won't wrap east here.
-        # Force a situation where ant faces E and is already on right edge.
-        grid[(W - 1) + 5 * W] = 1  # black → turn left (to N), move N; no wrap
-        # Try with a straight rule: use N (no turn) by patching rules
-        ant2 = {'x': W - 1, 'y': 5, 'dir': 1, 'rules': 'N'}  # single-colour, no turn
-        turmite_step(grid, W, H, ant2)
-        assert ant2['x'] == 0  # wrapped around
+        ant = {'x': W - 1, 'y': 5, 'dir': 1, 'rules': 'N'}  # facing E, no-turn rule
+        turmite_step(grid, W, H, ant)
+        assert ant['x'] == 0  # wrapped around
 
     def test_toroidal_wrap_north_boundary(self):
         """Ant stepping north off the top edge must reappear at y=H-1."""
