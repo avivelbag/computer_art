@@ -403,5 +403,14 @@
     "technique": "canvas / hyperbolic geometry / Poincaré disk / Möbius transforms / BFS tile generation",
     "path": "pieces/102-hyperbolic-tiling",
     "thumbnail": "pieces/102-hyperbolic-tiling/thumbnail.svg"
+  },
+  {
+    "id": "106-langtons-turmites",
+    "title": "Highway Builders — Langton's Ant and Turmite Variants",
+    "tagline": "Five Langton's-Ant agents race across a 512×512 toroidal grid — classic RL builds its diagonal highway while RLR, LLRR, RLLR, and LRRL spin spirals and rings in amber, cyan, green, violet, and rose",
+    "year": 2026,
+    "technique": "canvas / Langton's Ant / turmite / Uint8Array grid / ImageData per-pixel / requestAnimationFrame",
+    "path": "pieces/106-langtons-turmites",
+    "thumbnail": "pieces/106-langtons-turmites/thumbnail.svg"
   }
 ]

@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Highway Builders — Langton's Ant and Turmite Variants</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: #050508;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      overflow: hidden;
+    }
+    canvas {
+      display: block;
+      width: 100vmin;
+      height: 100vmin;
+      image-rendering: pixelated;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="c"></canvas>
+  <script>
+    const W = 512, H = 512, CELL = 2;
+    const CW = W * CELL, CH = H * CELL;
+    const STEPS_PER_FRAME = 200;
+
+    // Heading vectors: 0=N 1=E 2=S 3=W
+    const DX = [0, 1, 0, -1];
+    const DY = [-1, 0, 1, 0];
+
+    /**
+     * Each ant is defined by its starting position, heading, rule string, and
+     * base hue.  Rule string characters map cell-color indices to turns:
+     *   'R' → turn right 90°  (dir + 1) % 4
+     *   'L' → turn left  90°  (dir + 3) % 4
+     *   'U' → U-turn          (dir + 2) % 4
+     *   'N' → no turn
+     * When an ant visits cell with color c: turn = rules[c % len], then
+     * advance cell color = (c % len + 1) % len, then move forward one step.
+     * The grid wraps toroidally, so ants crossing the canvas boundary reappear
+     * on the opposite edge.
+     */
+    const ANTS = [
+      { x: W >> 2,         y: H >> 2,         dir: 0, rules: "RL",   hue: 35  },
+      { x: (3 * W) >> 2,   y: H >> 2,         dir: 2, rules: "RLR",  hue: 190 },
+      { x: W >> 2,         y: (3 * H) >> 2,   dir: 1, rules: "LLRR", hue: 120 },
+      { x: (3 * W) >> 2,   y: (3 * H) >> 2,   dir: 3, rules: "RLLR", hue: 270 },
+      { x: W >> 1,         y: H >> 1,          dir: 0, rules: "LRRL", hue: 350 },
+    ];
+    const N_ANTS = ANTS.length;
+
+    // grid[y*W+x]  = cell color index in range [0, ant.rules.length)
+    // owner[y*W+x] = 1-based ant index of the last visitor, 0 = never visited
+    const grid  = new Uint8Array(W * H);
+    const owner = new Uint8Array(W * H);
+
+    /**
+     * Convert HSL (h in degrees 0-360, s and l in 0-1) to integer RGB triple.
+     */
+    function hslToRgb(h, s, l) {
+      const c = (1 - Math.abs(2 * l - 1)) * s;
+      const x = c * (1 - Math.abs((h / 60) % 2 - 1));
+      const m = l - c / 2;
+      let r = 0, g = 0, b = 0;
+      if      (h < 60)  { r = c; g = x; }
+      else if (h < 120) { r = x; g = c; }
+      else if (h < 180) {        g = c; b = x; }
+      else if (h < 240) {        g = x; b = c; }
+      else if (h < 300) { r = x;        b = c; }
+      else              { r = c;        b = x; }
+      return [((r + m) * 255) | 0, ((g + m) * 255) | 0, ((b + m) * 255) | 0];
+    }
+
+    // Flat palette: PAL[(antIdx * MAX_C + colorIdx) * 3 + channel]
+    // Lightness maps linearly from 0.12 (color index 0) to 0.70 (max color index),
+    // so even cells cycled back to index 0 retain a faint tint of their ant's hue.
+    const MAX_C = 8;
+    const PAL = new Uint8Array(N_ANTS * MAX_C * 3);
+    for (let ai = 0; ai < N_ANTS; ai++) {
+      const n = ANTS[ai].rules.length;
+      for (let c = 0; c < MAX_C; c++) {
+        const t = n <= 1 ? 1 : (c % n) / (n - 1);
+        const [r, g, b] = hslToRgb(ANTS[ai].hue, 0.85, 0.12 + t * 0.58);
+        PAL[(ai * MAX_C + c) * 3]     = r;
+        PAL[(ai * MAX_C + c) * 3 + 1] = g;
+        PAL[(ai * MAX_C + c) * 3 + 2] = b;
+      }
+    }
+    const BGR = 5, BGG = 5, BGB = 8;
+
+    const canvas = document.getElementById('c');
+    canvas.width  = CW;
+    canvas.height = CH;
+    const ctx = canvas.getContext('2d');
+    ctx.imageSmoothingEnabled = false;
+    const img = ctx.createImageData(CW, CH);
+    const buf = img.data;
+
+    // Pre-fill with background color; alpha channel stays 255 throughout.
+    for (let i = 0; i < CW * CH; i++) {
+      buf[i * 4]     = BGR;
+      buf[i * 4 + 1] = BGG;
+      buf[i * 4 + 2] = BGB;
+      buf[i * 4 + 3] = 255;
+    }
+
+    /**
+     * Advance a single Langton's Ant / turmite step for every ant.
+     *
+     * For each ant:
+     *  1. Read cell color c at current position.
+     *  2. Turn according to rules[c % rules.length].
+     *  3. Increment cell color to (c%len + 1) % len and record ownership.
+     *  4. Move one cell forward (toroidal wrap).
+     */
+    function step() {
+      for (let ai = 0; ai < N_ANTS; ai++) {
+        const ant  = ANTS[ai];
+        const idx  = ant.y * W + ant.x;
+        const c    = grid[idx];
+        const rlen = ant.rules.length;
+        const nc   = c % rlen;
+
+        ant.dir = (ant.dir + (ant.rules[nc] === 'R' ? 1
+                            : ant.rules[nc] === 'L' ? 3
+                            : ant.rules[nc] === 'U' ? 2 : 0)) % 4;
+
+        grid[idx]  = (nc + 1) % rlen;
+        owner[idx] = ai + 1;
+
+        ant.x = (ant.x + DX[ant.dir] + W) % W;
+        ant.y = (ant.y + DY[ant.dir] + H) % H;
+      }
+    }
+
+    /**
+     * Repaint every cell into the ImageData buffer, then flush to canvas.
+     * Each cell occupies a CELL×CELL pixel block.  Unvisited cells (owner=0)
+     * use the background color; visited cells use the owning ant's palette
+     * entry for the current cell color index.
+     */
+    function render() {
+      for (let cy = 0; cy < H; cy++) {
+        for (let cx = 0; cx < W; cx++) {
+          const cell = cy * W + cx;
+          const ow   = owner[cell];
+          let r, g, b;
+          if (ow === 0) {
+            r = BGR; g = BGG; b = BGB;
+          } else {
+            const base = ((ow - 1) * MAX_C + grid[cell]) * 3;
+            r = PAL[base]; g = PAL[base + 1]; b = PAL[base + 2];
+          }
+          // Write 2×2 pixel block into ImageData.
+          const px0 = (cy * 2 * CW + cx * 2) * 4;
+          const px1 = px0 + 4;
+          const px2 = px0 + CW * 4;
+          const px3 = px2 + 4;
+          buf[px0] = r; buf[px0 + 1] = g; buf[px0 + 2] = b;
+          buf[px1] = r; buf[px1 + 1] = g; buf[px1 + 2] = b;
+          buf[px2] = r; buf[px2 + 1] = g; buf[px2 + 2] = b;
+          buf[px3] = r; buf[px3 + 1] = g; buf[px3 + 2] = b;
+        }
+      }
+      ctx.putImageData(img, 0, 0);
+    }
+
+    function loop() {
+      for (let i = 0; i < STEPS_PER_FRAME; i++) step();
+      render();
+      requestAnimationFrame(loop);
+    }
+
+    requestAnimationFrame(loop);
+  </script>
+</body>
+</html>
