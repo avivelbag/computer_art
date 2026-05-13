@@ -219,10 +219,11 @@ def test_pieces_json_still_valid_after_update():
     assert len(data) >= 1
 
 
-def test_new_entry_is_last():
-    """The topographic-contours entry should be the last in pieces.json (appended)."""
+def test_entry_is_present():
+    """The topographic-contours entry should exist in pieces.json."""
     data = pieces_json()
-    assert data[-1]["id"] == "64-topographic-contours"
+    ids = [e["id"] for e in data]
+    assert "64-topographic-contours" in ids
 
 
 def test_index_contour_width_larger_than_regular():

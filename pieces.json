@@ -250,5 +250,14 @@
     "technique": "canvas / marching squares / 3-D value noise / fBm / topographic contours",
     "path": "pieces/64-topographic-contours",
     "thumbnail": "pieces/64-topographic-contours/thumbnail.svg"
+  },
+  {
+    "id": "65-truchet-tiles",
+    "title": "Every Corner Has a Choice",
+    "tagline": "A 30×30 grid of Smith-variant Truchet tiles — each cell a binary arc choice — slowly reshuffles every 4 seconds, tracing rivers and closed loops from memoryless randomness; ivory ground, deep indigo arcs",
+    "year": 2026,
+    "technique": "canvas / Truchet tiles / Smith quarter-circle arc variant / crossfade animation",
+    "path": "pieces/65-truchet-tiles",
+    "thumbnail": "pieces/65-truchet-tiles/thumbnail.svg"
   }
 ]
