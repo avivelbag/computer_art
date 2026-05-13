@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Wolfram Elementary CA — Rule 30 / 90 / 110</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { background: #0a080f; overflow: hidden; }
+    canvas { display: block; }
+  </style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<script>
+const canvas = document.getElementById('c');
+const ctx    = canvas.getContext('2d');
+
+const SIM_W = 600;
+const SIM_H = 400;
+
+// Three Wolfram elementary rules with distinct palettes.
+const RULES    = [30, 90, 110];
+const PALETTES = [
+  [255, 176,   0],   // amber — Rule 30  (chaotic)
+  [  0, 200, 170],   // teal  — Rule 90  (Sierpiński fractal)
+  [220,  70, 120],   // rose  — Rule 110 (Turing-complete)
+];
+const BG = [10, 8, 15];
+
+// Time each rule is shown before the cross-fade begins.
+const RULE_DURATION = 9_000;
+const FADE_DURATION = 2_000;
+
+// Two off-screen canvases: A for the current rule, B for the incoming rule.
+const simA  = document.createElement('canvas');
+simA.width  = SIM_W;
+simA.height = SIM_H;
+const ctxA  = simA.getContext('2d');
+const imgA  = ctxA.createImageData(SIM_W, SIM_H);
+
+const simB  = document.createElement('canvas');
+simB.width  = SIM_W;
+simB.height = SIM_H;
+const ctxB  = simB.getContext('2d');
+const imgB  = ctxB.createImageData(SIM_W, SIM_H);
+
+let ruleIdx, rowA, rowB, yA, yB, phase, phaseStart;
+
+/**
+ * Fill all pixels of an ImageData with the background color.
+ */
+function fillBg(img) {
+  const d = img.data;
+  for (let i = 0; i < d.length; i += 4) {
+    d[i] = BG[0]; d[i + 1] = BG[1]; d[i + 2] = BG[2]; d[i + 3] = 255;
+  }
+}
+
+/**
+ * Return a Uint8Array of length SIM_W with a single live cell at the center.
+ */
+function seedRow() {
+  const r = new Uint8Array(SIM_W);
+  r[SIM_W >> 1] = 1;
+  return r;
+}
+
+/**
+ * Compute the next CA generation from row using the given Wolfram rule number.
+ * Boundary is periodic (wraps around).
+ */
+function nextRow(row, rule) {
+  const next = new Uint8Array(SIM_W);
+  for (let i = 0; i < SIM_W; i++) {
+    const pat = (row[(i - 1 + SIM_W) % SIM_W] << 2) |
+                (row[i] << 1) |
+                 row[(i + 1) % SIM_W];
+    next[i] = (rule >> pat) & 1;
+  }
+  return next;
+}
+
+/**
+ * Write a CA row into an ImageData at scanline y.
+ * Live cells get the rule's palette color; dead cells get the background.
+ */
+function writeRow(img, row, y, color) {
+  const base = y * SIM_W * 4;
+  const d    = img.data;
+  for (let x = 0; x < SIM_W; x++) {
+    const p = base + x * 4;
+    if (row[x]) {
+      d[p] = color[0]; d[p + 1] = color[1]; d[p + 2] = color[2];
+    } else {
+      d[p] = BG[0]; d[p + 1] = BG[1]; d[p + 2] = BG[2];
+    }
+    d[p + 3] = 255;
+  }
+}
+
+/**
+ * Scroll an ImageData up by one row — copyWithin shifts all pixel data up
+ * by SIM_W*4 bytes, moving row 1 into row 0, row 2 into row 1, and so on.
+ * Row SIM_H-1 is left as stale data and will be overwritten by the caller.
+ */
+function scroll(img) {
+  img.data.copyWithin(0, SIM_W * 4);
+}
+
+/**
+ * Compute the next CA generation and append it to img.
+ * When y reaches SIM_H the canvas scrolls upward so new rows appear at the
+ * bottom, creating an infinite-scroll effect.
+ * Returns the updated {row, y} state.
+ */
+function advance(img, row, y, rule, color) {
+  const next = nextRow(row, rule);
+  if (y >= SIM_H) {
+    scroll(img);
+    writeRow(img, next, SIM_H - 1, color);
+  } else {
+    writeRow(img, next, y, color);
+    y++;
+  }
+  return { row: next, y };
+}
+
+function init() {
+  canvas.width  = window.innerWidth;
+  canvas.height = window.innerHeight;
+
+  ruleIdx = 0;
+  fillBg(imgA);
+  rowA = seedRow();
+  writeRow(imgA, rowA, 0, PALETTES[ruleIdx]);
+  yA = 1;
+
+  rowB = new Uint8Array(SIM_W);
+  yB   = 0;
+
+  phase      = 'show';
+  phaseStart = performance.now();
+}
+
+function loop(now) {
+  requestAnimationFrame(loop);
+  const elapsed = now - phaseStart;
+
+  if (phase === 'show') {
+    const r = advance(imgA, rowA, yA, RULES[ruleIdx], PALETTES[ruleIdx]);
+    rowA = r.row;
+    yA   = r.y;
+    ctxA.putImageData(imgA, 0, 0);
+    ctx.drawImage(simA, 0, 0, canvas.width, canvas.height);
+
+    if (elapsed > RULE_DURATION) {
+      const next = (ruleIdx + 1) % RULES.length;
+      fillBg(imgB);
+      rowB = seedRow();
+      writeRow(imgB, rowB, 0, PALETTES[next]);
+      yB         = 1;
+      phase      = 'fade';
+      phaseStart = now;
+    }
+
+  } else {
+    const t    = Math.min(1, elapsed / FADE_DURATION);
+    const next = (ruleIdx + 1) % RULES.length;
+
+    const rA = advance(imgA, rowA, yA, RULES[ruleIdx], PALETTES[ruleIdx]);
+    rowA = rA.row;
+    yA   = rA.y;
+
+    const rB = advance(imgB, rowB, yB, RULES[next], PALETTES[next]);
+    rowB = rB.row;
+    yB   = rB.y;
+
+    ctxA.putImageData(imgA, 0, 0);
+    ctxB.putImageData(imgB, 0, 0);
+
+    // Draw A fully, then overlay B at increasing opacity for a cross-fade.
+    ctx.drawImage(simA, 0, 0, canvas.width, canvas.height);
+    ctx.globalAlpha = t;
+    ctx.drawImage(simB, 0, 0, canvas.width, canvas.height);
+    ctx.globalAlpha = 1;
+
+    if (t >= 1) {
+      ruleIdx = next;
+      imgA.data.set(imgB.data);
+      rowA   = rowB;
+      yA     = yB;
+      phase  = 'show';
+      phaseStart = now;
+    }
+  }
+}
+
+window.addEventListener('resize', init);
+window.addEventListener('click',  init);
+init();
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>
