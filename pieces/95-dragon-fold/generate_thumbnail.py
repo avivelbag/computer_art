@@ -4,7 +4,6 @@ Produces an SVG with the completed dragon curve at THUMB_ITERATIONS drawn as
 colour-banded polylines (teal → rose), fitted to SIZE × SIZE with a dark background.
 """
 
-import math
 import pathlib
 
 SIZE = 400
