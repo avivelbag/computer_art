@@ -584,8 +584,6 @@ def test_gen_large_input(tmp_path):
 def test_gen_single_seed():
     """With one seed every cell in the grid belongs to that seed (no borders between cells)."""
     mod = _import_gen()
-    import random as _r
-    rng = _r.Random(0)
     seeds = [(mod.GRID / 2, mod.GRID / 2, 0)]
     grid = mod.voronoi_grid(seeds)
     assert all(grid[cy][cx] == 0 for cy in range(mod.GRID) for cx in range(mod.GRID))
