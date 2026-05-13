@@ -412,5 +412,14 @@
     "technique": "canvas / Langton's Ant / turmite / Uint8Array grid / ImageData per-pixel / requestAnimationFrame",
     "path": "pieces/106-langtons-turmites",
     "thumbnail": "pieces/106-langtons-turmites/thumbnail.svg"
+  },
+  {
+    "id": "111-bifurcation",
+    "title": "Bifurcation: Where Order Fractures Into Chaos",
+    "tagline": "The logistic map x → r·x·(1−x) sweeps from stable fixed point through period-doubling cascades to full chaos — a per-pixel canvas render that builds left to right, shifting from cool blue to warm gold as r crosses the Feigenbaum onset at 3.57",
+    "year": 2026,
+    "technique": "canvas / logistic map / bifurcation diagram / ImageData per-pixel / requestAnimationFrame",
+    "path": "pieces/111-bifurcation",
+    "thumbnail": "pieces/111-bifurcation/thumbnail.png"
   }
 ]

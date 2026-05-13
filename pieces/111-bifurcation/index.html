@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Bifurcation: Where Order Fractures Into Chaos</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: #050508;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      overflow: hidden;
+    }
+    canvas {
+      display: block;
+      width: min(100vw, calc(100vh * 8 / 5));
+      height: min(calc(100vw * 5 / 8), 100vh);
+    }
+  </style>
+</head>
+<body>
+  <canvas id="c" width="800" height="500"></canvas>
+  <script>
+    const W = 800, H = 500;
+    const R_MIN = 2.5, R_SPAN = 1.5;
+    const CHAOS_ONSET = 3.57;
+    const WARMUP = 300, PLOT = 300;
+    // ~7 columns per frame → 800/7 ≈ 114 frames → ~1.9s at 60 fps
+    const COLS_PER_FRAME = 7;
+    const HOLD_MS = 4000;
+
+    const canvas = document.getElementById('c');
+    const ctx = canvas.getContext('2d');
+    const imgData = ctx.createImageData(W, H);
+    const buf = imgData.data;
+
+    function lerp(a, b, t) { return a + (b - a) * t; }
+
+    function reset() {
+      for (let i = 0; i < W * H; i++) {
+        buf[i * 4]     = 5;
+        buf[i * 4 + 1] = 5;
+        buf[i * 4 + 2] = 8;
+        buf[i * 4 + 3] = 255;
+      }
+    }
+
+    function drawColumn(px) {
+      const r = R_MIN + (px / W) * R_SPAN;
+      let x = 0.5;
+      for (let i = 0; i < WARMUP; i++) x = r * x * (1 - x);
+      const t = (r - R_MIN) / R_SPAN;
+      const rv = lerp(30, 255, t) | 0;
+      const gv = lerp(80, 200, t * t) | 0;
+      const bv = lerp(200, 30, t) | 0;
+      for (let i = 0; i < PLOT; i++) {
+        x = r * x * (1 - x);
+        const py = Math.floor((1 - x) * H);
+        if (py >= 0 && py < H) {
+          const idx = (py * W + px) * 4;
+          buf[idx]     = rv;
+          buf[idx + 1] = gv;
+          buf[idx + 2] = bv;
+          buf[idx + 3] = 255;
+        }
+      }
+    }
+
+    function drawChaosLine() {
+      const cx = Math.round(W * (CHAOS_ONSET - R_MIN) / R_SPAN);
+      ctx.save();
+      ctx.strokeStyle = 'rgba(255,255,255,0.22)';
+      ctx.lineWidth = 1;
+      ctx.setLineDash([5, 7]);
+      ctx.beginPath();
+      ctx.moveTo(cx + 0.5, 0);
+      ctx.lineTo(cx + 0.5, H);
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    let col = 0;
+    let phase = 'drawing';
+    let holdStart = 0;
+
+    function frame() {
+      if (phase === 'drawing') {
+        const end = Math.min(col + COLS_PER_FRAME, W);
+        for (let px = col; px < end; px++) drawColumn(px);
+        ctx.putImageData(imgData, 0, 0);
+        col = end;
+        if (col >= W) {
+          drawChaosLine();
+          phase = 'holding';
+          holdStart = performance.now();
+        }
+      } else if (performance.now() - holdStart >= HOLD_MS) {
+        reset();
+        ctx.putImageData(imgData, 0, 0);
+        col = 0;
+        phase = 'drawing';
+      }
+      requestAnimationFrame(frame);
+    }
+
+    reset();
+    requestAnimationFrame(frame);
+  </script>
+</body>
+</html>
