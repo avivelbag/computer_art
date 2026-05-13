@@ -376,5 +376,14 @@
     "technique": "canvas / dragon curve / paper-folding / bit-sequence algorithm / requestAnimationFrame",
     "path": "pieces/95-dragon-fold",
     "thumbnail": "pieces/95-dragon-fold/thumbnail.svg"
+  },
+  {
+    "id": "96-gray-scott",
+    "title": "Mitosis in Amber",
+    "tagline": "Gray-Scott reaction-diffusion at F=0.0545, k=0.062 grows coral Turing patterns from a seeded center — near-black ground blooms into warm amber filaments and ivory peaks at 60 fps on a 512×512 canvas",
+    "year": 2026,
+    "technique": "canvas / reaction-diffusion / Gray-Scott / Float32Array double-buffer / ImageData",
+    "path": "pieces/96-gray-scott",
+    "thumbnail": "pieces/96-gray-scott/thumbnail.svg"
   }
 ]
