@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Ink Dropped in Still Water: Paper Marbling</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#1a1408;display:flex;align-items:center;justify-content:center;min-height:100vh}
+canvas{display:block;width:100vmin;height:100vmin}
+</style>
+</head>
+<body>
+<canvas id="c" width="800" height="800"></canvas>
+<script>(function(){
+'use strict';
+const W=800,H=800;
+const canvas=document.getElementById('c');
+const ctx=canvas.getContext('2d');
+
+// Warm cream base + terracotta, cobalt, saffron, forest green, wine
+const BG         =[242,230,200];
+const TERRACOTTA =[192, 82, 42];
+const COBALT     =[ 58, 95,168];
+const SAFFRON    =[232,160, 32];
+const FGREEN     =[ 45, 96, 64];
+const WINE       =[150, 55, 95];
+
+function mkBuf(){
+  const b=new Uint8ClampedArray(W*H*4);
+  const[r,g,bl]=BG;
+  for(let i=0;i<W*H;i++){b[i*4]=r;b[i*4+1]=g;b[i*4+2]=bl;b[i*4+3]=255;}
+  return b;
+}
+
+// Bilinear sample from Uint8ClampedArray buf at float (sx,sy); returns [r,g,b] or BG.
+function smp(buf,sx,sy){
+  const ix=sx|0,iy=sy|0;
+  if(ix<0||ix>=W-1||iy<0||iy>=H-1) return BG;
+  const fx=sx-ix,fy=sy-iy;
+  const i00=(iy*W+ix)*4,i10=i00+4,i01=i00+W*4,i11=i01+4;
+  const s=(1-fx)*(1-fy),t=fx*(1-fy),u=(1-fx)*fy,v=fx*fy;
+  return[
+    buf[i00]*s+buf[i10]*t+buf[i01]*u+buf[i11]*v,
+    buf[i00+1]*s+buf[i10+1]*t+buf[i01+1]*u+buf[i11+1]*v,
+    buf[i00+2]*s+buf[i10+2]*t+buf[i01+2]*u+buf[i11+2]*v
+  ];
+}
+
+// Classic Ebru stone drop. Pixels within radius 2R get fresh concentric rings
+// (alternating drop color / background). Pixels outside 2R are read from
+// their pre-drop position via the inverse of r_new = r_old + R²/r_old,
+// which gives r_old = (r_new − √(r_new²−4R²)) / 2.
+function stoneDrop(buf,cx,cy,R,color,nRings){
+  const tmp=new Uint8ClampedArray(buf);
+  const R4=4*R*R;
+  for(let y=0;y<H;y++){
+    for(let x=0;x<W;x++){
+      const dx=x-cx,dy=y-cy,d2=dx*dx+dy*dy;
+      const idx=(y*W+x)*4;
+      if(d2<0.25){
+        buf[idx]=color[0];buf[idx+1]=color[1];buf[idx+2]=color[2];buf[idx+3]=255;
+        continue;
+      }
+      const d=Math.sqrt(d2);
+      let c;
+      if(d2<R4){
+        const ring=Math.floor(d*nRings/(2*R));
+        c=ring%2===0?color:BG;
+      }else{
+        const srcR=(d-Math.sqrt(d2-R4))*0.5;
+        c=smp(tmp,cx+dx/d*srcR,cy+dy/d*srcR);
+      }
+      buf[idx]=c[0];buf[idx+1]=c[1];buf[idx+2]=c[2];buf[idx+3]=255;
+    }
+  }
+}
+
+// Horizontal comb drag. Each tine[i] = {ty, dir} pulls pixels in the x-axis
+// by dir*amt pixels with Gaussian falloff exp(-(dy/sigma)²).
+// Displacement is the sum across all tines (they act simultaneously).
+function combH(buf,tines,amt,sigma){
+  const tmp=new Uint8ClampedArray(buf);
+  const sig2=sigma*sigma;
+  for(let y=0;y<H;y++){
+    let disp=0;
+    for(const{ty,dir}of tines){
+      const dy=y-ty;
+      disp+=dir*amt*Math.exp(-dy*dy/sig2);
+    }
+    for(let x=0;x<W;x++){
+      const c=smp(tmp,x-disp,y);
+      const idx=(y*W+x)*4;
+      buf[idx]=c[0];buf[idx+1]=c[1];buf[idx+2]=c[2];buf[idx+3]=255;
+    }
+  }
+}
+
+// Vertical comb drag (same principle, y-axis).
+function combV(buf,tines,amt,sigma){
+  const tmp=new Uint8ClampedArray(buf);
+  const sig2=sigma*sigma;
+  for(let x=0;x<W;x++){
+    let disp=0;
+    for(const{tx,dir}of tines){
+      const dx=x-tx;
+      disp+=dir*amt*Math.exp(-dx*dx/sig2);
+    }
+    for(let y=0;y<H;y++){
+      const c=smp(tmp,x,y-disp);
+      const idx=(y*W+x)*4;
+      buf[idx]=c[0];buf[idx+1]=c[1];buf[idx+2]=c[2];buf[idx+3]=255;
+    }
+  }
+}
+
+function snap(buf){return new ImageData(new Uint8ClampedArray(buf),W,H);}
+
+// Pre-compute all animation keyframes synchronously at startup.
+// Returns an array of ImageData objects: blank → drops → combs.
+function buildStates(){
+  const buf=mkBuf();
+  const states=[snap(buf)]; // state 0: blank cream
+
+  // Five stone drops building up the initial color field
+  stoneDrop(buf,230,270,115,TERRACOTTA,6); states.push(snap(buf));
+  stoneDrop(buf,560,230,100,COBALT,    5); states.push(snap(buf));
+  stoneDrop(buf,380,540,120,SAFFRON,   6); states.push(snap(buf));
+  stoneDrop(buf,640,520, 90,FGREEN,    5); states.push(snap(buf));
+  stoneDrop(buf,150,560, 80,WINE,      4); states.push(snap(buf));
+
+  // Horizontal rake: 7 tines alternating left / right creates the wave pattern
+  combH(buf,
+    [{ty: 70,dir: 1},{ty:190,dir:-1},{ty:310,dir: 1},
+     {ty:430,dir:-1},{ty:550,dir: 1},{ty:670,dir:-1},{ty:745,dir: 1}],
+    130,35);
+  states.push(snap(buf));
+
+  // Vertical rake: 6 tines all pulling in the same direction — final wavy marble
+  combV(buf,
+    [{tx: 80,dir:1},{tx:220,dir:1},{tx:360,dir:1},
+     {tx:500,dir:1},{tx:640,dir:1},{tx:750,dir:1}],
+    -100,35);
+  states.push(snap(buf));
+
+  return states; // 8 states total
+}
+
+const states=buildStates();
+const N=states.length;
+
+// Pre-allocated ImageData for cross-fade blending
+const blendBuf=new ImageData(W,H);
+function crossFade(a,b,t){
+  const da=a.data,db=b.data,dc=blendBuf.data,ti=1-t;
+  for(let i=0,n=da.length;i<n;i+=4){
+    dc[i]  =da[i]  *ti+db[i]  *t;
+    dc[i+1]=da[i+1]*ti+db[i+1]*t;
+    dc[i+2]=da[i+2]*ti+db[i+2]*t;
+    dc[i+3]=255;
+  }
+}
+
+// Animation state machine: fade between keyframes, hold, repeat.
+const FADE_MS=700;
+// Per-state hold times (ms): blank, five drops, h-comb, v-comb (final)
+const HOLD=[500,900,900,900,900,900,1500,5000];
+
+let phase='hold',from=0,to=1,phaseStart=0;
+
+function frame(ts){
+  if(!phaseStart) phaseStart=ts;
+  const elapsed=ts-phaseStart;
+
+  if(phase==='hold'){
+    ctx.putImageData(states[from],0,0);
+    if(elapsed>=(HOLD[from]||900)){
+      to=(from+1)%N;
+      phase='fade';
+      phaseStart=ts;
+    }
+  }else{
+    const t=Math.min(1,elapsed/FADE_MS);
+    crossFade(states[from],states[to],t);
+    ctx.putImageData(blendBuf,0,0);
+    if(t>=1){
+      from=to;
+      phase='hold';
+      phaseStart=ts;
+    }
+  }
+  requestAnimationFrame(frame);
+}
+
+// Prime the canvas with the cream background before the first frame fires
+ctx.fillStyle=`rgb(${BG[0]},${BG[1]},${BG[2]})`;
+ctx.fillRect(0,0,W,H);
+requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
