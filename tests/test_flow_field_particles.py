@@ -4,9 +4,6 @@ import math
 import pathlib
 import random
 import re
-import sys
-
-import pytest
 
 REPO = pathlib.Path(__file__).parent.parent
 PIECE_ID = "115-the-field-remembers"
