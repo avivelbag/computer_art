@@ -277,5 +277,14 @@
     "technique": "canvas / IFS chaos game / affine transforms / log-density rendering / morphing animation",
     "path": "pieces/75-ifs-fern",
     "thumbnail": "pieces/75-ifs-fern/thumbnail.svg"
+  },
+  {
+    "id": "76-dla-crystal",
+    "title": "DLA Crystal — Frost on Glass",
+    "tagline": "40 000 particles random-walk from the canvas edge until they touch the aggregate and freeze; birth order maps to a deep-blue→copper gradient, revealing the full growth history of a dendritic DLA fractal in a seamless 30-second loop",
+    "year": 2026,
+    "technique": "canvas / diffusion-limited aggregation / ImageData / Uint8Array occupancy grid / requestAnimationFrame",
+    "path": "pieces/76-dla-crystal",
+    "thumbnail": "pieces/76-dla-crystal/thumbnail.svg"
   }
 ]

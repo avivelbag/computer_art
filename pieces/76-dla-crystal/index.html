@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>DLA Crystal — Frost on Glass</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { background: #020814; overflow: hidden; }
+    canvas { display: block; }
+  </style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<script>
+const canvas  = document.getElementById('c');
+const ctx     = canvas.getContext('2d');
+
+const SIM_W      = 600;
+const SIM_H      = 600;
+const CX         = SIM_W >> 1;
+const CY         = SIM_H >> 1;
+const MAX_FROZEN = 40_000;
+const FADE_MS    = 2_000;
+const BATCH_BASE = 20;
+const BATCH_MAX  = 200;
+const STEPS_PER_WALKER = 20;
+
+/**
+ * Convert HSL (h in [0,1], s in [0,1], l in [0,1]) to [r, g, b] in [0,255].
+ */
+function hslToRgb(h, s, l) {
+  const c = (1 - Math.abs(2 * l - 1)) * s;
+  const x = c * (1 - Math.abs(h * 6 % 2 - 1));
+  const m = l - c / 2;
+  let r, g, b;
+  if      (h < 1/6) { r = c; g = x; b = 0; }
+  else if (h < 2/6) { r = x; g = c; b = 0; }
+  else if (h < 3/6) { r = 0; g = c; b = x; }
+  else if (h < 4/6) { r = 0; g = x; b = c; }
+  else if (h < 5/6) { r = x; g = 0; b = c; }
+  else              { r = c; g = 0; b = x; }
+  return [(r + m) * 255 | 0, (g + m) * 255 | 0, (b + m) * 255 | 0];
+}
+
+// 256-entry RGB lookup: index 0 = deep blue (seed), 255 = warm amber (tips).
+// Hue sweeps 200° → 30° as the cluster grows outward.
+const COLOR_LUT = new Uint8Array(256 * 3);
+(function buildLut() {
+  for (let i = 0; i < 256; i++) {
+    const t   = i / 255;
+    const hue = (200 - 170 * t) / 360;
+    const [r, g, b] = hslToRgb(hue, 0.85, 0.50);
+    COLOR_LUT[i * 3]     = r;
+    COLOR_LUT[i * 3 + 1] = g;
+    COLOR_LUT[i * 3 + 2] = b;
+  }
+})();
+
+// Off-screen simulation canvas (SIM_W × SIM_H).  The main canvas stretches it
+// to fill the viewport via drawImage, so the DLA grid stays affordable.
+const simCanvas  = document.createElement('canvas');
+simCanvas.width  = SIM_W;
+simCanvas.height = SIM_H;
+const simCtx     = simCanvas.getContext('2d');
+const imgData    = simCtx.createImageData(SIM_W, SIM_H);
+const pixels     = imgData.data;
+
+let grid;          // Uint8Array  – 1 if pixel is frozen
+let ageGrid;       // Uint16Array – frozen order, 1-indexed (max 40 000 < 65 535)
+let frozenCount;
+let clusterRadius;
+let walkers;       // active walkers: [{x, y}, ...]
+
+const STATE_GROWING = 0;
+const STATE_FADING  = 1;
+let state;
+let fadeStart;
+
+/**
+ * Mark pixel (x, y) as frozen, record its birth order, update clusterRadius,
+ * and paint the corresponding pixel in imgData using the age-to-color LUT.
+ */
+function freeze(x, y) {
+  const idx = y * SIM_W + x;
+  if (grid[idx]) return;
+  grid[idx] = 1;
+  frozenCount++;
+  ageGrid[idx] = frozenCount;
+
+  const dx = x - CX, dy = y - CY;
+  const r  = Math.sqrt(dx * dx + dy * dy);
+  if (r > clusterRadius) clusterRadius = r;
+
+  const lutIdx = Math.min(255, ((frozenCount - 1) / (MAX_FROZEN - 1) * 255) | 0);
+  const p  = idx << 2;
+  pixels[p]     = COLOR_LUT[lutIdx * 3];
+  pixels[p + 1] = COLOR_LUT[lutIdx * 3 + 1];
+  pixels[p + 2] = COLOR_LUT[lutIdx * 3 + 2];
+  pixels[p + 3] = 255;
+}
+
+/**
+ * Spawn a new walker on a circle of radius (clusterRadius + 20) at a random
+ * angle, snapped to the nearest integer pixel.
+ */
+function spawnWalker() {
+  const r     = clusterRadius + 20;
+  const angle = Math.random() * 2 * Math.PI;
+  return { x: Math.round(CX + r * Math.cos(angle)),
+           y: Math.round(CY + r * Math.sin(angle)) };
+}
+
+/**
+ * Advance walker w by one cardinal step.
+ * Returns false when the walker should be removed (frozen or escaped the kill
+ * radius).  Sticking test checks all four cardinal neighbours.
+ */
+function stepWalker(w) {
+  const dir = (Math.random() * 4) | 0;
+  if      (dir === 0) w.x++;
+  else if (dir === 1) w.x--;
+  else if (dir === 2) w.y++;
+  else                w.y--;
+
+  // Kill walkers that drift beyond the cluster + safety margin.
+  const dx = w.x - CX, dy = w.y - CY;
+  const killR = clusterRadius + 35;
+  if (dx * dx + dy * dy > killR * killR) return false;
+
+  if (w.x < 0 || w.x >= SIM_W || w.y < 0 || w.y >= SIM_H) return false;
+
+  const idx = w.y * SIM_W + w.x;
+  if (
+    (w.x > 0       && grid[idx - 1])      ||
+    (w.x < SIM_W-1 && grid[idx + 1])      ||
+    (w.y > 0       && grid[idx - SIM_W])  ||
+    (w.y < SIM_H-1 && grid[idx + SIM_W])
+  ) {
+    freeze(w.x, w.y);
+    return false;
+  }
+  return true;
+}
+
+function init() {
+  canvas.width  = window.innerWidth;
+  canvas.height = window.innerHeight;
+
+  grid          = new Uint8Array(SIM_W * SIM_H);
+  ageGrid       = new Uint16Array(SIM_W * SIM_H);
+  frozenCount   = 0;
+  clusterRadius = 1;
+  walkers       = [];
+  state         = STATE_GROWING;
+  fadeStart     = 0;
+
+  // Fill imgData with background colour so cleared pixels are correct.
+  for (let i = 0; i < SIM_W * SIM_H; i++) {
+    const p = i << 2;
+    pixels[p]     =  2;
+    pixels[p + 1] =  8;
+    pixels[p + 2] = 20;
+    pixels[p + 3] = 255;
+  }
+
+  freeze(CX, CY);
+}
+
+function loop(now) {
+  requestAnimationFrame(loop);
+
+  if (state === STATE_GROWING) {
+    // Adaptive batch: more walkers as cluster grows (each walk takes longer).
+    const batchSize = Math.min(BATCH_MAX, BATCH_BASE + (clusterRadius * 3 | 0));
+
+    while (walkers.length < batchSize) walkers.push(spawnWalker());
+
+    // Each walker gets STEPS_PER_WALKER moves before we repaint.
+    const survivors = [];
+    for (let i = 0; i < walkers.length; i++) {
+      const w = walkers[i];
+      let alive = true;
+      for (let s = 0; s < STEPS_PER_WALKER && alive; s++) {
+        alive = stepWalker(w);
+      }
+      if (alive) survivors.push(w);
+    }
+    walkers = survivors;
+
+    simCtx.putImageData(imgData, 0, 0);
+    ctx.drawImage(simCanvas, 0, 0, canvas.width, canvas.height);
+
+    if (frozenCount >= MAX_FROZEN) {
+      state     = STATE_FADING;
+      fadeStart = now;
+    }
+  } else {
+    simCtx.putImageData(imgData, 0, 0);
+    ctx.drawImage(simCanvas, 0, 0, canvas.width, canvas.height);
+
+    const alpha = Math.min(1, (now - fadeStart) / FADE_MS);
+    ctx.fillStyle = `rgba(255,255,255,${alpha})`;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    // Once fully white, reset and grow a fresh crystal.
+    if (alpha >= 1) init();
+  }
+}
+
+window.addEventListener('resize', init);
+window.addEventListener('click',  init);
+
+init();
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>
