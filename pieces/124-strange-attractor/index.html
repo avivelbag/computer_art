@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Strange Attractor: A Basin with No Bottom</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#0d0820;overflow:hidden;display:flex;align-items:center;justify-content:center;width:100vw;height:100vh}
+canvas{display:block;width:min(100vw,100vh);height:min(100vw,100vh)}
+</style>
+</head>
+<body>
+<canvas id="c" width="800" height="800"></canvas>
+<script>(function(){
+'use strict';
+const SZ=800;
+const A=-1.4,B=1.6,C=1.0,D=0.7;
+const TOTAL=5_000_000;
+const BATCH=10_000;
+const RESET_MS=60_000;
+const COORD_MIN=-2.5,COORD_RANGE=5.0;
+// deep-space violet background: rgb(13, 8, 32)
+const BG_R=13,BG_G=8,BG_B=32;
+// per-hit additive increment (≈1.6% alpha per hit)
+const INC=4;
+
+const canvas=document.getElementById('c');
+const ctx=canvas.getContext('2d');
+const img=ctx.createImageData(SZ,SZ);
+const buf=img.data;
+
+let x=0.1,y=0.1,count=0,startTime=Date.now();
+
+function clearBuf(){
+  for(let i=0;i<buf.length;i+=4){buf[i]=BG_R;buf[i+1]=BG_G;buf[i+2]=BG_B;buf[i+3]=255;}
+}
+
+function warmUp(){
+  // discard first 500 iterates so we start on the attractor
+  for(let i=0;i<500;i++){
+    const nx=Math.sin(A*y)+C*Math.cos(A*x);
+    const ny=Math.sin(B*x)+D*Math.cos(B*y);
+    x=nx;y=ny;
+  }
+}
+
+function reset(){
+  clearBuf();
+  ctx.putImageData(img,0,0);
+  x=0.1;y=0.1;count=0;
+  startTime=Date.now();
+  warmUp();
+}
+
+function frame(){
+  if(Date.now()-startTime>=RESET_MS)reset();
+
+  const end=Math.min(count+BATCH,TOTAL);
+  while(count<end){
+    const nx=Math.sin(A*y)+C*Math.cos(A*x);
+    const ny=Math.sin(B*x)+D*Math.cos(B*y);
+    x=nx;y=ny;
+
+    const px=(x-COORD_MIN)/COORD_RANGE*SZ|0;
+    const py=(y-COORD_MIN)/COORD_RANGE*SZ|0;
+    if(px>=0&&px<SZ&&py>=0&&py<SZ){
+      // map y-value to violet(100,0,200) → sky(0,150,255) → gold(255,210,0)
+      const t=Math.max(0,Math.min(1,(y-COORD_MIN)/COORD_RANGE));
+      let r,g,b;
+      if(t<0.5){
+        const u=t*2;
+        r=(100-100*u)|0;
+        g=(150*u)|0;
+        b=(200+55*u)|0;
+      }else{
+        const u=(t-0.5)*2;
+        r=(255*u)|0;
+        g=(150+60*u)|0;
+        b=(255-255*u)|0;
+      }
+      const idx=(py*SZ+px)<<2;
+      buf[idx  ]=Math.min(255,buf[idx  ]+(INC*r>>8)+1);
+      buf[idx+1]=Math.min(255,buf[idx+1]+(INC*g>>8)+1);
+      buf[idx+2]=Math.min(255,buf[idx+2]+(INC*b>>8)+1);
+    }
+    count++;
+  }
+  ctx.putImageData(img,0,0);
+  if(count>=TOTAL)count=0;
+  requestAnimationFrame(frame);
+}
+
+reset();
+requestAnimationFrame(frame);
+})();</script>
+</body>
+</html>
