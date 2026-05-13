@@ -1,0 +1,3 @@
+# Piece 127 — Voronoi Mosaic: Scattered Light
+
+A Voronoi diagram partitions the plane by assigning every point to its nearest seed; here 200 seeds are coloured from a hand-curated 12-tone jewel palette (sapphire, ruby, amber, jade, amethyst, deep teal, topaz, aquamarine, rose, emerald, gold, cobalt) and their cell boundaries drawn as thin near-black strokes for a stained-glass lead-came effect. The piece **animates**: each seed drifts on an independent sinusoidal path so the mosaic morphs slowly in a tectonic-plate motion at 20 fps, computed frame-by-frame by a distance-field scanline algorithm accelerated with a 40×40-pixel spatial grid that reduces per-pixel nearest-seed lookup to O(1) average cost.

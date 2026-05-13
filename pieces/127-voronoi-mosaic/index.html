@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Voronoi Mosaic: Scattered Light</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#0c0c14;overflow:hidden;display:flex;align-items:center;justify-content:center;width:100vw;height:100vh}
+canvas{display:block;width:min(100vw,100vh);height:min(100vw,100vh)}
+</style>
+</head>
+<body>
+<canvas id="c" width="800" height="800"></canvas>
+<script>(function(){
+'use strict';
+
+const W=800,H=800,N=200;
+
+// Spatial grid: 20×20 buckets of 40×40 pixels each
+const BCELL=40,BCOLS=W/BCELL,BROWS=H/BCELL;
+
+// 20 fps cap — enough to show the slow tectonic drift without burning CPU
+const FPS=20,FRAME_MS=1000/FPS;
+
+// Hand-curated 12-tone stained-glass jewel palette
+const PALETTE=[
+  [0x0F,0x52,0xBA], // sapphire
+  [0x9B,0x11,0x1E], // ruby
+  [0xD2,0x8C,0x00], // amber
+  [0x00,0x78,0x50], // jade
+  [0x6E,0x3C,0xAA], // amethyst
+  [0x00,0x64,0x78], // deep teal
+  [0xC8,0x50,0x14], // topaz
+  [0x1E,0x82,0x6E], // aquamarine
+  [0xBE,0x14,0x5A], // rose
+  [0x32,0xA0,0x5A], // emerald
+  [0xB4,0xA5,0x00], // gold
+  [0x14,0x32,0x9B], // cobalt
+];
+
+// Border: near-black charcoal for a lead-came stained-glass effect
+const BORDER=[0x14,0x14,0x1C];
+
+// Seed drift: sinusoidal motion — amplitude kept inside [MAX_AMP, W-MAX_AMP]
+// so seeds never leave the canvas
+const MAX_AMP=80;
+const basX=new Float32Array(N),basY=new Float32Array(N);
+const ampX=new Float32Array(N),ampY=new Float32Array(N);
+const frqX=new Float32Array(N),frqY=new Float32Array(N);
+const phX =new Float32Array(N),phY =new Float32Array(N);
+const curX=new Float32Array(N),curY=new Float32Array(N);
+const cIdx=new Uint8Array(N);
+
+for(let i=0;i<N;i++){
+  basX[i]=MAX_AMP+Math.random()*(W-2*MAX_AMP);
+  basY[i]=MAX_AMP+Math.random()*(H-2*MAX_AMP);
+  ampX[i]=20+Math.random()*60;
+  ampY[i]=20+Math.random()*60;
+  frqX[i]=0.0002+Math.random()*0.0003;
+  frqY[i]=0.0002+Math.random()*0.0003;
+  phX[i]=Math.random()*Math.PI*2;
+  phY[i]=Math.random()*Math.PI*2;
+  curX[i]=basX[i];
+  curY[i]=basY[i];
+  cIdx[i]=i%PALETTE.length;
+}
+
+const canvas=document.getElementById('c');
+const ctx=canvas.getContext('2d');
+const img=ctx.createImageData(W,H);
+const buf=img.data;
+const nearest=new Int32Array(W*H);
+
+// Pre-allocate bucket lists; cleared and refilled each frame
+const NBUCKETS=BCOLS*BROWS;
+const buckets=[];
+for(let i=0;i<NBUCKETS;i++) buckets.push([]);
+
+function buildGrid(){
+  for(let i=0;i<NBUCKETS;i++) buckets[i].length=0;
+  for(let i=0;i<N;i++){
+    const bx=Math.max(0,Math.min(BCOLS-1,curX[i]/BCELL|0));
+    const by=Math.max(0,Math.min(BROWS-1,curY[i]/BCELL|0));
+    buckets[by*BCOLS+bx].push(i);
+  }
+}
+
+// Distance-field Voronoi: for each pixel find nearest seed via a ±2-bucket
+// neighborhood search (covers ±80 px, safely beyond the mean gap for 200 seeds)
+function computeVoronoi(){
+  for(let py=0;py<H;py++){
+    const gby=py/BCELL|0;
+    const y0=gby-2<0?0:gby-2, y1=gby+2>=BROWS?BROWS-1:gby+2;
+    for(let px=0;px<W;px++){
+      const gbx=px/BCELL|0;
+      const x0=gbx-2<0?0:gbx-2, x1=gbx+2>=BCOLS?BCOLS-1:gbx+2;
+      let minD=1e18,minI=0;
+      for(let by=y0;by<=y1;by++){
+        for(let bx=x0;bx<=x1;bx++){
+          const buck=buckets[by*BCOLS+bx];
+          for(let k=0;k<buck.length;k++){
+            const si=buck[k];
+            const dx=px-curX[si],dy=py-curY[si];
+            const d=dx*dx+dy*dy;
+            if(d<minD){minD=d;minI=si;}
+          }
+        }
+      }
+      nearest[py*W+px]=minI;
+    }
+  }
+}
+
+function buildImage(){
+  for(let py=0;py<H;py++){
+    for(let px=0;px<W;px++){
+      const idx=py*W+px;
+      const si=nearest[idx];
+      const isBorder=(
+        (px>0   &&nearest[idx-1]!==si)||
+        (px<W-1 &&nearest[idx+1]!==si)||
+        (py>0   &&nearest[idx-W]!==si)||
+        (py<H-1 &&nearest[idx+W]!==si)
+      );
+      const p4=idx<<2;
+      if(isBorder){
+        buf[p4]=BORDER[0];buf[p4+1]=BORDER[1];buf[p4+2]=BORDER[2];
+      }else{
+        const col=PALETTE[cIdx[si]];
+        buf[p4]=col[0];buf[p4+1]=col[1];buf[p4+2]=col[2];
+      }
+      buf[p4+3]=255;
+    }
+  }
+}
+
+let lastT=0;
+function frame(now){
+  requestAnimationFrame(frame);
+  if(now-lastT<FRAME_MS) return;
+  lastT=now;
+  for(let i=0;i<N;i++){
+    curX[i]=basX[i]+ampX[i]*Math.sin(frqX[i]*now+phX[i]);
+    curY[i]=basY[i]+ampY[i]*Math.sin(frqY[i]*now+phY[i]);
+  }
+  buildGrid();
+  computeVoronoi();
+  buildImage();
+  ctx.putImageData(img,0,0);
+}
+
+requestAnimationFrame(frame);
+})();</script>
+</body>
+</html>
