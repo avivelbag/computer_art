@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>The Signal Disagrees With Itself</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { background: #0a0a0a; display: flex; align-items: center; justify-content: center; height: 100vh; overflow: hidden; }
+    canvas { display: block; image-rendering: pixelated; }
+  </style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<script>
+const W = 600, H = 600;
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+canvas.width = W;
+canvas.height = H;
+
+// Bold palette: 6 saturated colors for the base image
+const COLORS = ['#e63946', '#457b9d', '#f4a261', '#2a9d8f', '#e9c46a', '#264653'];
+
+// Offscreen canvas holds the stable base image, redrawn only on resize.
+const offscreen = document.createElement('canvas');
+offscreen.width = W;
+offscreen.height = H;
+const octx = offscreen.getContext('2d');
+
+/**
+ * Draw the base geometric image: concentric rectangles in alternating colors.
+ * Uses 10 rings so each color appears and the center is solid.
+ * This image is intentionally bold and readable so glitch corruption stays legible.
+ */
+function drawBase() {
+  octx.fillStyle = '#0a0a0a';
+  octx.fillRect(0, 0, W, H);
+  const rings = 10;
+  for (let i = 0; i <= rings; i++) {
+    const margin = (i / rings) * (Math.min(W, H) * 0.48);
+    const x = margin;
+    const y = margin;
+    const w = W - 2 * margin;
+    const h = H - 2 * margin;
+    octx.fillStyle = COLORS[i % COLORS.length];
+    octx.fillRect(x, y, w, h);
+  }
+  // Horizontal stripe overlay for extra scanline contrast
+  for (let y = 0; y < H; y += 24) {
+    octx.fillStyle = 'rgba(0,0,0,0.25)';
+    octx.fillRect(0, y, W, 8);
+  }
+}
+
+drawBase();
+
+/**
+ * Return a random integer in [lo, hi) using Math.random().
+ */
+function randInt(lo, hi) {
+  return lo + Math.floor(Math.random() * (hi - lo));
+}
+
+// Reusable ImageData buffers for the glitch pass.
+let srcData = null;
+let dstData = null;
+
+/**
+ * Apply three glitch techniques to the canvas in-place:
+ *   1. Scanline row displacement — each row is independently shifted
+ *      horizontally by a random amount that scales with glitchIntensity.
+ *   2. RGB channel split (chromatic aberration) — the red channel is
+ *      sampled with an additional +dx horizontal offset, blue with -dx.
+ *   3. Block copy — with low probability proportional to glitchIntensity,
+ *      a horizontal strip of rows is copied from a random source row to a
+ *      random destination row, simulating a corrupt memory block read.
+ *
+ * @param {number} intensity  value in [0, 1]; 0 = clean, 1 = maximum glitch
+ */
+function applyGlitch(intensity) {
+  // Draw clean base first
+  ctx.drawImage(offscreen, 0, 0);
+
+  if (intensity < 0.01) return; // skip pixel work when nearly calm
+
+  if (!srcData) {
+    srcData = ctx.createImageData(W, H);
+    dstData = ctx.createImageData(W, H);
+  }
+
+  const raw = ctx.getImageData(0, 0, W, H);
+  const src = raw.data;
+  const dst = dstData.data;
+
+  // Pre-compute per-row horizontal displacements for scanline shift.
+  // Only ~10 % of rows get a non-zero offset to preserve legibility.
+  const rowOffsets = new Int32Array(H);
+  const maxShift = Math.round(intensity * 80);
+  for (let y = 0; y < H; y++) {
+    if (Math.random() < 0.10 * intensity) {
+      rowOffsets[y] = randInt(-maxShift, maxShift + 1);
+    }
+  }
+
+  // Channel separation offset: red shifts right, blue shifts left.
+  const chromaShift = Math.round(intensity * 18);
+
+  // --- combine scanline shift + chromatic aberration ---
+  for (let y = 0; y < H; y++) {
+    const rowShift = rowOffsets[y];
+    for (let x = 0; x < W; x++) {
+      const dstIdx = (y * W + x) * 4;
+
+      // Red channel: sample at x - chromaShift - rowShift
+      const rxR = x - chromaShift - rowShift;
+      const clampedRx = Math.max(0, Math.min(W - 1, rxR));
+      const srcIdxR = (y * W + clampedRx) * 4;
+
+      // Green channel: sample at x - rowShift only
+      const gx = x - rowShift;
+      const clampedGx = Math.max(0, Math.min(W - 1, gx));
+      const srcIdxG = (y * W + clampedGx) * 4;
+
+      // Blue channel: sample at x + chromaShift - rowShift
+      const bx = x + chromaShift - rowShift;
+      const clampedBx = Math.max(0, Math.min(W - 1, bx));
+      const srcIdxB = (y * W + clampedBx) * 4;
+
+      dst[dstIdx]     = src[srcIdxR];     // R
+      dst[dstIdx + 1] = src[srcIdxG + 1]; // G
+      dst[dstIdx + 2] = src[srcIdxB + 2]; // B
+      dst[dstIdx + 3] = 255;
+    }
+  }
+
+  // --- block copy: paste a horizontal strip to a random destination ---
+  // Probability scales linearly so block copies are occasional even at peak intensity.
+  if (Math.random() < 0.05 * intensity) {
+    const srcRow  = randInt(0, H);
+    const destRow = randInt(0, H);
+    const stripH  = randInt(2, 20);
+    for (let dy = 0; dy < stripH; dy++) {
+      const sy = Math.min(srcRow  + dy, H - 1);
+      const ry = Math.min(destRow + dy, H - 1);
+      const srcOff = sy * W * 4;
+      const dstOff = ry * W * 4;
+      for (let bx = 0; bx < W * 4; bx++) {
+        dst[dstOff + bx] = src[srcOff + bx];
+      }
+    }
+  }
+
+  ctx.putImageData(dstData, 0, 0);
+}
+
+/**
+ * Main animation loop.
+ * Pulse period is 7 seconds. glitchIntensity follows sin³ so it eases in
+ * and out slowly — structure is always visible near the cycle boundaries.
+ */
+function frame() {
+  const phase = (Date.now() % 7000) / 7000;
+  // sin³ gives a slow ramp in, peak near phase=0.5, slow ramp out.
+  const intensity = Math.pow(Math.sin(phase * Math.PI), 3);
+  applyGlitch(intensity);
+  requestAnimationFrame(frame);
+}
+
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>

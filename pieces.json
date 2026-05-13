@@ -259,5 +259,14 @@
     "technique": "canvas / Truchet tiles / Smith quarter-circle arc variant / crossfade animation",
     "path": "pieces/65-truchet-tiles",
     "thumbnail": "pieces/65-truchet-tiles/thumbnail.svg"
+  },
+  {
+    "id": "70-signal-disagrees",
+    "title": "The Signal Disagrees With Itself",
+    "tagline": "Concentric rectangles in six saturated colors pulse through three glitch techniques — scanline displacement, RGB channel split, and block copy — building from calm geometry to chromatic chaos on a 7-second cycle",
+    "year": 2026,
+    "technique": "canvas / ImageData / glitch art / scanline displacement / chromatic aberration / block copy",
+    "path": "pieces/70-signal-disagrees",
+    "thumbnail": "pieces/70-signal-disagrees/thumbnail.png"
   }
 ]
