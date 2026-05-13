@@ -430,5 +430,14 @@
     "technique": "Boids / Particle System",
     "path": "pieces/113-boids-flocking",
     "thumbnail": "pieces/113-boids-flocking/thumbnail.svg"
+  },
+  {
+    "id": "115-the-field-remembers",
+    "title": "The Field Remembers",
+    "tagline": "4 000 particles follow a slowly-evolving simplex-noise vector field, leaving near-invisible ink trails in navy, rust, and sage on cream — building dense layered compositions before the canvas resets every 600 frames",
+    "year": 2026,
+    "technique": "canvas / flow field / Perlin noise / particle trails",
+    "path": "pieces/115-the-field-remembers",
+    "thumbnail": "pieces/115-the-field-remembers/thumbnail.png"
   }
 ]
