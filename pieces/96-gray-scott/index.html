@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mitosis in Amber — Gray-Scott Reaction Diffusion</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: #0a0800;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      overflow: hidden;
+    }
+    canvas {
+      display: block;
+      width: 100vmin;
+      height: 100vmin;
+      image-rendering: pixelated;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="canvas" width="512" height="512"></canvas>
+  <script>
+    const W = 512;
+    const H = 512;
+    const SIZE = W * H;
+
+    const F  = 0.0545;
+    const K  = 0.062;
+    const DU = 0.2097;
+    const DV = 0.105;
+
+    const STEPS_PER_FRAME = 8;
+    const DELTA_CAP_MS    = 50;
+
+    // 3-stop palette: near-black → warm amber → ivory
+    const PALETTE = [
+      [ 10,   8,   0],   // near-black  #0a0800
+      [200, 120,  10],   // warm amber  #c8780a
+      [245, 230, 195],   // ivory       #f5e6c3
+    ];
+
+    const canvas = document.getElementById('canvas');
+    const ctx    = canvas.getContext('2d');
+    ctx.imageSmoothingEnabled = false;
+
+    const imgData = ctx.createImageData(W, H);
+    const pixels  = imgData.data;
+
+    let u     = new Float32Array(SIZE);
+    let v     = new Float32Array(SIZE);
+    let uNext = new Float32Array(SIZE);
+    let vNext = new Float32Array(SIZE);
+
+    u.fill(1.0);
+
+    // Seed a small noisy rectangle at the center; random perturbation breaks symmetry
+    const SEED_HALF = 12;
+    for (let sy = H / 2 - SEED_HALF; sy < H / 2 + SEED_HALF; sy++) {
+      for (let sx = W / 2 - SEED_HALF; sx < W / 2 + SEED_HALF; sx++) {
+        const i = sy * W + sx;
+        u[i] = 0.50 + 0.05 * (Math.random() - 0.5);
+        v[i] = 0.25 + 0.05 * (Math.random() - 0.5);
+      }
+    }
+
+    /**
+     * Advance the Gray-Scott system one discrete step using a 5-point
+     * finite-difference Laplacian on a toroidal (wrap-around) grid.
+     *
+     * Governing equations:
+     *   dU/dt = Du·∇²U  −  U·V²  +  F·(1−U)
+     *   dV/dt = Dv·∇²V  +  U·V²  −  (F+K)·V
+     *
+     * At F=0.0545, K=0.062 the system produces coral/mitosis Turing patterns.
+     * Results are written into uNext/vNext then swapped to become current state.
+     */
+    function step() {
+      for (let y = 0; y < H; y++) {
+        const yRow = y * W;
+        const yN   = (y === 0     ? H - 1 : y - 1) * W;
+        const yS   = (y === H - 1 ? 0     : y + 1) * W;
+
+        for (let x = 0; x < W; x++) {
+          const i  = yRow + x;
+          const xW = x === 0     ? W - 1 : x - 1;
+          const xE = x === W - 1 ? 0     : x + 1;
+
+          const cu = u[i];
+          const cv = v[i];
+
+          const lapU = u[yRow + xW] + u[yRow + xE] + u[yN + x] + u[yS + x] - 4.0 * cu;
+          const lapV = v[yRow + xW] + v[yRow + xE] + v[yN + x] + v[yS + x] - 4.0 * cv;
+          const uvv  = cu * cv * cv;
+
+          uNext[i] = cu + DU * lapU - uvv + F * (1.0 - cu);
+          vNext[i] = cv + DV * lapV + uvv - (F + K) * cv;
+        }
+      }
+      let tmp = u; u = uNext; uNext = tmp;
+          tmp = v; v = vNext; vNext = tmp;
+    }
+
+    /**
+     * Map each pixel's V concentration to an RGB colour via a 3-stop linear
+     * palette lerp and write the result into the shared ImageData buffer.
+     *
+     * V ∈ [0, 0.5) → near-black to warm amber
+     * V ∈ [0.5, 1] → warm amber to ivory
+     */
+    function draw() {
+      const p0r = PALETTE[0][0], p0g = PALETTE[0][1], p0b = PALETTE[0][2];
+      const p1r = PALETTE[1][0], p1g = PALETTE[1][1], p1b = PALETTE[1][2];
+      const p2r = PALETTE[2][0], p2g = PALETTE[2][1], p2b = PALETTE[2][2];
+      const dr01 = p1r - p0r, dg01 = p1g - p0g, db01 = p1b - p0b;
+      const dr12 = p2r - p1r, dg12 = p2g - p1g, db12 = p2b - p1b;
+
+      for (let i = 0; i < SIZE; i++) {
+        const t  = v[i];
+        const p4 = i << 2;
+
+        if (t < 0.5) {
+          const s = t * 2.0;
+          pixels[p4]     = (p0r + s * dr01) | 0;
+          pixels[p4 + 1] = (p0g + s * dg01) | 0;
+          pixels[p4 + 2] = (p0b + s * db01) | 0;
+        } else {
+          const s = (t - 0.5) * 2.0;
+          pixels[p4]     = (p1r + s * dr12) | 0;
+          pixels[p4 + 1] = (p1g + s * dg12) | 0;
+          pixels[p4 + 2] = (p1b + s * db12) | 0;
+        }
+        pixels[p4 + 3] = 255;
+      }
+      ctx.putImageData(imgData, 0, 0);
+    }
+
+    let lastTime = 0;
+
+    function loop(now) {
+      // Cap delta so a backgrounded tab does not cause a burst of simulation steps on resume
+      const delta = Math.min(now - lastTime, DELTA_CAP_MS);
+      lastTime = now;
+      if (delta > 0) {
+        for (let s = 0; s < STEPS_PER_FRAME; s++) step();
+        draw();
+      }
+      requestAnimationFrame(loop);
+    }
+
+    requestAnimationFrame(loop);
+  </script>
+</body>
+</html>
