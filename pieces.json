@@ -340,5 +340,14 @@
     "technique": "canvas / phyllotaxis / golden angle / Fermat spiral / morphing animation / requestAnimationFrame",
     "path": "pieces/87-phyllotaxis",
     "thumbnail": "pieces/87-phyllotaxis/thumbnail.svg"
+  },
+  {
+    "id": "90-sandpile",
+    "title": "The Grain That Broke the Symmetry",
+    "tagline": "65 536 grains dropped at the center of a 401×401 grid topple outward until stable — self-organized criticality draws a fractal with exact 4-fold symmetry from a single rule, rendered cell-by-cell via ImageData",
+    "year": 2026,
+    "technique": "canvas / abelian sandpile / self-organized criticality / ImageData",
+    "path": "pieces/90-sandpile",
+    "thumbnail": "pieces/90-sandpile/thumbnail.svg"
   }
 ]
