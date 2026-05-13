@@ -1,272 +1,272 @@
 [
-    {
-        "id": "01-amber-current",
-        "title": "Amber Current",
-        "tagline": "600 particles drift through a Perlin-noise flow field in warm amber light",
-        "year": 2026,
-        "technique": "canvas / perlin noise",
-        "path": "pieces/01-amber-current",
-        "thumbnail": "pieces/01-amber-current/thumbnail.svg"
-    },
-    {
-        "id": "03-still-oscillating",
-        "title": "Still Oscillating",
-        "tagline": "Dual-pendulum harmonograph traces decaying Lissajous curves in violet light",
-        "year": 2026,
-        "technique": "canvas / harmonograph / parametric equations",
-        "path": "pieces/03-still-oscillating",
-        "thumbnail": "pieces/03-still-oscillating/thumbnail.svg"
-    },
-    {
-        "id": "04-between-the-tiles",
-        "title": "Between the Tiles",
-        "tagline": "A binary Truchet grid slowly ripples as random tiles flip orientation forever",
-        "year": 2026,
-        "technique": "canvas / truchet tiles / quarter-circle arcs",
-        "path": "pieces/04-between-the-tiles",
-        "thumbnail": "pieces/04-between-the-tiles/thumbnail.svg"
-    },
-    {
-        "id": "07-every-seed-knows",
-        "title": "Every Seed Knows",
-        "tagline": "~800 seeds spiral outward via the golden angle; a static botanical SVG with zero JavaScript",
-        "year": 2026,
-        "technique": "SVG / phyllotaxis / golden angle",
-        "path": "pieces/07-every-seed-knows",
-        "thumbnail": "pieces/07-every-seed-knows/thumbnail.svg"
-    },
-    {
-        "id": "10-the-room-divides-itself",
-        "title": "The Room Divides Itself",
-        "tagline": "A square canvas recursively subdivided by a seeded random process — architectural yet organic",
-        "year": 2026,
-        "technique": "SVG / recursive quadtree subdivision",
-        "path": "pieces/10-the-room-divides-itself",
-        "thumbnail": "pieces/10-the-room-divides-itself/thumbnail.svg"
-    },
-    {
-        "id": "15-the-surface-speaks",
-        "title": "The Surface Speaks",
-        "tagline": "A rippling sine–cosine surface sampled onto an 80×40 ASCII grid — amber phosphor on deep navy",
-        "year": 2026,
-        "technique": "HTML pre / ASCII art / sine-cosine product surface",
-        "path": "pieces/15-the-surface-speaks",
-        "thumbnail": "pieces/15-the-surface-speaks/thumbnail.svg"
-    },
-    {
-        "id": "16-light-through-cells",
-        "title": "Light Through Cells",
-        "tagline": "25 drifting Voronoi seeds painted in warm amber and teal — a stained-glass window that never settles",
-        "year": 2026,
-        "technique": "canvas / Voronoi diagram / brute-force pixel coloring",
-        "path": "pieces/16-light-through-cells",
-        "thumbnail": "pieces/16-light-through-cells/thumbnail.svg"
-    },
-    {
-        "id": "17-where-life-begins",
-        "title": "Where Life Begins",
-        "tagline": "Gray-Scott reaction-diffusion grows coral Turing patterns from a single seed — charcoal becomes cream",
-        "year": 2026,
-        "technique": "canvas / reaction-diffusion / Gray-Scott",
-        "path": "pieces/17-where-life-begins",
-        "thumbnail": "pieces/17-where-life-begins/thumbnail.svg"
-    },
-    {
-        "id": "21-frequencies-in-common",
-        "title": "Frequencies in Common",
-        "tagline": "56 Lissajous curves — 14 frequency ratios × 4 phase offsets — woven in near-black navy on warm cream",
-        "year": 2026,
-        "technique": "SVG / Lissajous curves / parametric / pen-plotter",
-        "path": "pieces/21-frequencies-in-common",
-        "thumbnail": "pieces/21-frequencies-in-common/thumbnail.svg"
-    },
-    {
-        "id": "22-dot-by-dot",
-        "title": "Dot by Dot the Light Falls",
-        "tagline": "A 60×60 halftone grid maps a damped radial ripple to dot radii — fluorescent coral on cream, slowly expanding",
-        "year": 2026,
-        "technique": "canvas / halftone grid / damped radial ripple / risograph",
-        "path": "pieces/22-dot-by-dot",
-        "thumbnail": "pieces/22-dot-by-dot/thumbnail.svg"
-    },
-    {
-        "id": "24-lsystem-botanical",
-        "title": "The Plant That Writes Itself",
-        "tagline": "A fractal fern grown by a context-free rewriting rule — 1,995 branches appear one by one over 4 seconds, then the plant fades and regrows",
-        "year": 2026,
-        "technique": "canvas / L-system / turtle graphics",
-        "path": "pieces/24-lsystem-botanical",
-        "thumbnail": "pieces/24-lsystem-botanical/thumbnail.svg"
-    },
-    {
-        "id": "28-the-shape-of-distance",
-        "title": "The Shape of Distance",
-        "tagline": "A WebGL ray-marcher sphere-traces signed-distance fields — torus and sphere blend in warm gold, casting soft shadows and reflected light, driven by pure math",
-        "year": 2026,
-        "technique": "WebGL / SDF ray marching / GLSL fragment shader",
-        "path": "pieces/28-the-shape-of-distance",
-        "thumbnail": "pieces/28-the-shape-of-distance/thumbnail.svg"
-    },
-    {
-        "id": "31-letters-in-motion",
-        "title": "Letters in Motion",
-        "tagline": "The word DRIFT rasterised into ~3 000 particles that assemble, hold, then scatter and fade in a seamless loop — generative typography via canvas pixel-sampling",
-        "year": 2026,
-        "technique": "canvas / generative typography / particle system",
-        "path": "pieces/31-letters-in-motion",
-        "thumbnail": "pieces/31-letters-in-motion/thumbnail.svg"
-    },
-    {
-        "id": "35-two-truths-overlapping",
-        "title": "Two Truths Overlapping",
-        "tagline": "Two families of concentric rings evaluated per-pixel beat against each other — a moiré interference field that breathes and rotates in a seamless 25-second cycle",
-        "year": 2026,
-        "technique": "canvas / ImageData / moiré interference / per-pixel sinusoidal evaluation",
-        "path": "pieces/35-two-truths-overlapping",
-        "thumbnail": "pieces/35-two-truths-overlapping/thumbnail.svg"
-    },
-    {
-        "id": "38-no-pattern-repeats",
-        "title": "No Pattern Repeats",
-        "tagline": "2,330 thick and thin rhombi grown from a ten-triangle sun by six generations of golden-ratio deflation — an aperiodic Penrose P3 tiling in deep indigo and warm amber",
-        "year": 2026,
-        "technique": "SVG / Penrose P3 tiling / substitution deflation",
-        "path": "pieces/38-no-pattern-repeats",
-        "thumbnail": "pieces/38-no-pattern-repeats/thumbnail.svg"
-    },
-    {
-        "id": "39-apollonian-gasket",
-        "title": "Circles All the Way Down",
-        "tagline": "376 circles packed by Descartes' theorem fill every interstice of an Apollonian gasket — deep teal outermost, warming through gold and coral to cream at the finest scale",
-        "year": 2026,
-        "technique": "SVG / Apollonian gasket / Descartes' Circle Theorem / Apollonian reflection",
-        "path": "pieces/39-apollonian-gasket",
-        "thumbnail": "pieces/39-apollonian-gasket/thumbnail.svg"
-    },
-    {
-        "id": "41-dust-of-the-infinite",
-        "title": "Dust of the Infinite",
-        "tagline": "2 million iterations of the Clifford strange attractor accumulate as fractal dust — amber filaments and rose peaks emerge from deterministic chaos on a near-black canvas",
-        "year": 2026,
-        "technique": "canvas / Clifford attractor / density accumulation / chunked setTimeout",
-        "path": "pieces/41-dust-of-the-infinite",
-        "thumbnail": "pieces/41-dust-of-the-infinite/thumbnail.svg"
-    },
-    {
-        "id": "42-circles-within-circles",
-        "title": "Circles Within Circles",
-        "tagline": "50 rotating epicycles, each spinning at an integer multiple of the base frequency, chain together to trace a glowing heart — Fourier decomposition made visible",
-        "year": 2026,
-        "technique": "canvas / Fourier epicycles / DFT / requestAnimationFrame",
-        "path": "pieces/42-circles-within-circles",
-        "thumbnail": "pieces/42-circles-within-circles/thumbnail.svg"
-    },
-    {
-        "id": "46-superformula-bloom",
-        "title": "Superformula Bloom",
-        "tagline": "The Gielis superformula morphs through six natural archetypes — flower, star, snowflake, leaf — in a seamless 30-second botanical loop",
-        "year": 2026,
-        "technique": "canvas / Gielis superformula / parametric morphing / requestAnimationFrame",
-        "path": "pieces/46-superformula-bloom",
-        "thumbnail": "pieces/46-superformula-bloom/thumbnail.svg"
-    },
-    {
-        "id": "47-hilbert-curve",
-        "title": "Every Point, Once",
-        "tagline": "A Hilbert curve of order 6 threads 4,095 segments through a 64×64 grid — drawn stroke by stroke in copper on near-black, visiting every cell exactly once",
-        "year": 2026,
-        "technique": "canvas / Hilbert curve / space-filling / recursive subdivision",
-        "path": "pieces/47-hilbert-curve",
-        "thumbnail": "pieces/47-hilbert-curve/thumbnail.svg"
-    },
-    {
-        "id": "50-spirograph",
-        "title": "Closed and Infinite",
-        "tagline": "Six hypotrochoid presets draw themselves stroke by stroke — petals of 5, 7, 8, 9, 11, and 13 unfold one by one, each in a distinct palette, fading seamlessly into the next",
-        "year": 2026,
-        "technique": "canvas / hypotrochoid / roulette curve / parametric",
-        "path": "pieces/50-spirograph",
-        "thumbnail": "pieces/50-spirograph/thumbnail.svg"
-    },
-    {
-        "id": "51-julia-set",
-        "title": "Julia Set — Orbit-Trap Coloring",
-        "tagline": "Each pixel's orbit under z→z²+c is trap-coloured from deep indigo to amber to ivory — a jewel-like fractal that morphs in real time as c drifts along a slow closed path",
-        "year": 2026,
-        "technique": "WebGL / Julia set / orbit-trap coloring / GLSL fragment shader",
-        "path": "pieces/51-julia-set",
-        "thumbnail": "pieces/51-julia-set/thumbnail.svg"
-    },
-    {
-        "id": "55-the-pond-remembers",
-        "title": "The Pond Remembers Every Stone",
-        "tagline": "Five coherent wave sources drift on Lissajous orbits — their superposed wavefronts paint shifting indigo and amber interference fringes across a full-bleed canvas, pixel by pixel, at 60 fps",
-        "year": 2026,
-        "technique": "canvas / wave superposition / interference / ImageData per-pixel",
-        "path": "pieces/55-the-pond-remembers",
-        "thumbnail": "pieces/55-the-pond-remembers/thumbnail.svg"
-    },
-    {
-        "id": "56-brians-brain",
-        "title": "Brian's Brain: The Spark That Cannot Rest",
-        "tagline": "Three-state cellular automata — OFF, ON, DYING — generate glider swarms racing across a toroidal grid; electric teal sparks and violet trails on a near-black canvas at 25 fps",
-        "year": 2026,
-        "technique": "canvas / cellular automata / Brian's Brain / Uint8Array double-buffer",
-        "path": "pieces/56-brians-brain",
-        "thumbnail": "pieces/56-brians-brain/thumbnail.svg"
-    },
-    {
-        "id": "57-chladni-figures",
-        "title": "Chladni Figures — Standing Waves Made Visible",
-        "tagline": "Six standing-wave eigenmodes evaluated per pixel reveal glowing nodal lines on deep indigo — the sand patterns of a vibrating plate rendered in pure mathematics at 60 fps",
-        "year": 2026,
-        "technique": "canvas / Chladni eigenmodes / ImageData per-pixel / crossfade animation",
-        "path": "pieces/57-chladni-figures",
-        "thumbnail": "pieces/57-chladni-figures/thumbnail.svg"
-    },
-    {
-        "id": "59-string-art",
-        "title": "String Art — The Curve Lives Between the Lines",
-        "tagline": "300 chords connect numbered points on a circle; as the real-valued multiplier eases from 2 to 50 the envelope morphs through cardioid, nephroid, and stranger epicycloid families — dusty rose on near-black at 60 fps",
-        "year": 2026,
-        "technique": "canvas / string art / epicycloid envelopes / fractional modulo interpolation",
-        "path": "pieces/59-string-art",
-        "thumbnail": "pieces/59-string-art/thumbnail.svg"
-    },
-    {
-        "id": "63-rhodonea",
-        "title": "Rhodonea — The Petal Count Is Always a Surprise",
-        "tagline": "Three concentric rose curves r = cos(k·θ) morph continuously as k sweeps 1→6, doubling or halving petal count at each rational — gold on deep charcoal with motion-blur ghosting at 30 fps",
-        "year": 2026,
-        "technique": "canvas / rhodonea polar curves / rational k morphing / motion-blur ghosting",
-        "path": "pieces/63-rhodonea",
-        "thumbnail": "pieces/63-rhodonea/thumbnail.svg"
-    },
-    {
-        "id": "64-topographic-contours",
-        "title": "The Land Before Memory — Contours of a Dreamed Terrain",
-        "tagline": "A 3-D value-noise heightfield sampled at 120×90 evolves slowly over time; marching squares extracts 12 isolines in a geological palette — deep indigo sea floor to cream snowcap — with thicker index contours every 5th level at 60 fps",
-        "year": 2026,
-        "technique": "canvas / marching squares / 3-D value noise / fBm / topographic contours",
-        "path": "pieces/64-topographic-contours",
-        "thumbnail": "pieces/64-topographic-contours/thumbnail.svg"
-    },
-    {
-        "id": "65-truchet-tiles",
-        "title": "Every Corner Has a Choice",
-        "tagline": "A 30×30 grid of Smith-variant Truchet tiles — each cell a binary arc choice — slowly reshuffles every 4 seconds, tracing rivers and closed loops from memoryless randomness; ivory ground, deep indigo arcs",
-        "year": 2026,
-        "technique": "canvas / Truchet tiles / Smith quarter-circle arc variant / crossfade animation",
-        "path": "pieces/65-truchet-tiles",
-        "thumbnail": "pieces/65-truchet-tiles/thumbnail.svg"
-    },
-    {
-        "id": "70-signal-disagrees",
-        "title": "The Signal Disagrees With Itself",
-        "tagline": "Concentric rectangles in six saturated colors pulse through three glitch techniques — scanline displacement, RGB channel split, and block copy — building from calm geometry to chromatic chaos on a 7-second cycle",
-        "year": 2026,
-        "technique": "canvas / ImageData / glitch art / scanline displacement / chromatic aberration / block copy",
-        "path": "pieces/70-signal-disagrees",
-        "thumbnail": "pieces/70-signal-disagrees/thumbnail.png"
-    }
+  {
+    "id": "01-amber-current",
+    "title": "Amber Current",
+    "tagline": "600 particles drift through a Perlin-noise flow field in warm amber light",
+    "year": 2026,
+    "technique": "canvas / perlin noise",
+    "path": "pieces/01-amber-current",
+    "thumbnail": "pieces/01-amber-current/thumbnail.svg"
+  },
+  {
+    "id": "03-still-oscillating",
+    "title": "Still Oscillating",
+    "tagline": "Dual-pendulum harmonograph traces decaying Lissajous curves in violet light",
+    "year": 2026,
+    "technique": "canvas / harmonograph / parametric equations",
+    "path": "pieces/03-still-oscillating",
+    "thumbnail": "pieces/03-still-oscillating/thumbnail.svg"
+  },
+  {
+    "id": "04-between-the-tiles",
+    "title": "Between the Tiles",
+    "tagline": "A binary Truchet grid slowly ripples as random tiles flip orientation forever",
+    "year": 2026,
+    "technique": "canvas / truchet tiles / quarter-circle arcs",
+    "path": "pieces/04-between-the-tiles",
+    "thumbnail": "pieces/04-between-the-tiles/thumbnail.svg"
+  },
+  {
+    "id": "07-every-seed-knows",
+    "title": "Every Seed Knows",
+    "tagline": "~800 seeds spiral outward via the golden angle; a static botanical SVG with zero JavaScript",
+    "year": 2026,
+    "technique": "SVG / phyllotaxis / golden angle",
+    "path": "pieces/07-every-seed-knows",
+    "thumbnail": "pieces/07-every-seed-knows/thumbnail.svg"
+  },
+  {
+    "id": "10-the-room-divides-itself",
+    "title": "The Room Divides Itself",
+    "tagline": "A square canvas recursively subdivided by a seeded random process — architectural yet organic",
+    "year": 2026,
+    "technique": "SVG / recursive quadtree subdivision",
+    "path": "pieces/10-the-room-divides-itself",
+    "thumbnail": "pieces/10-the-room-divides-itself/thumbnail.svg"
+  },
+  {
+    "id": "15-the-surface-speaks",
+    "title": "The Surface Speaks",
+    "tagline": "A rippling sine–cosine surface sampled onto an 80×40 ASCII grid — amber phosphor on deep navy",
+    "year": 2026,
+    "technique": "HTML pre / ASCII art / sine-cosine product surface",
+    "path": "pieces/15-the-surface-speaks",
+    "thumbnail": "pieces/15-the-surface-speaks/thumbnail.svg"
+  },
+  {
+    "id": "16-light-through-cells",
+    "title": "Light Through Cells",
+    "tagline": "25 drifting Voronoi seeds painted in warm amber and teal — a stained-glass window that never settles",
+    "year": 2026,
+    "technique": "canvas / Voronoi diagram / brute-force pixel coloring",
+    "path": "pieces/16-light-through-cells",
+    "thumbnail": "pieces/16-light-through-cells/thumbnail.svg"
+  },
+  {
+    "id": "17-where-life-begins",
+    "title": "Where Life Begins",
+    "tagline": "Gray-Scott reaction-diffusion grows coral Turing patterns from a single seed — charcoal becomes cream",
+    "year": 2026,
+    "technique": "canvas / reaction-diffusion / Gray-Scott",
+    "path": "pieces/17-where-life-begins",
+    "thumbnail": "pieces/17-where-life-begins/thumbnail.svg"
+  },
+  {
+    "id": "21-frequencies-in-common",
+    "title": "Frequencies in Common",
+    "tagline": "56 Lissajous curves — 14 frequency ratios × 4 phase offsets — woven in near-black navy on warm cream",
+    "year": 2026,
+    "technique": "SVG / Lissajous curves / parametric / pen-plotter",
+    "path": "pieces/21-frequencies-in-common",
+    "thumbnail": "pieces/21-frequencies-in-common/thumbnail.svg"
+  },
+  {
+    "id": "22-dot-by-dot",
+    "title": "Dot by Dot the Light Falls",
+    "tagline": "A 60×60 halftone grid maps a damped radial ripple to dot radii — fluorescent coral on cream, slowly expanding",
+    "year": 2026,
+    "technique": "canvas / halftone grid / damped radial ripple / risograph",
+    "path": "pieces/22-dot-by-dot",
+    "thumbnail": "pieces/22-dot-by-dot/thumbnail.svg"
+  },
+  {
+    "id": "24-lsystem-botanical",
+    "title": "The Plant That Writes Itself",
+    "tagline": "A fractal fern grown by a context-free rewriting rule — 1,995 branches appear one by one over 4 seconds, then the plant fades and regrows",
+    "year": 2026,
+    "technique": "canvas / L-system / turtle graphics",
+    "path": "pieces/24-lsystem-botanical",
+    "thumbnail": "pieces/24-lsystem-botanical/thumbnail.svg"
+  },
+  {
+    "id": "28-the-shape-of-distance",
+    "title": "The Shape of Distance",
+    "tagline": "A WebGL ray-marcher sphere-traces signed-distance fields — torus and sphere blend in warm gold, casting soft shadows and reflected light, driven by pure math",
+    "year": 2026,
+    "technique": "WebGL / SDF ray marching / GLSL fragment shader",
+    "path": "pieces/28-the-shape-of-distance",
+    "thumbnail": "pieces/28-the-shape-of-distance/thumbnail.svg"
+  },
+  {
+    "id": "31-letters-in-motion",
+    "title": "Letters in Motion",
+    "tagline": "The word DRIFT rasterised into ~3 000 particles that assemble, hold, then scatter and fade in a seamless loop — generative typography via canvas pixel-sampling",
+    "year": 2026,
+    "technique": "canvas / generative typography / particle system",
+    "path": "pieces/31-letters-in-motion",
+    "thumbnail": "pieces/31-letters-in-motion/thumbnail.svg"
+  },
+  {
+    "id": "35-two-truths-overlapping",
+    "title": "Two Truths Overlapping",
+    "tagline": "Two families of concentric rings evaluated per-pixel beat against each other — a moiré interference field that breathes and rotates in a seamless 25-second cycle",
+    "year": 2026,
+    "technique": "canvas / ImageData / moiré interference / per-pixel sinusoidal evaluation",
+    "path": "pieces/35-two-truths-overlapping",
+    "thumbnail": "pieces/35-two-truths-overlapping/thumbnail.svg"
+  },
+  {
+    "id": "38-no-pattern-repeats",
+    "title": "No Pattern Repeats",
+    "tagline": "2,330 thick and thin rhombi grown from a ten-triangle sun by six generations of golden-ratio deflation — an aperiodic Penrose P3 tiling in deep indigo and warm amber",
+    "year": 2026,
+    "technique": "SVG / Penrose P3 tiling / substitution deflation",
+    "path": "pieces/38-no-pattern-repeats",
+    "thumbnail": "pieces/38-no-pattern-repeats/thumbnail.svg"
+  },
+  {
+    "id": "39-apollonian-gasket",
+    "title": "Circles All the Way Down",
+    "tagline": "376 circles packed by Descartes' theorem fill every interstice of an Apollonian gasket — deep teal outermost, warming through gold and coral to cream at the finest scale",
+    "year": 2026,
+    "technique": "SVG / Apollonian gasket / Descartes' Circle Theorem / Apollonian reflection",
+    "path": "pieces/39-apollonian-gasket",
+    "thumbnail": "pieces/39-apollonian-gasket/thumbnail.svg"
+  },
+  {
+    "id": "41-dust-of-the-infinite",
+    "title": "Dust of the Infinite",
+    "tagline": "2 million iterations of the Clifford strange attractor accumulate as fractal dust — amber filaments and rose peaks emerge from deterministic chaos on a near-black canvas",
+    "year": 2026,
+    "technique": "canvas / Clifford attractor / density accumulation / chunked setTimeout",
+    "path": "pieces/41-dust-of-the-infinite",
+    "thumbnail": "pieces/41-dust-of-the-infinite/thumbnail.svg"
+  },
+  {
+    "id": "42-circles-within-circles",
+    "title": "Circles Within Circles",
+    "tagline": "50 rotating epicycles, each spinning at an integer multiple of the base frequency, chain together to trace a glowing heart — Fourier decomposition made visible",
+    "year": 2026,
+    "technique": "canvas / Fourier epicycles / DFT / requestAnimationFrame",
+    "path": "pieces/42-circles-within-circles",
+    "thumbnail": "pieces/42-circles-within-circles/thumbnail.svg"
+  },
+  {
+    "id": "46-superformula-bloom",
+    "title": "Superformula Bloom",
+    "tagline": "The Gielis superformula morphs through six natural archetypes — flower, star, snowflake, leaf — in a seamless 30-second botanical loop",
+    "year": 2026,
+    "technique": "canvas / Gielis superformula / parametric morphing / requestAnimationFrame",
+    "path": "pieces/46-superformula-bloom",
+    "thumbnail": "pieces/46-superformula-bloom/thumbnail.svg"
+  },
+  {
+    "id": "47-hilbert-curve",
+    "title": "Every Point, Once",
+    "tagline": "A Hilbert curve of order 6 threads 4,095 segments through a 64×64 grid — drawn stroke by stroke in copper on near-black, visiting every cell exactly once",
+    "year": 2026,
+    "technique": "canvas / Hilbert curve / space-filling / recursive subdivision",
+    "path": "pieces/47-hilbert-curve",
+    "thumbnail": "pieces/47-hilbert-curve/thumbnail.svg"
+  },
+  {
+    "id": "50-spirograph",
+    "title": "Closed and Infinite",
+    "tagline": "Six hypotrochoid presets draw themselves stroke by stroke — petals of 5, 7, 8, 9, 11, and 13 unfold one by one, each in a distinct palette, fading seamlessly into the next",
+    "year": 2026,
+    "technique": "canvas / hypotrochoid / roulette curve / parametric",
+    "path": "pieces/50-spirograph",
+    "thumbnail": "pieces/50-spirograph/thumbnail.svg"
+  },
+  {
+    "id": "51-julia-set",
+    "title": "Julia Set — Orbit-Trap Coloring",
+    "tagline": "Each pixel's orbit under z→z²+c is trap-coloured from deep indigo to amber to ivory — a jewel-like fractal that morphs in real time as c drifts along a slow closed path",
+    "year": 2026,
+    "technique": "WebGL / Julia set / orbit-trap coloring / GLSL fragment shader",
+    "path": "pieces/51-julia-set",
+    "thumbnail": "pieces/51-julia-set/thumbnail.svg"
+  },
+  {
+    "id": "55-the-pond-remembers",
+    "title": "The Pond Remembers Every Stone",
+    "tagline": "Five coherent wave sources drift on Lissajous orbits — their superposed wavefronts paint shifting indigo and amber interference fringes across a full-bleed canvas, pixel by pixel, at 60 fps",
+    "year": 2026,
+    "technique": "canvas / wave superposition / interference / ImageData per-pixel",
+    "path": "pieces/55-the-pond-remembers",
+    "thumbnail": "pieces/55-the-pond-remembers/thumbnail.svg"
+  },
+  {
+    "id": "56-brians-brain",
+    "title": "Brian's Brain: The Spark That Cannot Rest",
+    "tagline": "Three-state cellular automata — OFF, ON, DYING — generate glider swarms racing across a toroidal grid; electric teal sparks and violet trails on a near-black canvas at 25 fps",
+    "year": 2026,
+    "technique": "canvas / cellular automata / Brian's Brain / Uint8Array double-buffer",
+    "path": "pieces/56-brians-brain",
+    "thumbnail": "pieces/56-brians-brain/thumbnail.svg"
+  },
+  {
+    "id": "57-chladni-figures",
+    "title": "Chladni Figures — Standing Waves Made Visible",
+    "tagline": "Six standing-wave eigenmodes evaluated per pixel reveal glowing nodal lines on deep indigo — the sand patterns of a vibrating plate rendered in pure mathematics at 60 fps",
+    "year": 2026,
+    "technique": "canvas / Chladni eigenmodes / ImageData per-pixel / crossfade animation",
+    "path": "pieces/57-chladni-figures",
+    "thumbnail": "pieces/57-chladni-figures/thumbnail.svg"
+  },
+  {
+    "id": "59-string-art",
+    "title": "String Art — The Curve Lives Between the Lines",
+    "tagline": "300 chords connect numbered points on a circle; as the real-valued multiplier eases from 2 to 50 the envelope morphs through cardioid, nephroid, and stranger epicycloid families — dusty rose on near-black at 60 fps",
+    "year": 2026,
+    "technique": "canvas / string art / epicycloid envelopes / fractional modulo interpolation",
+    "path": "pieces/59-string-art",
+    "thumbnail": "pieces/59-string-art/thumbnail.svg"
+  },
+  {
+    "id": "63-rhodonea",
+    "title": "Rhodonea — The Petal Count Is Always a Surprise",
+    "tagline": "Three concentric rose curves r = cos(k·θ) morph continuously as k sweeps 1→6, doubling or halving petal count at each rational — gold on deep charcoal with motion-blur ghosting at 30 fps",
+    "year": 2026,
+    "technique": "canvas / rhodonea polar curves / rational k morphing / motion-blur ghosting",
+    "path": "pieces/63-rhodonea",
+    "thumbnail": "pieces/63-rhodonea/thumbnail.svg"
+  },
+  {
+    "id": "64-topographic-contours",
+    "title": "The Land Before Memory — Contours of a Dreamed Terrain",
+    "tagline": "A 3-D value-noise heightfield sampled at 120×90 evolves slowly over time; marching squares extracts 12 isolines in a geological palette — deep indigo sea floor to cream snowcap — with thicker index contours every 5th level at 60 fps",
+    "year": 2026,
+    "technique": "canvas / marching squares / 3-D value noise / fBm / topographic contours",
+    "path": "pieces/64-topographic-contours",
+    "thumbnail": "pieces/64-topographic-contours/thumbnail.svg"
+  },
+  {
+    "id": "65-truchet-tiles",
+    "title": "Every Corner Has a Choice",
+    "tagline": "A 30×30 grid of Smith-variant Truchet tiles — each cell a binary arc choice — slowly reshuffles every 4 seconds, tracing rivers and closed loops from memoryless randomness; ivory ground, deep indigo arcs",
+    "year": 2026,
+    "technique": "canvas / Truchet tiles / Smith quarter-circle arc variant / crossfade animation",
+    "path": "pieces/65-truchet-tiles",
+    "thumbnail": "pieces/65-truchet-tiles/thumbnail.svg"
+  },
+  {
+    "id": "70-signal-disagrees",
+    "title": "The Signal Disagrees With Itself",
+    "tagline": "Concentric rectangles in six saturated colors pulse through three glitch techniques — scanline displacement, RGB channel split, and block copy — building from calm geometry to chromatic chaos on a 7-second cycle",
+    "year": 2026,
+    "technique": "canvas / ImageData / glitch art / scanline displacement / chromatic aberration / block copy",
+    "path": "pieces/70-signal-disagrees",
+    "thumbnail": "pieces/70-signal-disagrees/thumbnail.png"
+  }
 ]

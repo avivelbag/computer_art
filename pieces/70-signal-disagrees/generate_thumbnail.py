@@ -94,7 +94,6 @@ def apply_glitch(src: np.ndarray, intensity: float, seed: int = 42) -> np.ndarra
 
 
 def main():
-    rng = random.Random(42)
     base = draw_base(W, H)
     glitched = apply_glitch(base, INTENSITY, seed=42)
     Image.fromarray(glitched).save("thumbnail.png")

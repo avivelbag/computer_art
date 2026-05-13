@@ -30,7 +30,7 @@ const octx = offscreen.getContext('2d');
 
 /**
  * Draw the base geometric image: concentric rectangles in alternating colors.
- * Uses 8 rings so each color appears and the center is solid.
+ * Uses 10 rings so each color appears and the center is solid.
  * This image is intentionally bold and readable so glitch corruption stays legible.
  */
 function drawBase() {
@@ -135,8 +135,8 @@ function applyGlitch(intensity) {
   }
 
   // --- block copy: paste a horizontal strip to a random destination ---
-  // Probability scales quadratically so it's rare at low intensity.
-  if (Math.random() < 0.05 * intensity * intensity * 20) {
+  // Probability scales linearly so block copies are occasional even at peak intensity.
+  if (Math.random() < 0.05 * intensity) {
     const srcRow  = randInt(0, H);
     const destRow = randInt(0, H);
     const stripH  = randInt(2, 20);

@@ -13,7 +13,6 @@ import json
 import math
 import pathlib
 import importlib.util
-import sys
 
 import pytest
 
@@ -127,7 +126,6 @@ class TestGlitchLogic:
 
     def test_apply_glitch_zero_intensity_returns_same_shape(self, mod):
         """Zero intensity should still return an array of the same shape."""
-        import numpy as np
         base = mod.draw_base(400, 400)
         out = mod.apply_glitch(base, 0.0, seed=1)
         assert out.shape == base.shape
@@ -157,7 +155,6 @@ class TestGlitchLogic:
 
     def test_apply_glitch_output_in_valid_range(self, mod):
         """All pixel values must stay within [0, 255] (no overflow)."""
-        import numpy as np
         base = mod.draw_base(400, 400)
         out = mod.apply_glitch(base, 0.9, seed=13)
         assert out.min() >= 0 and out.max() <= 255
