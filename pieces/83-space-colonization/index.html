@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Vascular Branching — Space Colonization</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: #f8f4ec;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+    }
+    canvas { display: block; width: 100vmin; height: 100vmin; }
+  </style>
+</head>
+<body>
+  <canvas id="canvas" width="600" height="600"></canvas>
+  <script>
+    const W = 600, H = 600;
+    const BG = '#f8f4ec';
+    const STROKE_COLOR = '#c45e2a';
+
+    const NUM_ATTRACTORS   = 500;
+    const INFLUENCE_RADIUS = 100;
+    const KILL_DISTANCE    = 10;
+    const STEP_SIZE        = 5;
+    const MAX_DEPTH        = 22;
+
+    const CLOUD_CX = W / 2;
+    const CLOUD_CY = H * 0.38;
+    const CLOUD_RX = W * 0.36;
+    const CLOUD_RY = H * 0.42;
+
+    const ROOT_X = W / 2;
+    const ROOT_Y = H * 0.87;
+
+    const HOLD_MS          = 900;
+    const FADE_MS          = 700;
+    const TICKS_PER_FRAME  = 3;
+
+    let attractors = [];
+    let nodes      = [];
+    let pending    = [];
+    let phase      = 'growing';
+    let holdTimer  = 0;
+    let fadeAlpha  = 1;
+    let offscreen  = null;
+    let lastT      = null;
+
+    const canvas = document.getElementById('canvas');
+    const ctx    = canvas.getContext('2d');
+    ctx.lineCap  = 'round';
+
+    function strokeWidth(depth) {
+      return Math.max(0.5, 4 * (1 - depth / MAX_DEPTH));
+    }
+
+    function generateAttractors() {
+      const pts = [];
+      while (pts.length < NUM_ATTRACTORS) {
+        const dx = Math.random() * 2 - 1;
+        const dy = Math.random() * 2 - 1;
+        if (dx * dx + dy * dy <= 1) {
+          pts.push({ x: CLOUD_CX + dx * CLOUD_RX, y: CLOUD_CY + dy * CLOUD_RY, active: true });
+        }
+      }
+      return pts;
+    }
+
+    function initSim() {
+      attractors = generateAttractors();
+      nodes      = [{ x: ROOT_X, y: ROOT_Y, parent: -1, depth: 0 }];
+      pending    = [];
+      phase      = 'growing';
+      holdTimer  = 0;
+      fadeAlpha  = 1;
+      offscreen  = null;
+      ctx.globalAlpha = 1;
+      ctx.fillStyle   = BG;
+      ctx.fillRect(0, 0, W, H);
+    }
+
+    function tick() {
+      // For each attractor: find nearest node within influence radius
+      const nearestNode = new Int32Array(attractors.length).fill(-1);
+      const nearestDsq  = new Float64Array(attractors.length).fill(Infinity);
+
+      for (let ai = 0; ai < attractors.length; ai++) {
+        if (!attractors[ai].active) continue;
+        const ax = attractors[ai].x, ay = attractors[ai].y;
+        for (let ni = 0; ni < nodes.length; ni++) {
+          const dx = ax - nodes[ni].x, dy = ay - nodes[ni].y;
+          const dsq = dx * dx + dy * dy;
+          if (dsq < INFLUENCE_RADIUS * INFLUENCE_RADIUS && dsq < nearestDsq[ai]) {
+            nearestDsq[ai]  = dsq;
+            nearestNode[ai] = ni;
+          }
+        }
+      }
+
+      // For each node: accumulate average direction from its attracted attractors
+      const dirX   = new Float64Array(nodes.length);
+      const dirY   = new Float64Array(nodes.length);
+      const dirCnt = new Int32Array(nodes.length);
+
+      for (let ai = 0; ai < attractors.length; ai++) {
+        if (!attractors[ai].active) continue;
+        const ni = nearestNode[ai];
+        if (ni === -1) continue;
+        const dx = attractors[ai].x - nodes[ni].x;
+        const dy = attractors[ai].y - nodes[ni].y;
+        const d  = Math.sqrt(dx * dx + dy * dy);
+        if (d === 0) continue;
+        dirX[ni] += dx / d;
+        dirY[ni] += dy / d;
+        dirCnt[ni]++;
+      }
+
+      // Spawn one child per attracted node
+      const newNodes = [];
+      for (let ni = 0; ni < nodes.length; ni++) {
+        if (dirCnt[ni] === 0) continue;
+        const len = Math.sqrt(dirX[ni] * dirX[ni] + dirY[ni] * dirY[ni]);
+        if (len === 0) continue;
+        const nx  = dirX[ni] / len;
+        const ny  = dirY[ni] / len;
+        const par = nodes[ni];
+        const cx  = par.x + nx * STEP_SIZE;
+        const cy  = par.y + ny * STEP_SIZE;
+        const dep = par.depth + 1;
+        newNodes.push({ x: cx, y: cy, parent: ni, depth: dep });
+        pending.push({ x1: par.x, y1: par.y, x2: cx, y2: cy, depth: dep });
+      }
+
+      // Kill attractors within kill-distance of any node (old + new)
+      const killDsq = KILL_DISTANCE * KILL_DISTANCE;
+      for (let ai = 0; ai < attractors.length; ai++) {
+        if (!attractors[ai].active) continue;
+        const ax = attractors[ai].x, ay = attractors[ai].y;
+        for (const n of nodes) {
+          const dx = ax - n.x, dy = ay - n.y;
+          if (dx * dx + dy * dy <= killDsq) { attractors[ai].active = false; break; }
+        }
+        if (!attractors[ai].active) continue;
+        for (const n of newNodes) {
+          const dx = ax - n.x, dy = ay - n.y;
+          if (dx * dx + dy * dy <= killDsq) { attractors[ai].active = false; break; }
+        }
+      }
+
+      for (const n of newNodes) nodes.push(n);
+      return newNodes.length > 0;
+    }
+
+    function flushPending() {
+      if (pending.length === 0) return;
+      ctx.globalAlpha  = 1;
+      ctx.strokeStyle  = STROKE_COLOR;
+      for (const seg of pending) {
+        ctx.lineWidth = strokeWidth(seg.depth);
+        ctx.beginPath();
+        ctx.moveTo(seg.x1, seg.y1);
+        ctx.lineTo(seg.x2, seg.y2);
+        ctx.stroke();
+      }
+      pending = [];
+    }
+
+    function hasActive() {
+      for (const a of attractors) if (a.active) return true;
+      return false;
+    }
+
+    function snapshot() {
+      offscreen = document.createElement('canvas');
+      offscreen.width  = W;
+      offscreen.height = H;
+      offscreen.getContext('2d').drawImage(canvas, 0, 0);
+    }
+
+    function loop(now) {
+      if (lastT === null) lastT = now;
+      const dt = Math.min(now - lastT, 100);
+      lastT = now;
+
+      if (phase === 'growing') {
+        for (let i = 0; i < TICKS_PER_FRAME; i++) tick();
+        flushPending();
+        if (!hasActive()) { snapshot(); phase = 'holding'; holdTimer = 0; }
+
+      } else if (phase === 'holding') {
+        holdTimer += dt;
+        if (holdTimer >= HOLD_MS) { phase = 'fading'; fadeAlpha = 1; }
+
+      } else {
+        fadeAlpha = Math.max(0, fadeAlpha - dt / FADE_MS);
+        ctx.globalAlpha = 1;
+        ctx.fillStyle   = BG;
+        ctx.fillRect(0, 0, W, H);
+        if (fadeAlpha > 0 && offscreen) {
+          ctx.globalAlpha = fadeAlpha;
+          ctx.drawImage(offscreen, 0, 0);
+          ctx.globalAlpha = 1;
+        }
+        if (fadeAlpha <= 0) initSim();
+      }
+
+      requestAnimationFrame(loop);
+    }
+
+    initSim();
+    requestAnimationFrame(loop);
+  </script>
+</body>
+</html>

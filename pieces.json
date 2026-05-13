@@ -313,5 +313,14 @@
     "technique": "WebGL / Newton fractal / complex iteration / GLSL",
     "path": "pieces/81-newtons-basin",
     "thumbnail": "pieces/81-newtons-basin/thumbnail.svg"
+  },
+  {
+    "id": "83-space-colonization",
+    "title": "Vascular Branching — Space Colonization",
+    "tagline": "500 attractor points distributed in an ellipse are consumed one by one as a skeleton of branch nodes competes for their direction — the Runions algorithm grows coral-like vasculature from a single root, tapering from 4 px trunk to hairline tips, in terracotta on cream",
+    "year": 2026,
+    "technique": "canvas / space colonization / Runions algorithm / incremental stroke rendering",
+    "path": "pieces/83-space-colonization",
+    "thumbnail": "pieces/83-space-colonization/thumbnail.svg"
   }
 ]
