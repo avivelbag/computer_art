@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <rect width="200" height="200" fill="#0a0e1a"/>
+
+  <!-- r=85: teal wavefront 270° CW from top, coral refractory 90° CW back to top -->
+  <path d="M 100,15 A 85,85 0 1,1 15,100" stroke="#00e5c0" stroke-width="5" fill="none" stroke-linecap="round"/>
+  <path d="M 15,100 A 85,85 0 0,1 100,15"  stroke="#c44b4b" stroke-width="5" fill="none" stroke-linecap="round"/>
+
+  <!-- r=65: arm offset 45°, teal from NE (146,54) 270° CW, coral 90° CW back to NE -->
+  <path d="M 146,54 A 65,65 0 1,1 54,54"  stroke="#00e5c0" stroke-width="5" fill="none" stroke-linecap="round"/>
+  <path d="M 54,54 A 65,65 0 0,1 146,54"  stroke="#c44b4b" stroke-width="5" fill="none" stroke-linecap="round"/>
+
+  <!-- r=45: arm offset 90°, teal from right (145,100) 270° CW to top (100,55), coral 90° CW back -->
+  <path d="M 145,100 A 45,45 0 1,1 100,55" stroke="#00e5c0" stroke-width="5" fill="none" stroke-linecap="round"/>
+  <path d="M 100,55 A 45,45 0 0,1 145,100" stroke="#c44b4b" stroke-width="5" fill="none" stroke-linecap="round"/>
+
+  <!-- r=25: arm offset 135°, teal from SE (118,118) 270° CW to NE (118,82), coral 90° CW back -->
+  <path d="M 118,118 A 25,25 0 1,1 118,82" stroke="#00e5c0" stroke-width="5" fill="none" stroke-linecap="round"/>
+  <path d="M 118,82 A 25,25 0 0,1 118,118" stroke="#c44b4b" stroke-width="5" fill="none" stroke-linecap="round"/>
+
+  <!-- Spiral core -->
+  <circle cx="100" cy="100" r="7" fill="#00e5c0"/>
+</svg>
