@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>The Field Remembers</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { background: #f2ede4; display: flex; align-items: center; justify-content: center; min-height: 100vh; overflow: hidden; }
+    canvas { display: block; width: min(100vw, calc(100vh * 8/5)); height: min(calc(100vw * 5/8), 100vh); }
+  </style>
+</head>
+<body>
+  <canvas id="c" width="800" height="500"></canvas>
+  <script>
+    // 2D Simplex noise — Stefan Gustavson, public domain
+    const _F2 = 0.5 * (Math.sqrt(3) - 1);
+    const _G2 = (3 - Math.sqrt(3)) / 6;
+    const _gr = [[1,1],[-1,1],[1,-1],[-1,-1],[1,0],[-1,0],[0,1],[0,-1]];
+    const _pm = new Uint8Array(512);
+    {
+      const p = Uint8Array.from({length: 256}, (_, i) => i);
+      for (let i = 255; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [p[i], p[j]] = [p[j], p[i]];
+      }
+      for (let i = 0; i < 512; i++) _pm[i] = p[i & 255];
+    }
+    function noise(xin, yin) {
+      const s = (xin + yin) * _F2;
+      const i = Math.floor(xin + s), j = Math.floor(yin + s);
+      const t = (i + j) * _G2;
+      const x0 = xin - (i - t), y0 = yin - (j - t);
+      const i1 = x0 > y0 ? 1 : 0, j1 = x0 > y0 ? 0 : 1;
+      const x1 = x0 - i1 + _G2, y1 = y0 - j1 + _G2;
+      const x2 = x0 - 1 + 2 * _G2, y2 = y0 - 1 + 2 * _G2;
+      const ii = i & 255, jj = j & 255;
+      const g0 = _pm[ii + _pm[jj]] % 8;
+      const g1 = _pm[ii + i1 + _pm[jj + j1]] % 8;
+      const g2 = _pm[ii + 1 + _pm[jj + 1]] % 8;
+      let n = 0;
+      let t0 = 0.5 - x0 * x0 - y0 * y0;
+      if (t0 >= 0) { t0 *= t0; n += t0 * t0 * (_gr[g0][0] * x0 + _gr[g0][1] * y0); }
+      let t1 = 0.5 - x1 * x1 - y1 * y1;
+      if (t1 >= 0) { t1 *= t1; n += t1 * t1 * (_gr[g1][0] * x1 + _gr[g1][1] * y1); }
+      let t2 = 0.5 - x2 * x2 - y2 * y2;
+      if (t2 >= 0) { t2 *= t2; n += t2 * t2 * (_gr[g2][0] * x2 + _gr[g2][1] * y2); }
+      return 70 * n;
+    }
+
+    const W = 800, H = 500, N = 4000;
+    const NOISE_SCALE = 0.003, TIME_SCALE = 0.0005, SPEED = 1.5;
+    const CLEAR_INTERVAL = 600;
+    const BG = '#f2ede4';
+    // Pen-plotter ink colors with hex alpha 0x0f ≈ 6%
+    const COLORS = ['#1a27440f', '#c0392b0f', '#4a7c590f'];
+    const TWO_PI = Math.PI * 2;
+
+    const canvas = document.getElementById('c');
+    const ctx = canvas.getContext('2d');
+
+    const particles = Array.from({length: N}, () => {
+      const x = Math.random() * W, y = Math.random() * H;
+      return { x, y, px: x, py: y, col: COLORS[Math.floor(Math.random() * 3)] };
+    });
+
+    let frameCount = 0;
+
+    ctx.fillStyle = BG;
+    ctx.fillRect(0, 0, W, H);
+
+    function frame() {
+      // Periodically clear canvas to start a new "layer", creating palimpsest effect
+      if (frameCount > 0 && frameCount % CLEAR_INTERVAL === 0) {
+        ctx.fillStyle = BG;
+        ctx.fillRect(0, 0, W, H);
+      }
+
+      const t = frameCount * TIME_SCALE;
+      ctx.lineWidth = 0.8;
+
+      for (const p of particles) {
+        const angle = noise(p.x * NOISE_SCALE, p.y * NOISE_SCALE + t) * TWO_PI;
+        p.px = p.x;
+        p.py = p.y;
+        p.x += Math.cos(angle) * SPEED;
+        p.y += Math.sin(angle) * SPEED;
+        // Wrap at canvas edges
+        p.x = ((p.x % W) + W) % W;
+        p.y = ((p.y % H) + H) % H;
+
+        // Skip segments that jumped across the canvas wrap boundary
+        if (Math.abs(p.x - p.px) > W * 0.4 || Math.abs(p.y - p.py) > H * 0.4) continue;
+
+        ctx.beginPath();
+        ctx.moveTo(p.px, p.py);
+        ctx.lineTo(p.x, p.y);
+        ctx.strokeStyle = p.col;
+        ctx.stroke();
+      }
+
+      frameCount++;
+      requestAnimationFrame(frame);
+    }
+
+    requestAnimationFrame(frame);
+  </script>
+</body>
+</html>
