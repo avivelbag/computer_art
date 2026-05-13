@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Every Corner Has a Choice</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { background: #f5f0e8; overflow: hidden; cursor: pointer; }
+    canvas { display: block; }
+  </style>
+</head>
+<body>
+  <canvas id="c"></canvas>
+  <script>
+    const COLS = 30;
+    const ROWS = 30;
+    const HOLD_MS = 4000;
+    const TRANS_MS = 800;
+    const BG = '#f5f0e8';
+    const INK = '#1a1260';
+
+    const canvas = document.getElementById('c');
+    const ctx = canvas.getContext('2d');
+
+    let W, H, cell, ox, oy;
+    let cur, nxt;
+    let phase = 'hold';
+    let holdStart = 0, transStart = 0;
+
+    function rng() {
+      return Array.from({length: ROWS}, () =>
+        Array.from({length: COLS}, () => Math.random() < 0.5 ? 0 : 1)
+      );
+    }
+
+    function resize() {
+      W = canvas.width = window.innerWidth;
+      H = canvas.height = window.innerHeight;
+      cell = Math.floor(Math.min(W / COLS, H / ROWS));
+      ox = Math.floor((W - COLS * cell) / 2);
+      oy = Math.floor((H - ROWS * cell) / 2);
+    }
+
+    // Smith variant: two quarter-circle arcs per tile connect adjacent edge
+    // midpoints. Type 0 arcs are centred on the top-left and bottom-right
+    // corners; type 1 arcs are centred on the top-right and bottom-left
+    // corners. Arcs of adjacent tiles always join at shared edge midpoints.
+    function drawTile(col, row, type) {
+      const x = ox + col * cell;
+      const y = oy + row * cell;
+      const r = cell / 2;
+
+      ctx.beginPath();
+      if (type === 0) {
+        ctx.moveTo(x + r, y);
+        ctx.arc(x, y, r, 0, Math.PI / 2);
+        ctx.moveTo(x + r, y + cell);
+        ctx.arc(x + cell, y + cell, r, Math.PI, 3 * Math.PI / 2);
+      } else {
+        ctx.moveTo(x + r, y);
+        ctx.arc(x + cell, y, r, Math.PI, Math.PI / 2, true);
+        ctx.moveTo(x, y + r);
+        ctx.arc(x, y + cell, r, -Math.PI / 2, 0);
+      }
+      ctx.stroke();
+    }
+
+    function drawGrid(grid, alpha) {
+      ctx.globalAlpha = alpha;
+      ctx.strokeStyle = INK;
+      ctx.lineWidth = cell * 0.12;
+      ctx.lineCap = 'round';
+      for (let row = 0; row < ROWS; row++) {
+        for (let col = 0; col < COLS; col++) {
+          drawTile(col, row, grid[row][col]);
+        }
+      }
+      ctx.globalAlpha = 1;
+    }
+
+    function ease(t) {
+      return t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+    }
+
+    function frame(ts) {
+      if (phase === 'hold' && ts - holdStart > HOLD_MS) {
+        nxt = rng();
+        phase = 'transition';
+        transStart = ts;
+      }
+
+      ctx.fillStyle = BG;
+      ctx.fillRect(0, 0, W, H);
+
+      if (phase === 'hold') {
+        drawGrid(cur, 1);
+      } else {
+        const p = ease(Math.min((ts - transStart) / TRANS_MS, 1));
+        drawGrid(cur, 1 - p);
+        drawGrid(nxt, p);
+        if (p >= 1) {
+          cur = nxt;
+          phase = 'hold';
+          holdStart = ts;
+        }
+      }
+
+      requestAnimationFrame(frame);
+    }
+
+    canvas.addEventListener('click', () => {
+      if (phase === 'hold') {
+        nxt = rng();
+        phase = 'transition';
+        transStart = performance.now();
+      }
+    });
+
+    window.addEventListener('resize', resize);
+    resize();
+    cur = rng();
+    holdStart = 0;
+    requestAnimationFrame(frame);
+  </script>
+</body>
+</html>
