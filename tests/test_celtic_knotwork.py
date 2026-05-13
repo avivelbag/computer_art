@@ -6,8 +6,6 @@ import pathlib
 import re
 import struct
 
-import pytest
-
 REPO = pathlib.Path(__file__).parent.parent
 PIECE_ID = "120-celtic-knotwork"
 PIECE_DIR = REPO / "pieces" / PIECE_ID
@@ -265,8 +263,6 @@ class TestCrossingDetection:
     def test_over_has_higher_z_than_under(self):
         """For every crossing, the 'over' segment midpoint must have higher z."""
         pts = self.pts
-        mx = [(pts[i][0] + pts[i + 1][0]) * 0.5 for i in range(N)]
-        my = [(pts[i][1] + pts[i + 1][1]) * 0.5 for i in range(N)]
         mz = [(pts[i][2] + pts[i + 1][2]) * 0.5 for i in range(N)]
         for c in detect_crossings(pts):
             assert mz[c["ov"]] >= mz[c["un"]], (
@@ -286,17 +282,6 @@ class TestCrossingDetection:
         spread = [(float(i) * 10, 0.0, 0.0) for i in range(N + 1)]
         cr = detect_crossings(spread)
         assert cr == []
-
-    def test_different_tilt_may_shift_crossings(self):
-        """Changing the tilt must potentially change which segment is 'over'."""
-        cr1 = detect_crossings(compute_points(0.1))
-        cr2 = detect_crossings(compute_points(1.1))
-        if cr1 and cr2:
-            overs1 = {c["ov"] for c in cr1}
-            overs2 = {c["ov"] for c in cr2}
-            # The two sets don't need to be completely disjoint, but they
-            # should not be identical — depth order changes with tilt.
-            assert overs1 != overs2 or True  # always passes; documents intent
 
 
 # ---------------------------------------------------------------------------
