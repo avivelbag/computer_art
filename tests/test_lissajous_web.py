@@ -4,8 +4,6 @@ import math
 import pathlib
 import re
 
-import pytest
-
 REPO = pathlib.Path(__file__).parent.parent
 PIECE_ID = "145-lissajous-web"
 PIECE_DIR = REPO / "pieces" / PIECE_ID
