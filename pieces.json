@@ -538,5 +538,14 @@
         "technique": "canvas / circle packing / greedy largest-empty-circle / requestAnimationFrame",
         "path": "pieces/139-circle-packing",
         "thumbnail": "pieces/139-circle-packing/thumbnail.svg"
+    },
+    {
+        "id": "142-light-divided",
+        "title": "Light Divided",
+        "tagline": "~400 random seeds triangulated by Bowyer-Watson into a stained-glass mosaic — rose to amber to slate, each triangle a facet of quiet geometric light, with a 0.5 px lead-came stroke",
+        "year": 2026,
+        "technique": "SVG / Delaunay triangulation / Bowyer-Watson / generative geometry",
+        "path": "pieces/142-light-divided",
+        "thumbnail": "pieces/142-light-divided/thumbnail.svg"
     }
 ]
