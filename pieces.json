@@ -592,5 +592,14 @@
     "technique": "canvas / Apollonian gasket / Descartes’ Circle Theorem / Apollonian reflection formula / BFS / requestAnimationFrame",
     "path": "pieces/157-apollonian-gasket",
     "thumbnail": "pieces/157-apollonian-gasket/thumbnail.svg"
+  },
+  {
+    "id": "162-ascii-scalar-field",
+    "title": "Density in Characters: ASCII Scalar Field",
+    "tagline": "Four superimposed plane waves form a scalar interference field rendered as a full-viewport grid of monospaced characters — field density selects from void through punctuation to ‘@’, hue shifts from deep cyan to warm cream, and animated phases cause the character grid to ripple endlessly at 60 fps",
+    "year": 2026,
+    "technique": "canvas / ASCII art / plane wave superposition / scalar field / fillText / requestAnimationFrame",
+    "path": "pieces/162-ascii-scalar-field",
+    "thumbnail": "pieces/162-ascii-scalar-field/thumbnail.svg"
   }
 ]

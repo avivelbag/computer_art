@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Piece 162 — Density in Characters: ASCII Scalar Field</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { background: #020810; overflow: hidden; }
+    canvas { display: block; }
+  </style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<script>
+'use strict';
+
+const cv = document.getElementById('c');
+const ctx = cv.getContext('2d');
+
+const CELL_H = 12;
+const FONT = `${CELL_H}px monospace`;
+
+// Density ramp: low field value → sparse characters, high → dense glyphs
+const RAMP = [' ', '.', '·', ':', '-', '=', '+', 'o', 'O', '#', '@'];
+
+// Four plane waves: [freq_x, freq_y, speed, phase_offset]
+// Different directions, frequencies, and speeds produce rich interference
+const WAVES = [
+  [0.08, 0.05, 0.9, 0.0],
+  [0.04, 0.09, 0.7, 1.2],
+  [0.10, 0.03, 1.1, 2.4],
+  [0.06, 0.07, 0.6, 3.7],
+];
+
+const FPS_CAP = 60;
+const FRAME_MS = 1000 / FPS_CAP;
+
+let cellW = 7.2;  // updated after font measurement
+let lastTs = -Infinity;
+
+function measureCellWidth() {
+  ctx.font = FONT;
+  // 'M' is the reference glyph for monospace cap-width
+  cellW = ctx.measureText('M').width;
+}
+
+function resize() {
+  cv.width = window.innerWidth;
+  cv.height = window.innerHeight;
+  measureCellWidth();
+}
+
+resize();
+window.addEventListener('resize', resize);
+
+/**
+ * Evaluate the scalar field at grid cell (cx, cy) at time t.
+ * Superimposes WAVES.length plane waves and normalises to [0, 1].
+ */
+function scalar(cx, cy, t) {
+  let sum = 0;
+  for (const [fx, fy, sp, ph] of WAVES) {
+    sum += Math.sin(cx * fx + cy * fy + t * sp + ph);
+  }
+  return (sum / WAVES.length + 1) * 0.5;
+}
+
+function render(ts) {
+  requestAnimationFrame(render);
+  if (ts - lastTs < FRAME_MS) return;
+  lastTs = ts;
+
+  const t = ts * 0.001;
+  const W = cv.width;
+  const H = cv.height;
+  const cols = Math.ceil(W / cellW) + 1;
+  const rows = Math.ceil(H / CELL_H) + 1;
+
+  ctx.font = FONT;
+  ctx.textBaseline = 'top';
+
+  for (let row = 0; row < rows; row++) {
+    for (let col = 0; col < cols; col++) {
+      const val = scalar(col, row, t);
+      const charIdx = Math.min(RAMP.length - 1, Math.floor(val * RAMP.length));
+
+      const x = col * cellW;
+      const y = row * CELL_H;
+
+      // Hue shifts from deep cyan (200) to warm yellow-cream (260)
+      const h = 200 + val * 60;
+      const bgL = Math.max(3, 8 + val * 10);
+      const fgL = 20 + val * 60;
+
+      ctx.fillStyle = `hsl(${h},70%,${bgL}%)`;
+      ctx.fillRect(x, y, cellW, CELL_H);
+
+      ctx.fillStyle = `hsl(${h},80%,${fgL}%)`;
+      ctx.fillText(RAMP[charIdx], x, y);
+    }
+  }
+}
+
+requestAnimationFrame(render);
+</script>
+</body>
+</html>
