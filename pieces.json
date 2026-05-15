@@ -565,5 +565,14 @@
         "technique": "canvas / halftone / risograph simulation / multiply blend / requestAnimationFrame",
         "path": "pieces/150-riso-halftone",
         "thumbnail": "pieces/150-riso-halftone/thumbnail.svg"
+    },
+    {
+        "id": "151-wave-equation-ripple",
+        "title": "2D Wave Equation: Interference Ripples",
+        "tagline": "Three point sources pulse on a 512×512 grid governed by the 2D wave equation — leapfrog finite-differences propagate circular wavefronts that interfere and reflect off Dirichlet boundaries, mapping displacement to deep navy and warm gold at 60 fps",
+        "year": 2026,
+        "technique": "canvas / 2D wave equation / leapfrog finite-difference / ImageData per-pixel / requestAnimationFrame",
+        "path": "pieces/151-wave-equation-ripple",
+        "thumbnail": "pieces/151-wave-equation-ripple/thumbnail.svg"
     }
 ]

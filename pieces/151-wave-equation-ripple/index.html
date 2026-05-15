@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Wave Equation — Interference Ripples</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { background: #04040e; display: flex; align-items: center; justify-content: center; min-height: 100vh; }
+    canvas { display: block; box-shadow: 0 4px 32px rgba(80,50,200,0.3); }
+  </style>
+</head>
+<body>
+<canvas id="c" width="512" height="512"></canvas>
+<script>
+  const W = 512, H = 512, N = W * H;
+  const canvas = document.getElementById('c');
+  const ctx = canvas.getContext('2d');
+
+  // Three wave buffers for leapfrog time-stepping: curr, prev, next
+  let curr = new Float32Array(N);
+  let prev = new Float32Array(N);
+  let next = new Float32Array(N);
+
+  // Courant parameter r = c²·dt²/dx²; 2D leapfrog is stable when r ≤ 0.5
+  const R = 0.24;
+
+  // Point sources: [gridX, gridY, angularFreq, initialPhase]
+  // Staggered positions, frequencies, and phases produce rich interference
+  const SOURCES = [
+    [W >> 2,              H >> 2,                0.15, 0.0],
+    [(3 * W) >> 2,        Math.floor(H / 3),     0.22, Math.PI / 3],
+    [W >> 1,              Math.floor(3 * H / 4), 0.18, (2 * Math.PI) / 3],
+  ];
+
+  // Pre-computed ABGR palette (little-endian; Uint32Array matches canvas pixel order):
+  // index 256 ≈ zero displacement → near-black (#04040e)
+  // index 0   = max negative       → deep indigo (#1200a0)
+  // index 511 = max positive       → warm gold   (#ffc800)
+  const PALETTE = new Uint32Array(512);
+  for (let i = 0; i < 512; i++) {
+    const t = (i - 256) / 255.5; // -1..+1
+    let r, g, b;
+    if (t >= 0) {
+      // near-black → warm gold
+      r = Math.round(4 + t * 251);
+      g = Math.round(4 + t * 196);
+      b = Math.round(14 - t * 14);
+    } else {
+      const s = -t; // 0..1
+      // near-black → deep indigo/navy
+      r = Math.round(4 + s * 14);
+      g = Math.round(4);
+      b = Math.round(14 + s * 146);
+    }
+    PALETTE[i] = (255 << 24)
+      | (Math.min(255, Math.max(0, b)) << 16)
+      | (Math.min(255, Math.max(0, g)) << 8)
+      |  Math.min(255, Math.max(0, r));
+  }
+
+  const imgData = ctx.createImageData(W, H);
+  // buf32 shares the same ArrayBuffer as imgData.data, so writes are immediately visible
+  const buf32 = new Uint32Array(imgData.data.buffer);
+
+  let tick = 0;
+
+  function frame() {
+    // Leapfrog finite-difference wave update (interior only; boundary cells stay 0)
+    for (let y = 1; y < H - 1; y++) {
+      const rowOff = y * W;
+      for (let x = 1; x < W - 1; x++) {
+        const i = rowOff + x;
+        // Discrete Laplacian: 4-point stencil
+        const lap = curr[i - 1] + curr[i + 1] + curr[i - W] + curr[i + W] - 4.0 * curr[i];
+        next[i] = 2.0 * curr[i] - prev[i] + R * lap;
+      }
+    }
+
+    // Override source cells with pulsed amplitude after leapfrog so each source
+    // drives the field at its own frequency and phase each step
+    for (const [sx, sy, freq, phase] of SOURCES) {
+      const amp = 0.75 * Math.sin(freq * tick + phase);
+      next[sy * W + sx] = Math.max(-1.0, Math.min(1.0, amp));
+    }
+
+    // Rotate buffers: next becomes current, current becomes previous
+    const tmp = prev;
+    prev = curr;
+    curr = next;
+    next = tmp;
+
+    // Map each grid cell displacement to a palette colour via soft tanh normalisation
+    for (let i = 0; i < N; i++) {
+      const t = Math.tanh(curr[i] * 2.0); // soft-clamp -1..1
+      buf32[i] = PALETTE[Math.min(511, Math.max(0, (t + 1.0) * 255.5 | 0))];
+    }
+
+    ctx.putImageData(imgData, 0, 0);
+    tick++;
+    requestAnimationFrame(frame);
+  }
+
+  frame();
+</script>
+</body>
+</html>
