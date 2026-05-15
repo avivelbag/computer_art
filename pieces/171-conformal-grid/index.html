@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Conformal Grid — The Grid That Knows Where It Lives</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: #0d0d18;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      overflow: hidden;
+    }
+    canvas { display: block; width: 100vmin; height: 100vmin; }
+  </style>
+</head>
+<body>
+<canvas id="c" width="800" height="800"></canvas>
+<script>
+const W = 800, H = 800;
+const CX = W / 2, CY = H / 2;
+const SCALE = 100;        // pixels per unit in the complex plane
+const GRID_MIN = -3;
+const GRID_MAX = 3;
+const N_LINES = 20;       // lines per direction (horizontal + vertical)
+const N_SAMPLES = 200;    // polyline samples per grid line
+const MAX_MAG = 8;        // skip mapped points with |f(z)| above this
+const MIN_Z_MAG = 0.05;   // skip input points near the origin (Joukowski pole)
+const JUMP_THRESH = 120;  // screen-pixel gap that signals a discontinuity
+const MAP_PERIOD = 8000;  // ms per map; λ rises 0→1→0 over this window
+
+// --- Complex arithmetic ---
+
+function cmul(a, b) {
+  return { re: a.re * b.re - a.im * b.im, im: a.re * b.im + a.im * b.re };
+}
+
+function cdiv(a, b) {
+  const d = b.re * b.re + b.im * b.im;
+  if (d < 1e-12) return null;
+  return { re: (a.re * b.re + a.im * b.im) / d, im: (a.im * b.re - a.re * b.im) / d };
+}
+
+function cmag(z) { return Math.sqrt(z.re * z.re + z.im * z.im); }
+
+// --- Conformal maps (each blends from identity at lam=0 to full map at lam=1) ---
+
+function joukowskiMap(z, lam) {
+  // z → z + λ/z; pole at z = 0 (returns null near origin)
+  if (cmag(z) < MIN_Z_MAG) return null;
+  const inv = cdiv({ re: 1, im: 0 }, z);
+  if (!inv) return null;
+  return { re: z.re + lam * inv.re, im: z.im + lam * inv.im };
+}
+
+function squareMap(z, lam) {
+  // z → (1−λ)·z + λ·z²
+  const z2 = cmul(z, z);
+  return { re: z.re + lam * (z2.re - z.re), im: z.im + lam * (z2.im - z.im) };
+}
+
+function mobiusMap(z, lam) {
+  // z → blend(z, (z−1)/(z+1), lam); pole at z = −1
+  const den = { re: z.re + 1, im: z.im };
+  const num = { re: z.re - 1, im: z.im };
+  const m = cdiv(num, den);
+  if (!m) return null;
+  return { re: z.re + lam * (m.re - z.re), im: z.im + lam * (m.im - z.im) };
+}
+
+const MAP_FNS = [joukowskiMap, squareMap, mobiusMap];
+
+// --- Grid helpers ---
+
+const LINE_POSITIONS = [];
+for (let i = 0; i < N_LINES; i++) {
+  LINE_POSITIONS.push(GRID_MIN + (GRID_MAX - GRID_MIN) * i / (N_LINES - 1));
+}
+
+function toScreen(w) {
+  return { x: CX + w.re * SCALE, y: CY - w.im * SCALE };
+}
+
+// Sample a grid line through the conformal map and return screen-space polyline segments.
+// isHorizontal=true → constant imaginary part (constVal), varying real part in [GRID_MIN, GRID_MAX].
+// Returns an array where null entries mark segment breaks (poles, large |f(z)|, jumps).
+function sampleLine(constVal, isHorizontal, mapFn, lam) {
+  const pts = [];
+  let lastPt = null;
+  for (let i = 0; i < N_SAMPLES; i++) {
+    const t = GRID_MIN + (GRID_MAX - GRID_MIN) * i / (N_SAMPLES - 1);
+    const z = isHorizontal ? { re: t, im: constVal } : { re: constVal, im: t };
+    const w = mapFn(z, lam);
+    if (!w || cmag(w) > MAX_MAG) {
+      if (pts.length > 0) pts.push(null);
+      lastPt = null;
+      continue;
+    }
+    const s = toScreen(w);
+    if (lastPt &&
+        (Math.abs(s.x - lastPt.x) > JUMP_THRESH || Math.abs(s.y - lastPt.y) > JUMP_THRESH)) {
+      pts.push(null);
+    }
+    pts.push(s);
+    lastPt = s;
+  }
+  return pts;
+}
+
+function drawSegmented(pts, color, lw) {
+  ctx.strokeStyle = color;
+  ctx.lineWidth = lw;
+  let seg = [];
+  const flush = () => {
+    if (seg.length < 2) { seg = []; return; }
+    ctx.beginPath();
+    ctx.moveTo(seg[0].x, seg[0].y);
+    for (let i = 1; i < seg.length; i++) ctx.lineTo(seg[i].x, seg[i].y);
+    ctx.stroke();
+    seg = [];
+  };
+  for (const p of pts) {
+    if (p === null) flush(); else seg.push(p);
+  }
+  flush();
+}
+
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+let t0 = null;
+
+function frame(ts) {
+  if (!t0) t0 = ts;
+  const elapsed = ts - t0;
+  const totalPeriod = MAP_PERIOD * MAP_FNS.length;
+  const cycle = elapsed % totalPeriod;
+  const mapIdx = Math.floor(cycle / MAP_PERIOD);
+  const phase = (cycle % MAP_PERIOD) / MAP_PERIOD;    // 0..1
+  const lam = Math.pow(Math.sin(phase * Math.PI), 2); // smooth 0→1→0 easing
+  const mapFn = MAP_FNS[mapIdx];
+
+  ctx.globalCompositeOperation = 'source-over';
+  ctx.fillStyle = '#0d0d18';
+  ctx.fillRect(0, 0, W, H);
+
+  // Light base grid — the w-plane coordinate lines at identity
+  ctx.lineWidth = 0.5;
+  for (const v of LINE_POSITIONS) {
+    ctx.strokeStyle = 'rgba(255,130,160,0.18)';
+    ctx.beginPath();
+    ctx.moveTo(CX + GRID_MIN * SCALE, CY - v * SCALE);
+    ctx.lineTo(CX + GRID_MAX * SCALE, CY - v * SCALE);
+    ctx.stroke();
+
+    ctx.strokeStyle = 'rgba(100,190,255,0.18)';
+    ctx.beginPath();
+    ctx.moveTo(CX + v * SCALE, CY - GRID_MAX * SCALE);
+    ctx.lineTo(CX + v * SCALE, CY - GRID_MIN * SCALE);
+    ctx.stroke();
+  }
+
+  // Bold mapped grid — additive compositing makes intersections bloom
+  ctx.globalCompositeOperation = 'lighter';
+
+  for (const v of LINE_POSITIONS) {
+    // Horizontal lines (constant imaginary part) — rose / coral family
+    const hp = sampleLine(v, true, mapFn, lam);
+    drawSegmented(hp, 'rgba(255,100,140,0.6)', 1.5);
+  }
+
+  for (const v of LINE_POSITIONS) {
+    // Vertical lines (constant real part) — sky-blue family
+    const vp = sampleLine(v, false, mapFn, lam);
+    drawSegmented(vp, 'rgba(80,195,255,0.6)', 1.5);
+  }
+
+  requestAnimationFrame(frame);
+}
+
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>
