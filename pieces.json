@@ -511,5 +511,14 @@
         "technique": "canvas / Fourier epicycles / DFT / CSS opacity transition / requestAnimationFrame",
         "path": "pieces/136-fourier-epicycles",
         "thumbnail": "pieces/136-fourier-epicycles/thumbnail.svg"
+    },
+    {
+        "id": "137-lorenz-attractor",
+        "title": "Lorenz Attractor — The Butterfly That Never Lands",
+        "tagline": "The 3D Lorenz strange attractor integrated via RK4 — 200 000 trajectory points accumulate into a log-density image on deep indigo as a rotating camera reveals the butterfly from every azimuth in cyan and gold",
+        "year": 2026,
+        "technique": "canvas / Lorenz attractor / RK4 integration / ImageData log-density / rotating camera",
+        "path": "pieces/137-lorenz-attractor",
+        "thumbnail": "pieces/137-lorenz-attractor/thumbnail.png"
     }
 ]
