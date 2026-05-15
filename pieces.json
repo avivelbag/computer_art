@@ -556,5 +556,14 @@
         "technique": "canvas / Lissajous curves / parametric equations / additive blending / requestAnimationFrame",
         "path": "pieces/145-lissajous-web",
         "thumbnail": "pieces/145-lissajous-web/thumbnail.svg"
+    },
+    {
+        "id": "150-riso-halftone",
+        "title": "Halftone Riso Print: Two-Color Screen",
+        "tagline": "Two halftone dot screens — fluorescent pink at 45° and teal at 75° — overlap with multiply blending on cream paper; slow misregistration drift animates the offset between screens, reproducing the warmth of physical Riso printing",
+        "year": 2026,
+        "technique": "canvas / halftone / risograph simulation / multiply blend / requestAnimationFrame",
+        "path": "pieces/150-riso-halftone",
+        "thumbnail": "pieces/150-riso-halftone/thumbnail.svg"
     }
 ]
