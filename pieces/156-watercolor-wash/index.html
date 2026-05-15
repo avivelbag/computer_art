@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Wet Pigment — Watercolor Wash</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { background: #e8e0d0; display: flex; align-items: center; justify-content: center; min-height: 100vh; }
+    canvas { display: block; box-shadow: 0 4px 24px rgba(0,0,0,0.18); }
+  </style>
+</head>
+<body>
+<canvas id="c" width="600" height="600"></canvas>
+<script>
+  const W = 600, H = 600;
+  const canvas = document.getElementById('c');
+  const ctx = canvas.getContext('2d');
+
+  // Three hue families: warm reds/oranges, cool blues/teals, earthy yellows/greens
+  const HUE_FAMILIES = [
+    () => 5  + Math.random() * 40,   // warm reds/oranges  (5–45)
+    () => 190 + Math.random() * 50,  // cool blues/teals   (190–240)
+    () => 70  + Math.random() * 50,  // earthy yellows/greens (70–120)
+  ];
+
+  /**
+   * Build a slightly irregular ellipse approximation with n vertices.
+   * Each vertex is jittered radially so the outline is never perfectly round.
+   */
+  function basePolygon(cx, cy, rx, ry, n) {
+    const pts = [];
+    for (let i = 0; i < n; i++) {
+      const angle = (i / n) * Math.PI * 2;
+      const jitter = 0.75 + Math.random() * 0.5;
+      pts.push([
+        cx + Math.cos(angle) * rx * jitter,
+        cy + Math.sin(angle) * ry * jitter,
+      ]);
+    }
+    return pts;
+  }
+
+  /**
+   * Recursive midpoint subdivision: insert a displaced midpoint between
+   * every consecutive pair of vertices.  Displacement magnitude halves
+   * each level, producing an organic wobbly outline without jagged spikes.
+   */
+  function subdivide(pts, depth, spread) {
+    if (depth === 0) return pts;
+    const out = [];
+    for (let i = 0; i < pts.length; i++) {
+      const a = pts[i];
+      const b = pts[(i + 1) % pts.length];
+      const mx = (a[0] + b[0]) / 2 + (Math.random() - 0.5) * spread;
+      const my = (a[1] + b[1]) / 2 + (Math.random() - 0.5) * spread;
+      out.push(a, [mx, my]);
+    }
+    return subdivide(out, depth - 1, spread * 0.5);
+  }
+
+  /**
+   * Paint one watercolor stroke: draw the same distorted polygon 25–40 times
+   * at very low alpha so edge cells accumulate more pigment than the interior —
+   * the characteristic darkening at the bead edge of real watercolor.
+   */
+  function drawStroke(hue) {
+    const cx = W * 0.1 + Math.random() * W * 0.8;
+    const cy = H * 0.1 + Math.random() * H * 0.8;
+    const rx = 40 + Math.random() * 110;
+    const ry = 30 + Math.random() * 90;
+    const n  = 8 + Math.floor(Math.random() * 5);
+    const base   = basePolygon(cx, cy, rx, ry, n);
+    const layers = 25 + Math.floor(Math.random() * 15);
+    const alpha  = 0.05 + Math.random() * 0.05;   // 5–10 % per layer
+
+    ctx.fillStyle = `hsla(${hue | 0}, 70%, 55%, ${alpha.toFixed(3)})`;
+    for (let k = 0; k < layers; k++) {
+      const pts = subdivide(base, 4, rx * 0.35);
+      ctx.beginPath();
+      ctx.moveTo(pts[0][0], pts[0][1]);
+      for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i][0], pts[i][1]);
+      ctx.closePath();
+      ctx.fill();
+    }
+  }
+
+  const COMPOSITION_DURATION = 45000;  // ms before soft reset
+  const FADE_DURATION        = 3000;   // ms the white overlay takes to clear canvas
+
+  let compositionStart = Date.now();
+  let fading           = false;
+  let fadeStartTime    = null;
+  let nextStrokeAt     = 0;
+
+  function chooseHue() {
+    return HUE_FAMILIES[Math.floor(Math.random() * HUE_FAMILIES.length)]();
+  }
+
+  function scheduleNext() {
+    nextStrokeAt = Date.now() + 500 + Math.random() * 300;
+  }
+
+  function resetCanvas() {
+    ctx.fillStyle = '#f5f0e8';
+    ctx.fillRect(0, 0, W, H);
+    compositionStart = Date.now();
+    fading           = false;
+    fadeStartTime    = null;
+    scheduleNext();
+  }
+
+  resetCanvas();
+
+  function loop() {
+    const now     = Date.now();
+    const elapsed = now - compositionStart;
+
+    if (!fading && elapsed >= COMPOSITION_DURATION) {
+      fading        = true;
+      fadeStartTime = now;
+    }
+
+    if (fading) {
+      // Gradually lay white over the canvas so old shapes dissolve into paper
+      ctx.fillStyle = 'rgba(245,240,232,0.04)';
+      ctx.fillRect(0, 0, W, H);
+      if (now - fadeStartTime >= FADE_DURATION) resetCanvas();
+    } else if (now >= nextStrokeAt) {
+      drawStroke(chooseHue());
+      scheduleNext();
+    }
+
+    requestAnimationFrame(loop);
+  }
+
+  loop();
+</script>
+</body>
+</html>
