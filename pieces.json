@@ -601,5 +601,14 @@
     "technique": "canvas / ASCII art / plane wave superposition / scalar field / fillText / requestAnimationFrame",
     "path": "pieces/162-ascii-scalar-field",
     "thumbnail": "pieces/162-ascii-scalar-field/thumbnail.svg"
+  },
+  {
+    "id": "167-everything-divides",
+    "title": "Everything Divides Evenly in the End",
+    "tagline": "A canvas recursively splits itself by golden-ratio and rule-of-thirds cuts until every rectangle rests in white or a primary De Stijl color — red, blue, or yellow — then quietly dissolves and starts over every 8–12 seconds",
+    "year": 2026,
+    "technique": "canvas / recursive Mondrian subdivision / De Stijl palette / golden-ratio splits / dissolve transition",
+    "path": "pieces/167-everything-divides",
+    "thumbnail": "pieces/167-everything-divides/thumbnail.svg"
   }
 ]

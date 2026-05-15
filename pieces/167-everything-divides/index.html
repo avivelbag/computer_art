@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Piece 167 — Everything Divides Evenly in the End</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { background: #111; display: flex; align-items: center; justify-content: center; min-height: 100vh; }
+    canvas { display: block; transition: opacity 1s ease; }
+  </style>
+</head>
+<body>
+<canvas id="c" width="800" height="800"></canvas>
+<script>
+'use strict';
+
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+const W = 800, H = 800;
+
+const BORDER   = 8;   // outer black frame width in px
+const LINE_W   = 8;   // interior dividing line stroke width in px
+const MIN_SIDE = 90;  // cells with min(w,h) < MIN_SIDE become leaves
+const MAX_DEPTH = 7;  // hard recursion cap
+
+const RED       = '#D40920';
+const BLUE      = '#1B4E8F';
+const YELLOW    = '#F5C500';
+const BLACK     = '#1A1A1A';
+const WHITE     = '#F8F5EE';
+const OFF_WHITES = ['#EDE9DF', '#F0EDE4', '#EAE6DC', '#F2EFE6'];
+
+/**
+ * Split position biased toward golden-ratio and rule-of-thirds proportions.
+ * Returns a value in (0, 1) that is concentrated around 0.618, 0.382, 0.333,
+ * and 0.667, with a center-biased triangular fallback for variety.
+ */
+function splitPos() {
+  const r = Math.random();
+  if (r < 0.30) return 0.618 + (Math.random() - 0.5) * 0.10;
+  if (r < 0.55) return 0.382 + (Math.random() - 0.5) * 0.10;
+  if (r < 0.70) return 0.333 + (Math.random() - 0.5) * 0.07;
+  if (r < 0.85) return 0.667 + (Math.random() - 0.5) * 0.07;
+  // Triangular distribution (sum of two uniforms, peak at 0.5), mapped to [0.30, 0.70]
+  return 0.30 + ((Math.random() + Math.random()) / 2) * 0.40;
+}
+
+/**
+ * Recursively split rect (x, y, w, h) until a cell's minimum side reaches
+ * MIN_SIDE or depth reaches MAX_DEPTH.  Axis is chosen by aspect ratio so
+ * taller rects are more likely to be split horizontally, keeping cells
+ * roughly square.  Each call appends to `leaves` (terminal rects) and
+ * `edges` (the cut line segments drawn as black dividers).
+ */
+function split(x, y, w, h, depth, leaves, edges) {
+  if (Math.min(w, h) < MIN_SIDE || depth >= MAX_DEPTH) {
+    leaves.push({ x, y, w, h });
+    return;
+  }
+  const horizontal = Math.random() < h / (w + h);
+  const pos = Math.max(0.20, Math.min(0.80, splitPos()));
+  if (horizontal) {
+    const cy = y + h * pos;
+    edges.push({ x1: x, y1: cy, x2: x + w, y2: cy });
+    split(x, y,  w, cy - y,      depth + 1, leaves, edges);
+    split(x, cy, w, y + h - cy,  depth + 1, leaves, edges);
+  } else {
+    const cx = x + w * pos;
+    edges.push({ x1: cx, y1: y, x2: cx, y2: y + h });
+    split(x,  y, cx - x,     h, depth + 1, leaves, edges);
+    split(cx, y, x + w - cx, h, depth + 1, leaves, edges);
+  }
+}
+
+/**
+ * Assign De Stijl colors to leaf rects.  Two or three of the largest leaves
+ * (chosen from the larger half of all leaves) receive a shuffled primary color;
+ * the remaining ~80% get white or a near-white off-white tone, preserving the
+ * airy, light-dominant quality of Mondrian's mature grid paintings.
+ */
+function colorLeaves(leaves) {
+  const sorted = [...leaves].sort((a, b) => b.w * b.h - a.w * a.h);
+  const primaries = [RED, BLUE, YELLOW].sort(() => Math.random() - 0.5);
+  const nColors = 2 + Math.floor(Math.random() * 2); // 2 or 3 colored cells
+  const pool = Math.max(nColors, Math.ceil(sorted.length * 0.5));
+  const colorSet = new Set();
+  let tries = 0;
+  while (colorSet.size < Math.min(nColors, 3) && tries++ < 300) {
+    colorSet.add(Math.floor(Math.random() * pool));
+  }
+  let ci = 0;
+  return sorted.map((leaf, i) => {
+    if (colorSet.has(i) && ci < primaries.length) {
+      return { ...leaf, fill: primaries[ci++] };
+    }
+    const fill = Math.random() < 0.25
+      ? OFF_WHITES[Math.floor(Math.random() * OFF_WHITES.length)]
+      : WHITE;
+    return { ...leaf, fill };
+  });
+}
+
+function generate() {
+  const leaves = [], edges = [];
+  split(BORDER, BORDER, W - 2 * BORDER, H - 2 * BORDER, 0, leaves, edges);
+  return { leaves: colorLeaves(leaves), edges };
+}
+
+function draw({ leaves, edges }) {
+  ctx.fillStyle = BLACK;
+  ctx.fillRect(0, 0, W, H);
+  for (const { x, y, w, h, fill } of leaves) {
+    ctx.fillStyle = fill;
+    ctx.fillRect(x, y, w, h);
+  }
+  ctx.strokeStyle = BLACK;
+  ctx.lineWidth = LINE_W;
+  ctx.lineCap = 'square';
+  for (const { x1, y1, x2, y2 } of edges) {
+    ctx.beginPath();
+    ctx.moveTo(x1, y1);
+    ctx.lineTo(x2, y2);
+    ctx.stroke();
+  }
+}
+
+let composition = generate();
+draw(composition);
+
+/**
+ * Fade canvas to invisible, swap to a new composition, fade back in.
+ * Schedules the next cycle recursively so timing never drifts from the
+ * transition end rather than from the initial setTimeout fire.
+ */
+function cycle() {
+  const wait = 8000 + Math.random() * 4000; // 8–12 s between compositions
+  setTimeout(() => {
+    canvas.style.opacity = '0';
+    setTimeout(() => {
+      composition = generate();
+      draw(composition);
+      canvas.style.opacity = '1';
+      cycle();
+    }, 1000); // wait for the 1 s CSS fade-out to complete before swapping
+  }, wait);
+}
+
+cycle();
+</script>
+</body>
+</html>
