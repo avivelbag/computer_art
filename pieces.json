@@ -574,5 +574,14 @@
         "technique": "canvas / 2D wave equation / leapfrog finite-difference / ImageData per-pixel / requestAnimationFrame",
         "path": "pieces/151-wave-equation-ripple",
         "thumbnail": "pieces/151-wave-equation-ripple/thumbnail.svg"
+    },
+    {
+        "id": "156-watercolor-wash",
+        "title": "Wet Pigment — Watercolor Wash",
+        "tagline": "Recursive midpoint subdivision distorts base polygons into organic blobs; 25–40 layers of 5–10 % opacity accumulate into soft watercolor washes across three hue families — warm reds, cool blues, and earthy greens — resetting every 45 s with a slow cream fade",
+        "year": 2026,
+        "technique": "canvas / watercolor simulation / recursive midpoint subdivision / translucent polygon layering / requestAnimationFrame",
+        "path": "pieces/156-watercolor-wash",
+        "thumbnail": "pieces/156-watercolor-wash/thumbnail.svg"
     }
 ]

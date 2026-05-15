@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" width="400" height="400">
+  <rect width="400" height="400" fill="#f5f0e8"/>
+
+  <!-- Warm red/orange wash (hue ~20) — multiple low-alpha layers -->
+  <polygon points="130,100 175,88 215,110 220,155 196,178 148,175 115,148 118,112" fill="#dd7733" opacity="0.10"/>
+  <polygon points="124,95 170,84 212,108 218,157 194,182 145,180 110,151 113,109" fill="#cc5522" opacity="0.09"/>
+  <polygon points="137,103 178,94 214,116 219,153 192,174 149,168 118,142 122,115" fill="#e08030" opacity="0.11"/>
+  <polygon points="141,107 182,98 216,119 222,156 195,177 151,170 121,144 125,118" fill="#dd6622" opacity="0.08"/>
+  <polygon points="132,101 173,90 213,112 217,152 193,175 147,172 114,145 117,111" fill="#cc6633" opacity="0.10"/>
+  <polygon points="128,97 168,86 210,109 215,154 191,179 143,177 111,149 114,110" fill="#e07722" opacity="0.08"/>
+
+  <!-- Cool blue/teal wash (hue ~210) — multiple low-alpha layers -->
+  <polygon points="245,205 288,198 314,228 310,268 282,284 244,282 218,258 220,222" fill="#3c8fdc" opacity="0.10"/>
+  <polygon points="239,199 283,192 316,225 312,272 280,289 241,287 213,261 215,218" fill="#2277cc" opacity="0.09"/>
+  <polygon points="248,208 292,202 317,230 313,267 283,282 246,280 221,255 223,222" fill="#4499dd" opacity="0.11"/>
+  <polygon points="241,202 285,196 315,227 311,269 281,286 243,284 217,260 219,220" fill="#1a88cc" opacity="0.08"/>
+  <polygon points="246,206 290,200 316,229 312,268 282,284 244,282 219,257 221,222" fill="#55aaee" opacity="0.09"/>
+  <polygon points="243,203 287,197 314,226 310,267 280,284 242,282 216,258 218,220" fill="#2288dd" opacity="0.10"/>
+
+  <!-- Earthy yellow/green wash (hue ~95) — multiple low-alpha layers -->
+  <polygon points="162,282 208,272 238,294 235,333 207,348 166,346 139,324 141,292" fill="#7edc3c" opacity="0.10"/>
+  <polygon points="156,276 203,267 235,291 232,335 204,350 163,348 135,326 137,289" fill="#66cc33" opacity="0.09"/>
+  <polygon points="165,285 210,276 240,297 237,334 208,348 168,345 141,323 143,292" fill="#88dd44" opacity="0.11"/>
+  <polygon points="158,279 204,270 236,293 233,333 205,348 164,346 137,325 139,291" fill="#55bb22" opacity="0.08"/>
+  <polygon points="163,282 208,272 238,294 236,333 207,347 166,344 139,323 141,291" fill="#77cc33" opacity="0.10"/>
+  <polygon points="159,278 205,268 236,291 233,331 204,346 163,344 136,323 138,290" fill="#66dd22" opacity="0.08"/>
+
+  <!-- Overlap/mixing zones where hue families blend -->
+  <polygon points="196,178 228,172 245,198 238,222 212,229 188,222 176,201" fill="#aa7733" opacity="0.06"/>
+  <polygon points="185,278 216,268 235,289 231,312 207,322 182,317 170,297" fill="#558833" opacity="0.06"/>
+  <polygon points="233,244 263,238 279,260 275,285 252,293 229,289 217,268" fill="#336699" opacity="0.06"/>
+</svg>
