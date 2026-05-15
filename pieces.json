@@ -484,5 +484,14 @@
         "technique": "canvas / Voronoi diagram / distance-field scanline / spatial grid / ImageData",
         "path": "pieces/127-voronoi-mosaic",
         "thumbnail": "pieces/127-voronoi-mosaic/thumbnail.svg"
+    },
+    {
+        "id": "129-moire-interference",
+        "title": "Ghost Frequencies: A Moiré Study",
+        "tagline": "Two systems of concentric rings overlap on an 800×800 canvas — a fixed system and a slowly drifting one; canvas difference compositing cancels coincident rings to black, producing a shifting moiré interference fringe on a near-black monochrome ground",
+        "year": 2026,
+        "technique": "moiré / optical interference / canvas difference compositing / concentric rings",
+        "path": "pieces/129-moire-interference",
+        "thumbnail": "pieces/129-moire-interference/thumbnail.svg"
     }
 ]
