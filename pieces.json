@@ -520,5 +520,14 @@
         "technique": "canvas / Lorenz attractor / RK4 integration / ImageData log-density / rotating camera",
         "path": "pieces/137-lorenz-attractor",
         "thumbnail": "pieces/137-lorenz-attractor/thumbnail.png"
+    },
+    {
+        "id": "138-harmonograph",
+        "title": "Harmonograph — Four Pendulums, One Stroke",
+        "tagline": "A bilateral lateral harmonograph with two damped pendulums on each axis — frequency ratios 2:3 and 3:2 with phase offsets trace a near-closed compound Lissajous in cool steel-blue as the curve spirals inward to silence",
+        "year": 2026,
+        "technique": "canvas / bilateral harmonograph / damped pendulum equations / parametric animation",
+        "path": "pieces/138-harmonograph",
+        "thumbnail": "pieces/138-harmonograph/thumbnail.svg"
     }
 ]
