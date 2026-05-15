@@ -493,5 +493,14 @@
         "technique": "moiré / optical interference / canvas difference compositing / concentric rings",
         "path": "pieces/129-moire-interference",
         "thumbnail": "pieces/129-moire-interference/thumbnail.svg"
+    },
+    {
+        "id": "133-sdf-raymarcher",
+        "title": "SDF Raymarcher — Infinite Folded Space",
+        "tagline": "An infinite field of tori rendered entirely in a GLSL fragment shader via sphere-tracing — warm gold surfaces emerge from deep indigo fog as the camera slowly orbits, repeating forever through domain folding",
+        "year": 2026,
+        "technique": "WebGL / SDF ray marching / domain repetition / GLSL fragment shader",
+        "path": "pieces/133-sdf-raymarcher",
+        "thumbnail": "pieces/133-sdf-raymarcher/thumbnail.svg"
     }
 ]

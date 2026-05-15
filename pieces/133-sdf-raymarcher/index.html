@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>SDF Raymarcher — Infinite Folded Space</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { background: #060110; overflow: hidden; }
+    canvas { display: block; width: 100vw; height: 100vh; }
+  </style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<script id="vert" type="x-shader/x-vertex">
+attribute vec2 aPos;
+void main() { gl_Position = vec4(aPos, 0.0, 1.0); }
+</script>
+<script id="frag" type="x-shader/x-fragment">
+precision highp float;
+uniform vec2  uRes;
+uniform float uTime;
+
+float sdTorus(vec3 p, vec2 t) {
+  vec2 q = vec2(length(p.xz) - t.x, p.y);
+  return length(q) - t.y;
+}
+
+float map(vec3 p) {
+  vec3 q = mod(p, 2.0) - 1.0;
+  return sdTorus(q, vec2(0.4, 0.15));
+}
+
+vec3 calcNormal(vec3 p) {
+  const vec2 e = vec2(0.001, 0.0);
+  return normalize(vec3(
+    map(p + e.xyy) - map(p - e.xyy),
+    map(p + e.yxy) - map(p - e.yxy),
+    map(p + e.yyx) - map(p - e.yyx)
+  ));
+}
+
+float calcAO(vec3 pos, vec3 nor) {
+  float occ = 0.0;
+  float sca  = 1.0;
+  for (int i = 0; i < 5; i++) {
+    float h = 0.01 + 0.12 * float(i) / 4.0;
+    float d = map(pos + h * nor);
+    occ += (h - d) * sca;
+    sca *= 0.95;
+  }
+  return clamp(1.0 - 3.0 * occ, 0.0, 1.0);
+}
+
+float rayMarch(vec3 ro, vec3 rd) {
+  float t = 0.001;
+  for (int i = 0; i < 64; i++) {
+    float d = map(ro + rd * t);
+    if (d < 0.001 || t > 30.0) break;
+    t += d;
+  }
+  return t;
+}
+
+void main() {
+  vec2 uv = (gl_FragCoord.xy * 2.0 - uRes) / min(uRes.x, uRes.y);
+
+  // Camera orbits with 20-second period: 2π/20 ≈ 0.31416 rad/s
+  float angle = uTime * 0.31416;
+  vec3 ro = vec3(cos(angle) * 4.0, 1.5 + sin(uTime * 0.17) * 0.5, sin(angle) * 4.0);
+  vec3 target = vec3(0.0, 0.0, 0.0);
+  vec3 fwd = normalize(target - ro);
+  vec3 rgt = normalize(cross(fwd, vec3(0.0, 1.0, 0.0)));
+  vec3 up  = cross(rgt, fwd);
+  vec3 rd  = normalize(uv.x * rgt + uv.y * up + 1.5 * fwd);
+
+  vec3 skyColor     = vec3(0.06, 0.04, 0.22);
+  vec3 surfaceColor = vec3(0.92, 0.72, 0.18);
+
+  float t   = rayMarch(ro, rd);
+  vec3  col;
+
+  if (t > 29.0) {
+    col = skyColor;
+  } else {
+    vec3 pos = ro + rd * t;
+    vec3 nor = calcNormal(pos);
+    float occ = calcAO(pos, nor);
+
+    vec3 lig = normalize(vec3(1.0, 2.0, -0.5));
+    float dif = clamp(dot(nor, lig), 0.0, 1.0);
+    vec3  ref = reflect(rd, nor);
+    float spe = pow(clamp(dot(ref, lig), 0.0, 1.0), 32.0);
+
+    col = surfaceColor * (0.05 + 0.65 * dif * occ) + 0.35 * spe * occ;
+
+    // Cool rim light adds a blue-violet fringe at glancing angles
+    float rim = pow(1.0 - clamp(dot(-rd, nor), 0.0, 1.0), 3.0);
+    col += rim * vec3(0.18, 0.22, 0.80) * 0.45;
+
+    // Distance fog: exponential blend toward deep indigo sky
+    float fog = 1.0 - exp(-0.07 * t);
+    col = mix(col, skyColor, fog);
+  }
+
+  col = pow(clamp(col, 0.0, 1.0), vec3(0.4545));
+  gl_FragColor = vec4(col, 1.0);
+}
+</script>
+<script>
+const canvas = document.getElementById('c');
+const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+
+function mkShader(type, src) {
+  const sh = gl.createShader(type);
+  gl.shaderSource(sh, src);
+  gl.compileShader(sh);
+  if (!gl.getShaderParameter(sh, gl.COMPILE_STATUS))
+    console.error(gl.getShaderInfoLog(sh));
+  return sh;
+}
+
+const prog = gl.createProgram();
+gl.attachShader(prog, mkShader(gl.VERTEX_SHADER,   document.getElementById('vert').textContent));
+gl.attachShader(prog, mkShader(gl.FRAGMENT_SHADER, document.getElementById('frag').textContent));
+gl.linkProgram(prog);
+gl.useProgram(prog);
+
+const buf = gl.createBuffer();
+gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+gl.bufferData(gl.ARRAY_BUFFER,
+  new Float32Array([-1,-1, 1,-1, -1,1, 1,-1, 1,1, -1,1]),
+  gl.STATIC_DRAW);
+
+const aPos  = gl.getAttribLocation(prog, 'aPos');
+gl.enableVertexAttribArray(aPos);
+gl.vertexAttribPointer(aPos, 2, gl.FLOAT, false, 0, 0);
+
+const uRes  = gl.getUniformLocation(prog, 'uRes');
+const uTime = gl.getUniformLocation(prog, 'uTime');
+
+function resize() {
+  canvas.width  = window.innerWidth;
+  canvas.height = window.innerHeight;
+  gl.viewport(0, 0, canvas.width, canvas.height);
+  gl.uniform2f(uRes, canvas.width, canvas.height);
+}
+window.addEventListener('resize', resize);
+resize();
+
+const t0 = performance.now();
+function frame(ts) {
+  gl.uniform1f(uTime, (ts - t0) * 0.001);
+  gl.drawArrays(gl.TRIANGLES, 0, 6);
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>
