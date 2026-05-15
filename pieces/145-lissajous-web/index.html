@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Frequencies in Resonance — Lissajous Web</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { background: #08080f; display: flex; align-items: center; justify-content: center; min-height: 100vh; }
+    canvas { display: block; }
+  </style>
+</head>
+<body>
+<canvas id="canvas" width="600" height="600"></canvas>
+<script>
+  const canvas = document.getElementById('canvas');
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width;
+  const H = canvas.height;
+  const CX = W / 2;
+  const CY = H / 2;
+  const R = 270;
+
+  // Fixed x-frequency; b drifts slowly to morph the Lissajous figure
+  const a = 3;
+  let b = 0.98;
+  let tau = 0;
+  // Phase offset drifts at a different rate to vary knot structures over time
+  let delta = 0;
+
+  const TAU_STEP = 0.02;     // parameter increment per frame
+  const B_STEP = 0.00008;    // frequency drift — very slow
+  const DELTA_STEP = 0.0001; // phase drift — creates varied knot topology
+  const POINTS_PER_FRAME = 200;
+  const ALPHA = 0.05;        // low alpha accumulates glow at turning points
+
+  ctx.fillStyle = '#08080f';
+  ctx.fillRect(0, 0, W, H);
+
+  function hueFromB(bVal) {
+    // Map the fractional part of b/a to a hue in [0, 360]
+    const frac = (bVal / a) % 1;
+    return frac * 360;
+  }
+
+  function frame() {
+    const hue = hueFromB(b);
+    ctx.beginPath();
+    ctx.strokeStyle = `hsla(${hue}, 80%, 70%, ${ALPHA})`;
+    ctx.lineWidth = 1.0;
+
+    const x0 = CX + R * Math.sin(a * tau + delta);
+    const y0 = CY + R * Math.sin(b * tau);
+    ctx.moveTo(x0, y0);
+
+    for (let i = 0; i < POINTS_PER_FRAME; i++) {
+      tau += TAU_STEP;
+      const x = CX + R * Math.sin(a * tau + delta);
+      const y = CY + R * Math.sin(b * tau);
+      ctx.lineTo(x, y);
+    }
+
+    ctx.stroke();
+
+    // Advance frequency and phase; wrap b so the animation loops seamlessly
+    b += B_STEP;
+    if (b > 5.02) {
+      b = 0.98;
+      tau = 0;
+      delta = 0;
+      ctx.fillStyle = '#08080f';
+      ctx.fillRect(0, 0, W, H);
+    }
+
+    delta += DELTA_STEP;
+
+    requestAnimationFrame(frame);
+  }
+
+  requestAnimationFrame(frame);
+</script>
+</body>
+</html>

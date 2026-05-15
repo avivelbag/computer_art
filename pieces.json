@@ -547,5 +547,14 @@
         "technique": "SVG / Delaunay triangulation / Bowyer-Watson / generative geometry",
         "path": "pieces/142-light-divided",
         "thumbnail": "pieces/142-light-divided/thumbnail.svg"
+    },
+    {
+        "id": "145-lissajous-web",
+        "title": "Frequencies in Resonance: Lissajous Web",
+        "tagline": "A single Lissajous curve drifts through every frequency ratio as b sweeps 0.98→5.02 — low-alpha accumulation builds luminous gem-like webs, hue shifting with each near-integer resonance on a near-black canvas at 60 fps",
+        "year": 2026,
+        "technique": "canvas / Lissajous curves / parametric equations / additive blending / requestAnimationFrame",
+        "path": "pieces/145-lissajous-web",
+        "thumbnail": "pieces/145-lissajous-web/thumbnail.svg"
     }
 ]
