@@ -1,0 +1,71 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 250" width="400" height="250">
+  <defs>
+    <radialGradient id="bg" cx="50%" cy="50%" r="70%">
+      <stop offset="0%" stop-color="#1a0035"/>
+      <stop offset="100%" stop-color="#060012"/>
+    </radialGradient>
+    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="2.5" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <filter id="softglow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="4" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="400" height="250" fill="url(#bg)"/>
+
+  <!-- Faint initial ring suggestion -->
+  <circle cx="200" cy="125" r="70" fill="none" stroke="rgba(0,180,160,0.12)" stroke-width="22"/>
+
+  <!-- Outer peripheral veins -->
+  <path d="M55,80 C90,95 115,108 130,125 C145,142 140,165 120,185" fill="none" stroke="rgba(0,200,175,0.35)" stroke-width="1.2"/>
+  <path d="M345,80 C310,95 285,108 270,125 C255,142 260,165 280,185" fill="none" stroke="rgba(0,200,175,0.35)" stroke-width="1.2"/>
+  <path d="M55,80 C80,55 110,48 140,48 C170,48 190,52 200,50" fill="none" stroke="rgba(0,195,170,0.3)" stroke-width="1"/>
+  <path d="M345,80 C320,55 290,48 260,48 C230,48 210,52 200,50" fill="none" stroke="rgba(0,195,170,0.3)" stroke-width="1"/>
+  <path d="M120,185 C145,200 170,205 200,205 C230,205 255,200 280,185" fill="none" stroke="rgba(0,195,170,0.3)" stroke-width="1"/>
+
+  <!-- Main radial veins with glow -->
+  <path d="M200,50 C208,70 215,90 215,125 C215,160 208,178 200,200" fill="none" stroke="rgba(0,230,200,0.75)" stroke-width="2" filter="url(#glow)"/>
+  <path d="M130,125 C148,110 165,107 200,105 C235,107 252,110 270,125" fill="none" stroke="rgba(0,230,200,0.7)" stroke-width="2" filter="url(#glow)"/>
+
+  <!-- Secondary branching veins -->
+  <path d="M130,125 C138,85 155,68 175,55" fill="none" stroke="rgba(0,225,195,0.65)" stroke-width="1.6" filter="url(#glow)"/>
+  <path d="M270,125 C262,85 245,68 225,55" fill="none" stroke="rgba(0,225,195,0.65)" stroke-width="1.6" filter="url(#glow)"/>
+  <path d="M130,125 C138,160 152,178 175,193" fill="none" stroke="rgba(0,220,190,0.6)" stroke-width="1.5" filter="url(#glow)"/>
+  <path d="M270,125 C262,160 248,178 225,193" fill="none" stroke="rgba(0,220,190,0.6)" stroke-width="1.5" filter="url(#glow)"/>
+
+  <!-- Fine cross-linking veins -->
+  <path d="M175,55 C185,75 195,90 200,105" fill="none" stroke="rgba(0,240,210,0.5)" stroke-width="1.1"/>
+  <path d="M225,55 C215,75 205,90 200,105" fill="none" stroke="rgba(0,240,210,0.5)" stroke-width="1.1"/>
+  <path d="M175,193 C185,178 195,162 200,148" fill="none" stroke="rgba(0,230,200,0.45)" stroke-width="1"/>
+  <path d="M225,193 C215,178 205,162 200,148" fill="none" stroke="rgba(0,230,200,0.45)" stroke-width="1"/>
+
+  <!-- Central node with soft glow -->
+  <circle cx="200" cy="125" r="6" fill="rgba(200,255,248,0.85)" filter="url(#softglow)"/>
+  <circle cx="200" cy="125" r="3" fill="rgba(255,255,255,0.95)"/>
+
+  <!-- Intersection nodes -->
+  <circle cx="200" cy="105" r="2.5" fill="rgba(0,255,220,0.7)" filter="url(#glow)"/>
+  <circle cx="200" cy="148" r="2.5" fill="rgba(0,255,220,0.7)" filter="url(#glow)"/>
+  <circle cx="130" cy="125" r="2.5" fill="rgba(0,250,215,0.65)" filter="url(#glow)"/>
+  <circle cx="270" cy="125" r="2.5" fill="rgba(0,250,215,0.65)" filter="url(#glow)"/>
+  <circle cx="175" cy="55"  r="2"   fill="rgba(0,240,210,0.6)"/>
+  <circle cx="225" cy="55"  r="2"   fill="rgba(0,240,210,0.6)"/>
+  <circle cx="175" cy="193" r="2"   fill="rgba(0,235,205,0.55)"/>
+  <circle cx="225" cy="193" r="2"   fill="rgba(0,235,205,0.55)"/>
+
+  <!-- Fine peripheral tendrils -->
+  <path d="M55,80 C45,95 38,115 40,140" fill="none" stroke="rgba(0,185,165,0.25)" stroke-width="0.8"/>
+  <path d="M345,80 C355,95 362,115 360,140" fill="none" stroke="rgba(0,185,165,0.25)" stroke-width="0.8"/>
+  <path d="M40,140 C42,160 52,175 70,180" fill="none" stroke="rgba(0,180,160,0.2)" stroke-width="0.8"/>
+  <path d="M360,140 C358,160 348,175 330,180" fill="none" stroke="rgba(0,180,160,0.2)" stroke-width="0.8"/>
+</svg>

@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>The Mold That Finds the Train Schedule — Physarum</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { background: #0d0020; display: flex; align-items: center; justify-content: center; min-height: 100vh; overflow: hidden; }
+    canvas { display: block; width: min(100vw, calc(100vh * 8/5)); height: min(calc(100vw * 5/8), 100vh); image-rendering: pixelated; }
+  </style>
+</head>
+<body>
+  <canvas id="c" width="800" height="500"></canvas>
+  <script>
+    const W = 800, H = 500, N = 12000;
+    const TWO_PI       = Math.PI * 2;
+    const SENSOR_ANGLE = Math.PI / 6;
+    const SENSOR_DIST  = 9;
+    const STEP_SIZE    = 1.5;
+    const DECAY        = 0.96;
+    const DEPOSIT      = 5.0;
+    const INV9         = 1 / 9;
+    const MAX_TRAIL    = 40;
+    const SIZE         = W * H;
+
+    // Palette stops: deep violet → electric teal → warm white
+    const P0 = [18,  0,  40];
+    const P1 = [ 0, 230, 200];
+    const P2 = [255, 248, 235];
+
+    const canvas = document.getElementById('c');
+    const ctx    = canvas.getContext('2d');
+    ctx.imageSmoothingEnabled = false;
+
+    let trail    = new Float32Array(SIZE);
+    let trailBuf = new Float32Array(SIZE);
+
+    // Agents packed as (x, y, angle) triples
+    const agents = new Float32Array(N * 3);
+
+    // Initialise agents on a ring, facing outward so the colony expands
+    const CX = W / 2, CY = H / 2;
+    const RING_R = Math.min(W, H) * 0.28;
+    for (let i = 0; i < N; i++) {
+      const theta = (i / N) * TWO_PI;
+      const r     = RING_R + (Math.random() - 0.5) * 8;
+      agents[i * 3]     = CX + Math.cos(theta) * r;
+      agents[i * 3 + 1] = CY + Math.sin(theta) * r;
+      agents[i * 3 + 2] = theta + (Math.random() - 0.5) * 0.4;
+    }
+
+    function sampleTrail(sx, sy) {
+      const ix = (((sx | 0) % W) + W) % W;
+      const iy = (((sy | 0) % H) + H) % H;
+      return trail[iy * W + ix];
+    }
+
+    function tick() {
+      // Diffuse trail with 3×3 box blur then multiply by decay factor
+      for (let y = 0; y < H; y++) {
+        const yRow = y * W;
+        const yN   = ((y - 1 + H) % H) * W;
+        const yS   = ((y + 1)     % H) * W;
+        for (let x = 0; x < W; x++) {
+          const xW = (x - 1 + W) % W;
+          const xE = (x + 1)     % W;
+          trailBuf[yRow + x] = (
+            trail[yN + xW] + trail[yN + x] + trail[yN + xE] +
+            trail[yRow + xW] + trail[yRow + x] + trail[yRow + xE] +
+            trail[yS + xW] + trail[yS + x] + trail[yS + xE]
+          ) * INV9 * DECAY;
+        }
+      }
+      let tmp = trail; trail = trailBuf; trailBuf = tmp;
+
+      // Update each agent: sense, steer, deposit, move
+      for (let i = 0; i < N; i++) {
+        const b = i * 3;
+        let x = agents[b], y = agents[b + 1], a = agents[b + 2];
+
+        const cosA = Math.cos(a), sinA = Math.sin(a);
+        const fwd   = sampleTrail(x + cosA * SENSOR_DIST,
+                                   y + sinA * SENSOR_DIST);
+        const left  = sampleTrail(x + Math.cos(a + SENSOR_ANGLE) * SENSOR_DIST,
+                                   y + Math.sin(a + SENSOR_ANGLE) * SENSOR_DIST);
+        const right = sampleTrail(x + Math.cos(a - SENSOR_ANGLE) * SENSOR_DIST,
+                                   y + Math.sin(a - SENSOR_ANGLE) * SENSOR_DIST);
+
+        if (fwd > left && fwd > right) {
+          // continue straight
+        } else if (left > right) {
+          a += SENSOR_ANGLE;
+        } else if (right > left) {
+          a -= SENSOR_ANGLE;
+        } else {
+          // symmetric — random jitter breaks degeneracy
+          a += (Math.random() < 0.5 ? 1 : -1) * SENSOR_ANGLE;
+        }
+
+        // Move and wrap on a toroidal canvas
+        x = (x + Math.cos(a) * STEP_SIZE + W) % W;
+        y = (y + Math.sin(a) * STEP_SIZE + H) % H;
+
+        trail[((y | 0) % H) * W + ((x | 0) % W)] += DEPOSIT;
+
+        agents[b]     = x;
+        agents[b + 1] = y;
+        agents[b + 2] = a;
+      }
+    }
+
+    const imgData = ctx.createImageData(W, H);
+    const pixels  = imgData.data;
+
+    const dr01 = P1[0] - P0[0], dg01 = P1[1] - P0[1], db01 = P1[2] - P0[2];
+    const dr12 = P2[0] - P1[0], dg12 = P2[1] - P1[1], db12 = P2[2] - P1[2];
+
+    function draw() {
+      for (let i = 0; i < SIZE; i++) {
+        let t = trail[i] / MAX_TRAIL;
+        if (t > 1) t = 1;
+        // smoothstep for perceptual sharpening of vein edges
+        t = t * t * (3 - 2 * t);
+
+        const p4 = i << 2;
+        if (t < 0.5) {
+          const s = t * 2;
+          pixels[p4]     = (P0[0] + s * dr01) | 0;
+          pixels[p4 + 1] = (P0[1] + s * dg01) | 0;
+          pixels[p4 + 2] = (P0[2] + s * db01) | 0;
+        } else {
+          const s = (t - 0.5) * 2;
+          pixels[p4]     = (P1[0] + s * dr12) | 0;
+          pixels[p4 + 1] = (P1[1] + s * dg12) | 0;
+          pixels[p4 + 2] = (P1[2] + s * db12) | 0;
+        }
+        pixels[p4 + 3] = 255;
+      }
+      ctx.putImageData(imgData, 0, 0);
+    }
+
+    function loop() {
+      tick();
+      draw();
+      requestAnimationFrame(loop);
+    }
+
+    requestAnimationFrame(loop);
+  </script>
+</body>
+</html>

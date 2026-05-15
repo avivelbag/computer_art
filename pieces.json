@@ -619,5 +619,14 @@
     "technique": "canvas / conformal mapping / complex analysis / Joukowski transform / parametric grid morphing",
     "path": "pieces/171-conformal-grid",
     "thumbnail": "pieces/171-conformal-grid/thumbnail.svg"
+  },
+  {
+    "id": "175-physarum-slime",
+    "title": "The Mold That Finds the Train Schedule: Physarum",
+    "tagline": "12 000 agents deposit chemical trail onto an 800×500 grid; trail diffuses and decays each frame while agents steer toward the strongest signal — three local rules crystallise a vein network in deep violet, electric teal, and warm white at 60 fps",
+    "year": 2026,
+    "technique": "canvas / Physarum polycephalum / slime mold simulation / trail diffusion / chemotaxis / Float32Array / ImageData / requestAnimationFrame",
+    "path": "pieces/175-physarum-slime",
+    "thumbnail": "pieces/175-physarum-slime/thumbnail.svg"
   }
 ]
