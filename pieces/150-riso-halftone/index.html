@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Halftone Riso — Two-Color Screen</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { background: #D8D0C0; display: flex; align-items: center; justify-content: center; min-height: 100vh; }
+    canvas { display: block; box-shadow: 0 4px 24px rgba(0,0,0,0.25); }
+  </style>
+</head>
+<body>
+<canvas id="canvas" width="600" height="600"></canvas>
+<script>
+  const canvas = document.getElementById('canvas');
+  const ctx    = canvas.getContext('2d');
+  const W = canvas.width;
+  const H = canvas.height;
+
+  const INK_A = '#FF4880'; // fluorescent pink
+  const INK_B = '#00A99D'; // teal
+  const PAPER  = '#F5F0E8'; // cream
+  const GRID   = 13;        // dot grid spacing in px
+  const BASE_R = 6;         // maximum dot radius
+
+  // Tone field: concentric sine rings centered on canvas
+  function tone(x, y) {
+    const dx = x - W / 2;
+    const dy = y - H / 2;
+    const r  = Math.sqrt(dx * dx + dy * dy);
+    return 0.5 + 0.42 * Math.sin(r / 28);
+  }
+
+  // Draw one halftone screen: dots at grid rotated by `angleDeg` degrees,
+  // offset from canvas center by (offX, offY) for misregistration.
+  function drawScreen(angleDeg, color, offX, offY) {
+    const angle = angleDeg * Math.PI / 180;
+    const cosA  = Math.cos(angle);
+    const sinA  = Math.sin(angle);
+    const cx    = W / 2 + offX;
+    const cy    = H / 2 + offY;
+    const steps = Math.ceil(Math.sqrt(W * W + H * H) / 2 / GRID) + 2;
+
+    ctx.save();
+    ctx.globalCompositeOperation = 'multiply';
+    ctx.fillStyle = color;
+    ctx.beginPath();
+
+    for (let i = -steps; i <= steps; i++) {
+      for (let j = -steps; j <= steps; j++) {
+        // Rotate grid basis vectors (cosA, sinA) and (-sinA, cosA) by angle
+        const x = cx + i * GRID * cosA - j * GRID * sinA;
+        const y = cy + i * GRID * sinA + j * GRID * cosA;
+
+        if (x < -BASE_R || x > W + BASE_R || y < -BASE_R || y > H + BASE_R) continue;
+
+        const t = tone(x, y);
+        const r = BASE_R * t;
+        if (r < 0.3) continue;
+
+        ctx.moveTo(x + r, y);
+        ctx.arc(x, y, r, 0, Math.PI * 2);
+      }
+    }
+
+    ctx.fill();
+    ctx.restore();
+  }
+
+  let frame = 0;
+
+  function render() {
+    // Paper background — no globalCompositeOperation on this layer
+    ctx.globalCompositeOperation = 'source-over';
+    ctx.fillStyle = PAPER;
+    ctx.fillRect(0, 0, W, H);
+
+    // Screen A: pink at 45° — fixed
+    drawScreen(45, INK_A, 0, 0);
+
+    // Screen B: teal at 75° — slow drift for misregistration effect
+    const drift = 4 * Math.sin(frame * 0.003);
+    drawScreen(75, INK_B, drift, drift * 0.6);
+
+    frame++;
+    requestAnimationFrame(render);
+  }
+
+  render();
+</script>
+</body>
+</html>
