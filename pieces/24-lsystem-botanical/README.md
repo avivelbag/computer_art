@@ -13,7 +13,7 @@ An animated L-system botanical. A context-free string rewriting rule expands 6 t
 
 - **Axiom:** `X`
 - **Angle:** 25°
-- **Iterations:** 6 → 1,995 F-segments
+- **Iterations:** 6 → 6,048 F-segments
 
 ## Turtle interpretation
 

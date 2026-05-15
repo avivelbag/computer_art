@@ -92,7 +92,7 @@
     {
         "id": "24-lsystem-botanical",
         "title": "The Plant That Writes Itself",
-        "tagline": "A fractal fern grown by a context-free rewriting rule — 1,995 branches appear one by one over 4 seconds, then the plant fades and regrows",
+        "tagline": "A fractal fern grown by a context-free rewriting rule — 6,048 segments appear one by one over 4 seconds, then the plant fades and regrows",
         "year": 2026,
         "technique": "canvas / L-system / turtle graphics",
         "path": "pieces/24-lsystem-botanical",
