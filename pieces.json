@@ -637,5 +637,14 @@
     "technique": "SVG / polar equations / sinusoidal radial symmetry / SMIL animation",
     "path": "pieces/176-radiolaria-diatoms",
     "thumbnail": "pieces/176-radiolaria-diatoms/thumbnail.svg"
+  },
+  {
+    "id": "180-gray-scott",
+    "title": "Chemical Dreams — Gray-Scott Mitosis",
+    "tagline": "Two chemical species on a 512×512 toroidal grid self-organise via reaction-diffusion into a continuously self-replicating population of cyan spots on deep indigo — each spot grows to a critical radius and splits in two at 60 fps",
+    "year": 2026,
+    "technique": "canvas / Gray-Scott reaction-diffusion / mitosis regime / Float32Array / ImageData LUT / requestAnimationFrame",
+    "path": "pieces/180-gray-scott",
+    "thumbnail": "pieces/180-gray-scott/thumbnail.svg"
   }
 ]

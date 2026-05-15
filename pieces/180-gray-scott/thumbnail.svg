@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" width="400" height="400">
+  <!-- Background: deep indigo -->
+  <rect width="400" height="400" fill="#1a0a2e"/>
+
+  <!-- Mid-tone cyan halos (intermediate V, outer shells of mitosis spots) -->
+  <circle cx="200" cy="200" r="38" fill="#00a3c4"/>
+  <circle cx="90"  cy="110" r="26" fill="#00a3c4"/>
+  <circle cx="320" cy="130" r="22" fill="#00a3c4"/>
+  <circle cx="340" cy="285" r="28" fill="#00a3c4"/>
+  <circle cx="70"  cy="300" r="24" fill="#00a3c4"/>
+  <circle cx="175" cy="345" r="20" fill="#00a3c4"/>
+  <circle cx="280" cy="55"  r="18" fill="#00a3c4"/>
+  <circle cx="130" cy="255" r="16" fill="#00a3c4"/>
+  <circle cx="370" cy="180" r="14" fill="#00a3c4"/>
+  <circle cx="50"  cy="195" r="12" fill="#00a3c4"/>
+  <circle cx="250" cy="155" r="16" fill="#00a3c4"/>
+  <circle cx="305" cy="225" r="14" fill="#00a3c4"/>
+  <circle cx="155" cy="60"  r="16" fill="#00a3c4"/>
+
+  <!-- Electric cyan cores (high V, bright centers of spots) -->
+  <circle cx="200" cy="200" r="22" fill="#00e5ff"/>
+  <circle cx="90"  cy="110" r="14" fill="#00e5ff"/>
+  <circle cx="320" cy="130" r="12" fill="#00e5ff"/>
+  <circle cx="340" cy="285" r="16" fill="#00e5ff"/>
+  <circle cx="70"  cy="300" r="13" fill="#00e5ff"/>
+  <circle cx="175" cy="345" r="11" fill="#00e5ff"/>
+  <circle cx="280" cy="55"  r="10" fill="#00e5ff"/>
+  <circle cx="130" cy="255" r="9"  fill="#00e5ff"/>
+  <circle cx="370" cy="180" r="7"  fill="#00e5ff"/>
+  <circle cx="50"  cy="195" r="6"  fill="#00e5ff"/>
+  <circle cx="250" cy="155" r="9"  fill="#00e5ff"/>
+  <circle cx="305" cy="225" r="8"  fill="#00e5ff"/>
+  <circle cx="155" cy="60"  r="9"  fill="#00e5ff"/>
+
+  <!-- Dividing pair: two spots mid-split, suggesting mitosis -->
+  <circle cx="230" cy="320" r="10" fill="#00a3c4"/>
+  <circle cx="252" cy="320" r="10" fill="#00a3c4"/>
+  <circle cx="230" cy="320" r="6"  fill="#00e5ff"/>
+  <circle cx="252" cy="320" r="6"  fill="#00e5ff"/>
+
+  <!-- Scattered small spots -->
+  <circle cx="380" cy="360" r="7"  fill="#00a3c4"/>
+  <circle cx="380" cy="360" r="4"  fill="#00e5ff"/>
+  <circle cx="20"  cy="50"  r="6"  fill="#00a3c4"/>
+  <circle cx="20"  cy="50"  r="3"  fill="#00e5ff"/>
+  <circle cx="390" cy="70"  r="5"  fill="#00a3c4"/>
+  <circle cx="390" cy="70"  r="3"  fill="#00e5ff"/>
+  <circle cx="100" cy="380" r="8"  fill="#00a3c4"/>
+  <circle cx="100" cy="380" r="5"  fill="#00e5ff"/>
+</svg>
