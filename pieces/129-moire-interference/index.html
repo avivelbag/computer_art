@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Ghost Frequencies: A Moiré Study</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#0d0d0d;overflow:hidden;display:flex;align-items:center;justify-content:center;width:100vw;height:100vh}
+canvas{display:block;width:min(100vw,100vh);height:min(100vw,100vh)}
+</style>
+</head>
+<body>
+<canvas id="c" width="800" height="800"></canvas>
+<script>(function(){
+'use strict';
+
+const W=800,H=800;
+const CX=W/2,CY=H/2;
+const RING_SPACING=10;
+// Covers full diagonal plus max offset from center
+const MAX_R=700;
+
+const canvas=document.getElementById('c');
+const ctx=canvas.getContext('2d');
+
+function drawRings(cx,cy){
+  ctx.beginPath();
+  for(let r=RING_SPACING;r<=MAX_R;r+=RING_SPACING){
+    ctx.moveTo(cx+r,cy);
+    ctx.arc(cx,cy,r,0,Math.PI*2);
+  }
+  ctx.stroke();
+}
+
+function frame(ts){
+  const t=ts*0.001;
+
+  ctx.fillStyle='#0d0d0d';
+  ctx.fillRect(0,0,W,H);
+
+  ctx.strokeStyle='#ffffff';
+  ctx.lineWidth=1;
+
+  // Layer A: concentric rings anchored at canvas center
+  ctx.globalCompositeOperation='source-over';
+  drawRings(CX,CY);
+
+  // Layer B: same ring system with a slowly drifting center.
+  // 'difference' compositing: where both ring systems coincide the pixel
+  // cancels to black — that is the moiré interference fringe.
+  // sin/cos with incommensurable frequencies ensure the motion never
+  // exactly repeats, while each axis individually loops seamlessly.
+  ctx.globalCompositeOperation='difference';
+  const dx=Math.sin(t*0.2)*50;
+  const dy=Math.cos(t*0.13)*30;
+  drawRings(CX+dx,CY+dy);
+
+  ctx.globalCompositeOperation='source-over';
+  requestAnimationFrame(frame);
+}
+
+requestAnimationFrame(frame);
+})();</script>
+</body>
+</html>
