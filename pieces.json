@@ -529,5 +529,14 @@
         "technique": "canvas / bilateral harmonograph / damped pendulum equations / parametric animation",
         "path": "pieces/138-harmonograph",
         "thumbnail": "pieces/138-harmonograph/thumbnail.svg"
+    },
+    {
+        "id": "139-circle-packing",
+        "title": "Circle Packing — Every Gap Has a Name",
+        "tagline": "A greedy largest-empty-circle algorithm fills an 800×800 canvas iteratively — largest circles appear first in warm cream, medium circles in amber, and tiny gap-filling circles in deep teal, building a dense organic mosaic at 20 circles per frame",
+        "year": 2026,
+        "technique": "canvas / circle packing / greedy largest-empty-circle / requestAnimationFrame",
+        "path": "pieces/139-circle-packing",
+        "thumbnail": "pieces/139-circle-packing/thumbnail.svg"
     }
 ]

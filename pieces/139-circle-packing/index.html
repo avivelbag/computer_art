@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Circle Packing — Every Gap Has a Name</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { background: #0a0a14; display: flex; align-items: center; justify-content: center; min-height: 100vh; }
+    canvas { display: block; }
+  </style>
+</head>
+<body>
+<canvas id="canvas" width="800" height="800"></canvas>
+<script>
+  const canvas = document.getElementById('canvas');
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width;
+  const H = canvas.height;
+
+  const MIN_R = 2;
+  const N_CANDIDATES = 200;
+  const CIRCLES_PER_FRAME = 20;
+  const RESTART_DELAY_MS = 3000;
+
+  // 3-stop palette: t=0 (smallest circles) → deep teal, t=0.5 → amber, t=1 (largest) → cream
+  const PAL = [
+    [13, 59, 79],
+    [232, 160, 32],
+    [245, 240, 200],
+  ];
+
+  const circles = [];
+  let maxR = MIN_R;
+  let done = false;
+  let animId = null;
+
+  function palColor(t) {
+    t = Math.max(0, Math.min(1, t));
+    const [a, b] = t < 0.5 ? [PAL[0], PAL[1]] : [PAL[1], PAL[2]];
+    const s = t < 0.5 ? t * 2 : (t - 0.5) * 2;
+    return [
+      (a[0] + (b[0] - a[0]) * s) | 0,
+      (a[1] + (b[1] - a[1]) * s) | 0,
+      (a[2] + (b[2] - a[2]) * s) | 0,
+    ];
+  }
+
+  // Map log(r) linearly to [0,1] across the full radius range so the palette
+  // spans from the smallest placed circles (deep teal) to the largest (cream).
+  function circleT(r) {
+    const logMin = Math.log(MIN_R);
+    const logMax = Math.log(maxR);
+    return logMax > logMin ? (Math.log(r) - logMin) / (logMax - logMin) : 1;
+  }
+
+  // Distance from (cx,cy) to the nearest obstacle: canvas edge or any placed circle.
+  function clearance(cx, cy) {
+    let r = Math.min(cx, cy, W - cx, H - cy);
+    for (let i = 0; i < circles.length; i++) {
+      const c = circles[i];
+      const dx = cx - c.x, dy = cy - c.y;
+      const d = Math.sqrt(dx * dx + dy * dy) - c.r;
+      if (d < r) r = d;
+    }
+    return r;
+  }
+
+  // Sample N_CANDIDATES random points, keep the one with the largest clearance.
+  function placeOne() {
+    let bestR = 0, bestX = 0, bestY = 0;
+    for (let i = 0; i < N_CANDIDATES; i++) {
+      const cx = Math.random() * W;
+      const cy = Math.random() * H;
+      const r = clearance(cx, cy);
+      if (r > bestR) { bestR = r; bestX = cx; bestY = cy; }
+    }
+    if (bestR < MIN_R) return false;
+    if (bestR > maxR) maxR = bestR;
+    circles.push({ x: bestX, y: bestY, r: bestR });
+    return true;
+  }
+
+  function drawLast() {
+    const c = circles[circles.length - 1];
+    const [ri, gi, bi] = palColor(circleT(c.r));
+    ctx.beginPath();
+    ctx.arc(c.x, c.y, c.r, 0, Math.PI * 2);
+    ctx.fillStyle = `rgb(${ri},${gi},${bi})`;
+    ctx.fill();
+  }
+
+  function init() {
+    ctx.fillStyle = '#0a0a14';
+    ctx.fillRect(0, 0, W, H);
+    circles.length = 0;
+    maxR = MIN_R;
+    done = false;
+  }
+
+  function tick() {
+    if (done) {
+      cancelAnimationFrame(animId);
+      setTimeout(() => {
+        init();
+        animId = requestAnimationFrame(tick);
+      }, RESTART_DELAY_MS);
+      return;
+    }
+
+    for (let i = 0; i < CIRCLES_PER_FRAME; i++) {
+      if (!placeOne()) {
+        done = true;
+        break;
+      }
+      drawLast();
+    }
+
+    animId = requestAnimationFrame(tick);
+  }
+
+  init();
+  animId = requestAnimationFrame(tick);
+</script>
+</body>
+</html>
