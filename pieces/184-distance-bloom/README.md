@@ -1,0 +1,7 @@
+# Distance Bloom — 2D SDF Morphing
+
+A WebGL fragment shader evaluates four 2D signed-distance functions simultaneously for every pixel. Three primitives — two circles and a rounded rectangle — drift along Lissajous orbits parameterised by irrational frequency ratios (φ ≈ 1.618 and √2 ≈ 1.414), ensuring the paths never close into repeating loops. A fourth small circle is subtracted from the merged field via `opSmoothSubtraction`, carving a hole that appears and heals as the carver drifts in and out of the main blob cluster.
+
+The three main shapes are blended by two calls to `opSmoothUnion`, which uses the standard k-factor polynomial (`mix(d2, d1, h) − k·h·(1−h)`) to smoothly merge and separate surfaces as they approach each other. The resulting scalar distance field is divided into isocontour bands via `fract(d × 6)`: the fractional part cycles 0→1 once per band, and `floor(d × 6) mod 4` selects one of four neon colors — electric cyan, hot magenta, bright amber, and acid green. Adjacent bands blend smoothly into each other via `mix`. A `smoothstep` brightens the leading edge of each band into a white flash, creating the neon-glow contour line effect. An exponential term `exp(−|d| × 1.6)` fades bands into the dark indigo background as distance grows, reproducing the depth falloff of a topographic map.
+
+All animation state is a single `uTime` uniform; there is no CPU-side simulation loop. The full-window canvas updates at 60 fps with a single `gl.drawArrays(TRIANGLES, 0, 6)` call per frame.

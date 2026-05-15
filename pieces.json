@@ -646,5 +646,14 @@
     "technique": "canvas / Gray-Scott reaction-diffusion / mitosis regime / Float32Array / ImageData LUT / requestAnimationFrame",
     "path": "pieces/180-gray-scott",
     "thumbnail": "pieces/180-gray-scott/thumbnail.svg"
+  },
+  {
+    "id": "184-distance-bloom",
+    "title": "Distance Bloom — 2D SDF Morphing",
+    "tagline": "Three primitives drift on Lissajous orbits; their blended signed-distance field is sliced into neon isocontour bands — cyan, magenta, amber, green — glowing brightest at each level-set boundary, animated in a WebGL fragment shader at 60 fps",
+    "year": 2026,
+    "technique": "WebGL / 2D SDF / smooth union + subtraction / isocontour bands / GLSL fragment shader",
+    "path": "pieces/184-distance-bloom",
+    "thumbnail": "pieces/184-distance-bloom/thumbnail.svg"
   }
 ]
