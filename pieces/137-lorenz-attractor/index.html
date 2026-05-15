@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Lorenz Attractor — The Butterfly That Never Lands</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#060618;overflow:hidden;display:flex;align-items:center;justify-content:center;width:100vw;height:100vh}
+canvas{display:block;width:min(100vw,100vh);height:min(100vw,100vh)}
+</style>
+</head>
+<body>
+<canvas id="c" width="800" height="800"></canvas>
+<script>(function(){
+'use strict';
+const SZ = 800;
+// Lorenz system parameters: sigma (Prandtl), rho (Rayleigh), beta (geometric)
+const SIGMA = 10, RHO = 28, BETA = 8/3;
+// RK4 time step
+const DT = 0.005, DT_2 = DT/2, DT_6 = DT/6;
+// Ring buffer holds this many 3D trajectory points
+const N_TRAIL = 200000;
+// New integration steps added per animation frame
+const BATCH = 1000;
+// Camera rotation increment in radians per frame (~50 s for full revolution)
+const ROT_SPEED = 0.002;
+
+// Projection: u = x*cos(angle) - y*sin(angle) (rotate XY), v = z (vertical)
+const U_HALF = 38.0;
+const V_MIN = -3.0, V_MAX = 53.0, V_RANGE = V_MAX - V_MIN;
+
+// Deep indigo background: #060618
+const BG_R = 6, BG_G = 6, BG_B = 24;
+
+// Pre-build 256-entry colour LUT: index 0 = background, 1-255 = indigo → cyan → gold.
+// Index is proportional to log-normalised density, so low-traffic regions glow dim cyan
+// and high-traffic spiral cores burn gold.
+const LUT_R = new Uint8Array(256);
+const LUT_G = new Uint8Array(256);
+const LUT_B = new Uint8Array(256);
+LUT_R[0] = BG_R; LUT_G[0] = BG_G; LUT_B[0] = BG_B;
+for(let i = 1; i < 256; i++){
+  const t = i / 255;
+  let r, g, b;
+  if(t < 0.5){
+    const u = t * 2;
+    // indigo (6,6,24) → luminous cyan (0,220,220)
+    r = (BG_R * (1 - u)) | 0;
+    g = (BG_G + (220 - BG_G) * u) | 0;
+    b = (BG_B + (220 - BG_B) * u) | 0;
+  } else {
+    const u = (t - 0.5) * 2;
+    // luminous cyan (0,220,220) → warm gold (255,215,0)
+    r = (255 * u) | 0;
+    g = (220 - 5 * u) | 0;
+    b = (220 * (1 - u)) | 0;
+  }
+  LUT_R[i] = r; LUT_G[i] = g; LUT_B[i] = b;
+}
+
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+const img = ctx.createImageData(SZ, SZ);
+const buf = img.data;
+
+// Ring buffer: packed [x,y,z] Float32 triplets for the last N_TRAIL points
+const pts = new Float32Array(N_TRAIL * 3);
+let head = 0;    // next write slot (in points, not bytes)
+let filled = 0;  // valid points currently in buffer
+
+// Density accumulator: hit count per screen pixel, rebuilt each frame
+const density = new Float32Array(SZ * SZ);
+
+// Current 3D integration position
+let cx = 0.1, cy = 0.0, cz = 1.0;
+// Current camera angle (radians)
+let angle = 0.0;
+
+// Inline RK4: evaluates four Lorenz derivative estimates and combines them.
+// Writes updated cx, cy, cz into the outer-scope variables.
+function rk4Step(){
+  const x = cx, y = cy, z = cz;
+  const dx1 = SIGMA*(y-x),      dy1 = x*(RHO-z)-y,      dz1 = x*y-BETA*z;
+  const x2 = x+DT_2*dx1,  y2 = y+DT_2*dy1,  z2 = z+DT_2*dz1;
+  const dx2 = SIGMA*(y2-x2),    dy2 = x2*(RHO-z2)-y2,   dz2 = x2*y2-BETA*z2;
+  const x3 = x+DT_2*dx2,  y3 = y+DT_2*dy2,  z3 = z+DT_2*dz2;
+  const dx3 = SIGMA*(y3-x3),    dy3 = x3*(RHO-z3)-y3,   dz3 = x3*y3-BETA*z3;
+  const x4 = x+DT*dx3,    y4 = y+DT*dy3,    z4 = z+DT*dz3;
+  const dx4 = SIGMA*(y4-x4),    dy4 = x4*(RHO-z4)-y4,   dz4 = x4*y4-BETA*z4;
+  cx = x + DT_6*(dx1+2*dx2+2*dx3+dx4);
+  cy = y + DT_6*(dy1+2*dy2+2*dy3+dy4);
+  cz = z + DT_6*(dz1+2*dz2+2*dz3+dz4);
+}
+
+function integrateN(n){
+  for(let i = 0; i < n; i++){
+    rk4Step();
+    const idx = head * 3;
+    pts[idx] = cx; pts[idx+1] = cy; pts[idx+2] = cz;
+    head = (head + 1) % N_TRAIL;
+    if(filled < N_TRAIL) filled++;
+  }
+}
+
+// Rebuild density grid from scratch using current camera angle.
+// Projection rotates in the XY plane so the 3D butterfly is revealed as angle increases.
+function rebuildDensity(){
+  density.fill(0);
+  const cosA = Math.cos(angle), sinA = Math.sin(angle);
+  const uScale = SZ / (2 * U_HALF);
+  const vScale = SZ / V_RANGE;
+  const n = filled;
+  for(let i = 0; i < n; i++){
+    const idx = i * 3;
+    const u = pts[idx] * cosA - pts[idx+1] * sinA;
+    const v = pts[idx+2];
+    const sx = ((u + U_HALF) * uScale) | 0;
+    const sy = ((V_MAX - v) * vScale) | 0;  // flip: high z maps to top
+    if(sx >= 0 && sx < SZ && sy >= 0 && sy < SZ){
+      density[sy * SZ + sx] += 1;
+    }
+  }
+}
+
+// Map log-normalised density to RGB via LUT and push to ImageData.
+function renderDensity(){
+  let maxD = 1;
+  for(let i = 0; i < SZ*SZ; i++){ if(density[i] > maxD) maxD = density[i]; }
+  const scale = 255 / Math.log(maxD + 1);
+  for(let i = 0; i < SZ*SZ; i++){
+    const lut = density[i] > 0 ? (Math.log(density[i]+1) * scale) | 0 : 0;
+    const idx = i << 2;
+    buf[idx  ] = LUT_R[lut];
+    buf[idx+1] = LUT_G[lut];
+    buf[idx+2] = LUT_B[lut];
+    buf[idx+3] = 255;
+  }
+  ctx.putImageData(img, 0, 0);
+}
+
+// Discard the initial transient so the first frame starts on the attractor
+for(let i = 0; i < 2000; i++) rk4Step();
+
+// Pre-fill ring buffer before first paint so the attractor is already visible
+integrateN(N_TRAIL);
+
+function frame(){
+  integrateN(BATCH);
+  angle = (angle + ROT_SPEED) % (2 * Math.PI);
+  rebuildDensity();
+  renderDensity();
+  requestAnimationFrame(frame);
+}
+
+rebuildDensity();
+renderDensity();
+requestAnimationFrame(frame);
+})();</script>
+</body>
+</html>
