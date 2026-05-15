@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Apollonian Gasket — Every Gap Holds a Circle</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { background: #050A1A; display: flex; align-items: center; justify-content: center; min-height: 100vh; }
+    canvas { display: block; }
+  </style>
+</head>
+<body>
+<canvas id="c" width="800" height="800"></canvas>
+<script>
+'use strict';
+const cv = document.getElementById('c');
+const ctx = cv.getContext('2d');
+const W = 800, H = 800, CX = W / 2, CY = H / 2;
+
+const MIN_R = 0.5;
+const MAX_DEPTH = 6;
+const OUTER_R = 376;
+
+// Warm amber (depth 0) → cool violet-blue (depth 6)
+const PALETTE = [
+  [232, 160,  32],  // 0 — amber
+  [212,  90,  64],  // 1 — orange-red
+  [180,  60, 120],  // 2 — pink-magenta
+  [130,  70, 190],  // 3 — purple
+  [ 80,  90, 220],  // 4 — violet-blue
+  [ 50, 120, 220],  // 5 — periwinkle
+  [ 60, 150, 210],  // 6 — cool blue
+];
+
+function depthAlpha(depth) {
+  return Math.max(0.4, 1 - depth * 0.08);
+}
+
+function circleKey(x, y, r) {
+  return `${Math.round(x * 10)},${Math.round(y * 10)},${Math.round(r * 10)}`;
+}
+
+/**
+ * Builds the Apollonian gasket using the reflection formula:
+ *   k_new = 2(ka+kb+kc) - k_parent
+ *   z_new·k_new = 2(za·ka+zb·kb+zc·kc) - z_parent·k_parent
+ * This avoids the ±√ sign ambiguity in the full Descartes formula and
+ * directly yields the unique twin of k_parent tangent to triple (a,b,c).
+ *
+ * Returns array of {k, x, y, r, depth} objects (outer enclosing circle excluded).
+ */
+function buildGasket() {
+  // Three equal inner circles of radius r1 packed symmetrically in outer circle R.
+  // Tangency to outer: d1 = R - r1; mutual tangency: 2r1 = d1*sqrt(3) → r1 = R*sqrt(3)/(2+sqrt(3))
+  const k0 = -1 / OUTER_R;
+  const r1 = OUTER_R * Math.sqrt(3) / (2 + Math.sqrt(3));
+  const k1 = 1 / r1;
+  const d1 = OUTER_R - r1;
+
+  const C0 = { k: k0, x: 0,                    y: 0,     r: OUTER_R, depth: -1 };
+  const C1 = { k: k1, x: 0,                    y: -d1,   r: r1,      depth: 0 };
+  const C2 = { k: k1, x:  d1 * Math.sqrt(3)/2, y: d1/2,  r: r1,      depth: 0 };
+  const C3 = { k: k1, x: -d1 * Math.sqrt(3)/2, y: d1/2,  r: r1,      depth: 0 };
+
+  const circles = [C1, C2, C3];
+  const seen = new Set([C1, C2, C3].map(c => circleKey(c.x, c.y, c.r)));
+
+  // Each queue entry = [a, b, c, parent, depth-of-new-circle]
+  const queue = [
+    [C1, C2, C3, C0, 1],  // central gap between the three inner circles
+    [C0, C2, C3, C1, 1],  // gap near top circle
+    [C0, C1, C3, C2, 1],  // gap near bottom-right circle
+    [C0, C1, C2, C3, 1],  // gap near bottom-left circle
+  ];
+
+  let qi = 0;
+  while (qi < queue.length) {
+    const [a, b, c, p, depth] = queue[qi++];
+    if (depth > MAX_DEPTH) continue;
+
+    const kn = 2 * (a.k + b.k + c.k) - p.k;
+    if (kn <= 0) continue;
+    const rn = 1 / kn;
+    if (rn < MIN_R) continue;
+
+    const xn = (2 * (a.x * a.k + b.x * b.k + c.x * c.k) - p.x * p.k) / kn;
+    const yn = (2 * (a.y * a.k + b.y * b.k + c.y * c.k) - p.y * p.k) / kn;
+
+    const key = circleKey(xn, yn, rn);
+    if (seen.has(key)) continue;
+    seen.add(key);
+
+    const cn = { k: kn, x: xn, y: yn, r: rn, depth };
+    circles.push(cn);
+
+    queue.push([b, c, cn, a, depth + 1]);
+    queue.push([a, c, cn, b, depth + 1]);
+    queue.push([a, b, cn, c, depth + 1]);
+  }
+
+  return circles;
+}
+
+const gasket = buildGasket();
+
+// Group by depth level for level-by-level animation
+const levels = [];
+for (const c of gasket) {
+  while (levels.length <= c.depth) levels.push([]);
+  levels[c.depth].push(c);
+}
+
+function drawLevels(upTo) {
+  ctx.save();
+  ctx.beginPath();
+  ctx.arc(CX, CY, OUTER_R, 0, Math.PI * 2);
+  ctx.clip();
+
+  for (let d = 0; d <= upTo && d < levels.length; d++) {
+    const [r, g, b] = PALETTE[Math.min(d, PALETTE.length - 1)];
+    ctx.globalAlpha = depthAlpha(d);
+    ctx.fillStyle = `rgb(${r},${g},${b})`;
+    for (const c of levels[d]) {
+      ctx.beginPath();
+      ctx.arc(CX + c.x, CY + c.y, Math.max(c.r, 0.5), 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
+  ctx.restore();
+  ctx.globalAlpha = 1;
+}
+
+function drawBackground() {
+  ctx.fillStyle = '#050A1A';
+  ctx.fillRect(0, 0, W, H);
+  ctx.save();
+  ctx.strokeStyle = '#1a2a4a';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.arc(CX, CY, OUTER_R, 0, Math.PI * 2);
+  ctx.stroke();
+  ctx.restore();
+}
+
+const LEVEL_MS  = 600;   // ms to show each new depth level
+const PAUSE_MS  = 2500;  // hold the complete gasket before fading
+const FADE_MS   = 1200;  // crossfade duration back to black
+
+let phase = 'building';  // 'building' | 'pause' | 'fading'
+let currentDepth = 0;
+let phaseStart = null;
+
+function render(ts) {
+  requestAnimationFrame(render);
+  if (phaseStart === null) phaseStart = ts;
+
+  drawBackground();
+
+  if (phase === 'building') {
+    drawLevels(currentDepth);
+    if (ts - phaseStart >= LEVEL_MS) {
+      currentDepth++;
+      phaseStart = ts;
+      if (currentDepth >= levels.length) {
+        phase = 'pause';
+        phaseStart = ts;
+      }
+    }
+  } else if (phase === 'pause') {
+    drawLevels(levels.length - 1);
+    if (ts - phaseStart >= PAUSE_MS) {
+      phase = 'fading';
+      phaseStart = ts;
+    }
+  } else {
+    drawLevels(levels.length - 1);
+    const t = Math.min(1, (ts - phaseStart) / FADE_MS);
+    ctx.globalAlpha = t;
+    ctx.fillStyle = '#050A1A';
+    ctx.fillRect(0, 0, W, H);
+    ctx.globalAlpha = 1;
+    if (t >= 1) {
+      phase = 'building';
+      currentDepth = 0;
+      phaseStart = ts;
+    }
+  }
+}
+
+requestAnimationFrame(render);
+</script>
+</body>
+</html>
