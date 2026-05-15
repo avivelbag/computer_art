@@ -628,5 +628,14 @@
     "technique": "canvas / Physarum polycephalum / slime mold simulation / trail diffusion / chemotaxis / Float32Array / ImageData / requestAnimationFrame",
     "path": "pieces/175-physarum-slime",
     "thumbnail": "pieces/175-physarum-slime/thumbnail.svg"
+  },
+  {
+    "id": "176-radiolaria-diatoms",
+    "title": "Radiolaria & Diatom Morphology",
+    "tagline": "Seven microscopic siliceous organisms — each grown from r = a + b·sin(n·θ) + c·sin(m·θ) — rotate slowly on deep navy; bone-white and pale-gold line art with concentric shells, diamond-tipped spines, and inner lattice detail",
+    "year": 2026,
+    "technique": "SVG / polar equations / sinusoidal radial symmetry / SMIL animation",
+    "path": "pieces/176-radiolaria-diatoms",
+    "thumbnail": "pieces/176-radiolaria-diatoms/thumbnail.svg"
   }
 ]
