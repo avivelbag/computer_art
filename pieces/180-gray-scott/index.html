@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Chemical Dreams — Gray-Scott Mitosis Reaction-Diffusion</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: #1a0a2e;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      overflow: hidden;
+    }
+    canvas {
+      display: block;
+      width: 100vmin;
+      height: 100vmin;
+      image-rendering: pixelated;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="canvas" width="512" height="512"></canvas>
+  <script>
+    const W = 512;
+    const H = 512;
+    const SIZE = W * H;
+
+    // Mitosis regime — circular spots split continuously into daughter spots.
+    // Distinct from piece 96 (coral: F=0.0545, K=0.062); this is the true
+    // mitosis class at F=0.0367, K=0.0649.
+    const F  = 0.0367;
+    const K  = 0.0649;
+    const DU = 0.2100;
+    const DV = 0.1050;
+
+    const STEPS_PER_FRAME = 10;
+    const DELTA_CAP_MS    = 50;
+
+    const canvas = document.getElementById('canvas');
+    const ctx    = canvas.getContext('2d');
+    ctx.imageSmoothingEnabled = false;
+
+    const imgData = ctx.createImageData(W, H);
+    const pixels  = imgData.data;
+
+    // Precompute 256-entry RGBA LUT: deep indigo (#1a0a2e) → electric cyan (#00e5ff).
+    // Written as little-endian Uint32 (AABBGGRR) for direct Uint32Array writes.
+    const LUT = new Uint32Array(256);
+    (function buildLUT() {
+      const r0 = 0x1a, g0 = 0x0a, b0 = 0x2e;
+      const r1 = 0x00, g1 = 0xe5, b1 = 0xff;
+      for (let i = 0; i < 256; i++) {
+        const t = i / 255;
+        const r = (r0 + t * (r1 - r0)) | 0;
+        const g = (g0 + t * (g1 - g0)) | 0;
+        const b = (b0 + t * (b1 - b0)) | 0;
+        LUT[i] = (255 << 24) | (b << 16) | (g << 8) | r;
+      }
+    })();
+
+    let u     = new Float32Array(SIZE);
+    let v     = new Float32Array(SIZE);
+    let uNext = new Float32Array(SIZE);
+    let vNext = new Float32Array(SIZE);
+
+    u.fill(1.0);
+
+    // Seed a random patch at the center; noise breaks symmetry so each load differs.
+    const SEED_HALF = 10;
+    for (let sy = H / 2 - SEED_HALF; sy < H / 2 + SEED_HALF; sy++) {
+      for (let sx = W / 2 - SEED_HALF; sx < W / 2 + SEED_HALF; sx++) {
+        const i = sy * W + sx;
+        u[i] = 0.50 + 0.05 * (Math.random() - 0.5);
+        v[i] = 0.25 + 0.05 * (Math.random() - 0.5);
+      }
+    }
+
+    /**
+     * Advance the Gray-Scott system one step with a 9-point Laplacian on a
+     * toroidal grid. Diagonal neighbors weight 0.05, axis-aligned 0.20,
+     * center -1.0 (kernel sums to zero).
+     *
+     * Equations:
+     *   dU/dt = Du·∇²U  −  U·V²  +  F·(1−U)
+     *   dV/dt = Dv·∇²V  +  U·V²  −  (F+K)·V
+     *
+     * At F=0.0367, K=0.0649 (mitosis regime) spots grow to a critical radius
+     * then spontaneously divide into two daughter spots; the population
+     * self-replicates indefinitely.
+     */
+    function step() {
+      for (let y = 0; y < H; y++) {
+        const yRow = y * W;
+        const yN   = (y === 0     ? H - 1 : y - 1) * W;
+        const yS   = (y === H - 1 ? 0     : y + 1) * W;
+
+        for (let x = 0; x < W; x++) {
+          const i  = yRow + x;
+          const xW = x === 0     ? W - 1 : x - 1;
+          const xE = x === W - 1 ? 0     : x + 1;
+
+          const cu = u[i];
+          const cv = v[i];
+
+          const lapU =
+            0.05 * (u[yN + xW] + u[yN + xE] + u[yS + xW] + u[yS + xE]) +
+            0.20 * (u[yRow + xW] + u[yRow + xE] + u[yN + x] + u[yS + x]) -
+            cu;
+          const lapV =
+            0.05 * (v[yN + xW] + v[yN + xE] + v[yS + xW] + v[yS + xE]) +
+            0.20 * (v[yRow + xW] + v[yRow + xE] + v[yN + x] + v[yS + x]) -
+            cv;
+          const uvv = cu * cv * cv;
+
+          uNext[i] = cu + DU * lapU - uvv + F * (1.0 - cu);
+          vNext[i] = cv + DV * lapV + uvv - (F + K) * cv;
+        }
+      }
+      let tmp = u; u = uNext; uNext = tmp;
+          tmp = v; v = vNext; vNext = tmp;
+    }
+
+    /**
+     * Map each cell's V concentration to a precomputed RGBA entry via the
+     * indigo→cyan LUT and write it into the ImageData buffer via a Uint32Array
+     * view, writing four bytes per pixel in a single 32-bit store.
+     */
+    function draw() {
+      const buf32 = new Uint32Array(pixels.buffer);
+      for (let i = 0; i < SIZE; i++) {
+        const idx = (v[i] * 255 + 0.5) | 0;
+        buf32[i] = LUT[idx < 0 ? 0 : idx > 255 ? 255 : idx];
+      }
+      ctx.putImageData(imgData, 0, 0);
+    }
+
+    let lastTime = 0;
+
+    function loop(now) {
+      // Cap delta so a backgrounded tab does not cause a burst of steps on resume.
+      const delta = Math.min(now - lastTime, DELTA_CAP_MS);
+      lastTime = now;
+      if (delta > 0) {
+        for (let s = 0; s < STEPS_PER_FRAME; s++) step();
+        draw();
+      }
+      requestAnimationFrame(loop);
+    }
+
+    requestAnimationFrame(loop);
+  </script>
+</body>
+</html>
