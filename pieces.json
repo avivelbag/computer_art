@@ -610,5 +610,14 @@
     "technique": "canvas / recursive Mondrian subdivision / De Stijl palette / golden-ratio splits / dissolve transition",
     "path": "pieces/167-everything-divides",
     "thumbnail": "pieces/167-everything-divides/thumbnail.svg"
+  },
+  {
+    "id": "171-conformal-grid",
+    "title": "The Grid That Knows Where It Lives — Conformal Map",
+    "tagline": "A rectangular coordinate grid breathes through three conformal maps — Joukowski (z + λ/z), square (z²), and Möbius ((z−1)/(z+1)) — each morphing smoothly from identity to full distortion over eight seconds while angles are preserved at every crossing; rose horizontal lines and sky-blue vertical lines overlap with additive compositing so intersections bloom",
+    "year": 2026,
+    "technique": "canvas / conformal mapping / complex analysis / Joukowski transform / parametric grid morphing",
+    "path": "pieces/171-conformal-grid",
+    "thumbnail": "pieces/171-conformal-grid/thumbnail.svg"
   }
 ]
