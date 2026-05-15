@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" width="400" height="400">
+  <!-- Black background forms the outer border and all dividing lines -->
+  <rect width="400" height="400" fill="#1A1A1A"/>
+
+  <!-- Leaf fills (mathematical boundaries — lines painted on top cover seams) -->
+  <!-- Large red rect: top-left, ~golden-ratio wide, covers full top height -->
+  <rect x="8"   y="8"   width="156" height="250" fill="#D40920"/>
+  <!-- White: top-center-top -->
+  <rect x="164" y="8"   width="114" height="126" fill="#F8F5EE"/>
+  <!-- Blue: top-right-top -->
+  <rect x="278" y="8"   width="114" height="126" fill="#1B4E8F"/>
+  <!-- Yellow: top-center-bottom -->
+  <rect x="164" y="134" width="114" height="124" fill="#F5C500"/>
+  <!-- White: top-right-bottom -->
+  <rect x="278" y="134" width="114" height="124" fill="#F8F5EE"/>
+  <!-- Off-white: bottom-left small cell -->
+  <rect x="8"   y="258" width="110" height="134" fill="#EDE9DF"/>
+  <!-- White: large bottom-right cell -->
+  <rect x="118" y="258" width="274" height="134" fill="#F8F5EE"/>
+
+  <!-- Dividing lines drawn on top; stroke-width=8 matches BORDER/LINE_W -->
+  <!-- Horizontal split at y=258 (full width) -->
+  <line x1="8"   y1="258" x2="392" y2="258" stroke="#1A1A1A" stroke-width="8" stroke-linecap="square"/>
+  <!-- Horizontal split at y=134 (top-right section only) -->
+  <line x1="164" y1="134" x2="392" y2="134" stroke="#1A1A1A" stroke-width="8" stroke-linecap="square"/>
+  <!-- Vertical split at x=164 (full top section height) -->
+  <line x1="164" y1="8"   x2="164" y2="258" stroke="#1A1A1A" stroke-width="8" stroke-linecap="square"/>
+  <!-- Vertical split at x=278 (top section, both top and bottom halves combined) -->
+  <line x1="278" y1="8"   x2="278" y2="258" stroke="#1A1A1A" stroke-width="8" stroke-linecap="square"/>
+  <!-- Vertical split at x=118 (bottom section only) -->
+  <line x1="118" y1="258" x2="118" y2="392" stroke="#1A1A1A" stroke-width="8" stroke-linecap="square"/>
+</svg>
