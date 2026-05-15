@@ -1,0 +1,3 @@
+# Fourier Epicycles — Drawing with Circles
+
+Each of the 64 sample points on a 5-pointed star polygon is encoded as a complex number z[n] = x + iy; the Discrete Fourier Transform Z[k] = Σ z[n]·e^(−2πikn/N) decomposes the shape into N frequency components, each one becoming a rotating circle (epicycle) with radius |Z[k]| and initial phase arg(Z[k]).  Chaining those circles tip-to-tail in descending-amplitude order — so the largest, slowest sweep leads — and advancing every circle at its own integer frequency k each frame, the tip of the outermost arm traces the original star path, closing perfectly when the global parameter θ returns to 2π after eight seconds.  When the revolution completes the gold trace fades out over 0.5 s and the drawing begins again.

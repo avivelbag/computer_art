@@ -502,5 +502,14 @@
         "technique": "WebGL / SDF ray marching / domain repetition / GLSL fragment shader",
         "path": "pieces/133-sdf-raymarcher",
         "thumbnail": "pieces/133-sdf-raymarcher/thumbnail.svg"
+    },
+    {
+        "id": "136-fourier-epicycles",
+        "title": "Fourier Epicycles — Drawing with Circles",
+        "tagline": "A 5-pointed star decomposed into 64 rotating circles via the DFT — cool blue epicycles on deep navy trace warm gold geometry, closing perfectly after each 8-second revolution",
+        "year": 2026,
+        "technique": "canvas / Fourier epicycles / DFT / CSS opacity transition / requestAnimationFrame",
+        "path": "pieces/136-fourier-epicycles",
+        "thumbnail": "pieces/136-fourier-epicycles/thumbnail.svg"
     }
 ]

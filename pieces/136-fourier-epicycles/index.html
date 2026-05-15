@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Fourier Epicycles — Drawing with Circles</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { background: #06101e; overflow: hidden; }
+    #wrap { position: relative; width: 100vw; height: 100vh; }
+    canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+    #trace { transition: opacity 0.5s ease; }
+  </style>
+</head>
+<body>
+<div id="wrap">
+  <canvas id="circles"></canvas>
+  <canvas id="trace"></canvas>
+</div>
+<script>
+const TWO_PI = 2 * Math.PI;
+const N = 64;         // DFT coefficient count — samples the star into 64 complex numbers
+const PERIOD = 8000;  // ms for one full revolution (θ: 0 → 2π)
+
+// Sample N points uniformly along the perimeter of a 5-pointed star polygon.
+// Vertices alternate outer (r=1.0) and inner (r=0.38) at 36° intervals, starting at the top.
+function sampleStar(n) {
+  const verts = [];
+  for (let i = 0; i < 10; i++) {
+    const a = TWO_PI * i / 10 - Math.PI / 2;
+    const r = i % 2 === 0 ? 1.0 : 0.38;
+    verts.push({ re: r * Math.cos(a), im: r * Math.sin(a) });
+  }
+  const segs = verts.map((v, i) => {
+    const b = verts[(i + 1) % 10];
+    return Math.hypot(b.re - v.re, b.im - v.im);
+  });
+  const total = segs.reduce((s, v) => s + v, 0);
+  const pts = [];
+  for (let i = 0; i < n; i++) {
+    const target = (i / n) * total;
+    let acc = 0;
+    for (let j = 0; j < 10; j++) {
+      if (acc + segs[j] >= target || j === 9) {
+        const frac = Math.min((target - acc) / segs[j], 1);
+        const a = verts[j], b = verts[(j + 1) % 10];
+        pts.push({ re: a.re + frac * (b.re - a.re), im: a.im + frac * (b.im - a.im) });
+        break;
+      }
+      acc += segs[j];
+    }
+  }
+  return pts;
+}
+
+// Forward DFT treating each sample as a complex number (re, im).
+// Z[k] = Σ z[n]·e^(−2πikn/N) — returns coefficients sorted by amplitude descending.
+function dft(signal) {
+  const n = signal.length;
+  const out = [];
+  for (let k = 0; k < n; k++) {
+    let re = 0, im = 0;
+    for (let j = 0; j < n; j++) {
+      const angle = TWO_PI * k * j / n;
+      const c = Math.cos(angle), s = Math.sin(angle);
+      re += signal[j].re * c + signal[j].im * s;
+      im += -signal[j].re * s + signal[j].im * c;
+    }
+    out.push({ freq: k, amp: Math.sqrt(re * re + im * im) / n, phase: Math.atan2(im, re) });
+  }
+  return out.sort((a, b) => b.amp - a.amp);
+}
+
+const coeffs = dft(sampleStar(N));
+
+const cCircles = document.getElementById('circles');
+const cTrace   = document.getElementById('trace');
+const ctxC = cCircles.getContext('2d');
+const ctxT = cTrace.getContext('2d');
+
+let W, H, CX, CY, SCALE;
+
+function resize() {
+  W = cCircles.width = cTrace.width = window.innerWidth;
+  H = cCircles.height = cTrace.height = window.innerHeight;
+  CX = W / 2; CY = H / 2;
+  SCALE = Math.min(W, H) * 0.38;
+}
+window.addEventListener('resize', resize);
+resize();
+
+let t0 = null, prev = null, resetting = false;
+
+function frame(ts) {
+  if (t0 === null) t0 = ts;
+
+  if (!resetting) {
+    const elapsed = ts - t0;
+    const theta = (TWO_PI * elapsed) / PERIOD;
+
+    ctxC.clearRect(0, 0, W, H);
+    let x = CX, y = CY;
+
+    for (const c of coeffs) {
+      const r = c.amp * SCALE;
+      const angle = c.freq * theta + c.phase;
+      const nx = x + r * Math.cos(angle);
+      const ny = y + r * Math.sin(angle);
+
+      ctxC.beginPath();
+      ctxC.arc(x, y, r, 0, TWO_PI);
+      ctxC.strokeStyle = 'rgba(80, 160, 255, 0.22)';
+      ctxC.lineWidth = 0.6;
+      ctxC.stroke();
+
+      ctxC.beginPath();
+      ctxC.moveTo(x, y);
+      ctxC.lineTo(nx, ny);
+      ctxC.strokeStyle = 'rgba(120, 190, 255, 0.65)';
+      ctxC.lineWidth = 1;
+      ctxC.stroke();
+
+      x = nx; y = ny;
+    }
+
+    // Accumulate the trace on the persistent trace canvas — segments added each frame
+    if (prev !== null) {
+      ctxT.beginPath();
+      ctxT.moveTo(prev.x, prev.y);
+      ctxT.lineTo(x, y);
+      ctxT.strokeStyle = '#f5b942';
+      ctxT.lineWidth = 2;
+      ctxT.lineCap = 'round';
+      ctxT.lineJoin = 'round';
+      ctxT.stroke();
+    }
+    prev = { x, y };
+
+    // After one full revolution: fade out trace via CSS transition, then reset
+    if (elapsed >= PERIOD) {
+      resetting = true;
+      cTrace.style.opacity = '0';
+      setTimeout(() => {
+        ctxT.clearRect(0, 0, W, H);
+        prev = null;
+        t0 = null;
+        // Suppress transition so the opacity-1 restore is instant
+        cTrace.style.transition = 'none';
+        cTrace.style.opacity = '1';
+        requestAnimationFrame(() => {
+          cTrace.style.transition = 'opacity 0.5s ease';
+          resetting = false;
+        });
+      }, 500);
+    }
+  }
+
+  requestAnimationFrame(frame);
+}
+
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>
