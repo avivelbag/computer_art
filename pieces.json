@@ -655,5 +655,14 @@
     "technique": "WebGL / 2D SDF / smooth union + subtraction / isocontour bands / GLSL fragment shader",
     "path": "pieces/184-distance-bloom",
     "thumbnail": "pieces/184-distance-bloom/thumbnail.svg"
+  },
+  {
+    "id": "187-voronoi-stipple",
+    "title": "Voronoi Stipple — Weighted Dot Etching",
+    "tagline": "600 seeds relax via Lloyd’s algorithm toward a density defined by a sum of 2-D Gaussians — thick charcoal dots in dark regions, hairline dots in light — producing a pen-plotter etching aesthetic on off-white paper; animated at 30 fps for 45 iterations then held",
+    "year": 2026,
+    "technique": "canvas 2D / Voronoi Lloyd relaxation / weighted centroid stipple / spatial grid / density Gaussians",
+    "path": "pieces/187-voronoi-stipple",
+    "thumbnail": "pieces/187-voronoi-stipple/thumbnail.svg"
   }
 ]
