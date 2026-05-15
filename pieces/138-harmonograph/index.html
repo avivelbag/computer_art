@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Harmonograph — Four Pendulums, One Stroke</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { background: #0a0a14; display: flex; align-items: center; justify-content: center; min-height: 100vh; }
+    canvas { display: block; }
+  </style>
+</head>
+<body>
+<canvas id="canvas" width="600" height="600"></canvas>
+<script>
+  const canvas = document.getElementById('canvas');
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width;
+  const H = canvas.height;
+  const CX = W / 2;
+  const CY = H / 2;
+
+  // Bilateral lateral harmonograph: two pendulums drive x, two drive y.
+  // Frequency ratio 2:3 on x-axis and 3:2 on y-axis creates a compound Lissajous
+  // figure with bilateral symmetry-breaking from the phase offsets.
+  const A1 = 1.0, F1 = 2.0, P1 = 0.0,          DAMP1 = 0.002;
+  const A2 = 1.0, F2 = 3.0, P2 = Math.PI / 4,   DAMP2 = 0.002;
+  const A3 = 1.0, F3 = 3.0, P3 = Math.PI / 6,   DAMP3 = 0.002;
+  const A4 = 1.0, F4 = 2.0, P4 = Math.PI / 2,   DAMP4 = 0.002;
+
+  const SCALE = 140;       // pixels per normalised unit
+  const ALPHA = 0.15;      // semi-transparent stroke to build density through overlap
+  const LINE_WIDTH = 0.8;
+  const DT = 0.01;         // time step
+  const T_MAX = 400;       // damping makes trace invisible beyond this
+  const TOTAL_STEPS = Math.round(T_MAX / DT);
+  const STEPS_PER_FRAME = 200;
+  const REPLAY_DELAY_MS = 1500;
+
+  let step = 0;
+  let animId = null;
+
+  function xAt(t) {
+    return A1 * Math.sin(F1 * t + P1) * Math.exp(-DAMP1 * t)
+         + A2 * Math.sin(F2 * t + P2) * Math.exp(-DAMP2 * t);
+  }
+
+  function yAt(t) {
+    return A3 * Math.sin(F3 * t + P3) * Math.exp(-DAMP3 * t)
+         + A4 * Math.sin(F4 * t + P4) * Math.exp(-DAMP4 * t);
+  }
+
+  function fillBackground() {
+    ctx.fillStyle = '#0a0a14';
+    ctx.fillRect(0, 0, W, H);
+  }
+
+  function tick() {
+    if (step >= TOTAL_STEPS) {
+      cancelAnimationFrame(animId);
+      setTimeout(() => {
+        step = 0;
+        fillBackground();
+        animId = requestAnimationFrame(tick);
+      }, REPLAY_DELAY_MS);
+      return;
+    }
+
+    const t0 = step * DT;
+    ctx.beginPath();
+    ctx.strokeStyle = `rgba(160, 210, 255, ${ALPHA})`;
+    ctx.lineWidth = LINE_WIDTH;
+    ctx.moveTo(CX + xAt(t0) * SCALE, CY + yAt(t0) * SCALE);
+
+    const limit = Math.min(step + STEPS_PER_FRAME, TOTAL_STEPS);
+    while (step < limit) {
+      step++;
+      const t = step * DT;
+      ctx.lineTo(CX + xAt(t) * SCALE, CY + yAt(t) * SCALE);
+    }
+
+    ctx.stroke();
+    animId = requestAnimationFrame(tick);
+  }
+
+  fillBackground();
+  animId = requestAnimationFrame(tick);
+</script>
+</body>
+</html>
