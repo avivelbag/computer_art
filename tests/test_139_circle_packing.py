@@ -307,9 +307,6 @@ def test_clearance_large_placed_circle():
     """A very large placed circle should dominate the clearance at its edge."""
     placed = [(200, 200, 180)]
     r = clearance(400, 200, placed, 400, 400)
-    expected = min(400 - 400, 200, 400 - 400, 400 - 200)
-    dist_to_circle = math.sqrt((400 - 200) ** 2 + (200 - 200) ** 2) - 180
-    expected = min(0, dist_to_circle)
     assert r <= 0
 
 
@@ -374,7 +371,6 @@ def test_thumbnail_has_multiple_circles():
 def test_thumbnail_circles_have_fill():
     """All circle elements must specify a fill color."""
     root = ET.fromstring(THUMBNAIL.read_text())
-    ns = {'svg': 'http://www.w3.org/2000/svg'}
     circles = root.findall('.//circle') or root.findall('.//{http://www.w3.org/2000/svg}circle')
     assert circles, "No <circle> elements found"
     for c in circles:
