@@ -928,5 +928,15 @@
         "path": "pieces/232-rossler-ensemble",
         "thumbnail": "pieces/232-rossler-ensemble/thumbnail.svg",
         "description": "Seven Rössler systems (dx/dt = -(y+z), dy/dt = x+a·y, dz/dt = b+z·(x-c)) start with x₀ offsets of 0.01 between neighbors, integrated simultaneously via 4th-order Runge-Kutta and projected onto the x-y plane. Each orbit traces a colored trail (spectral palette: red through violet) that persists and fades over 500 frames on a near-black canvas, showing the characteristic spiral-and-fold topology of the Rössler strange attractor. A live Chaos Meter tracks max Euclidean distance in x-y from the center trajectory, revealing how the Lyapunov exponent (λ ≈ 0.07 s⁻¹) slowly amplifies the 0.01-unit offset. Sliders control parameters a, b, c, and initial x₀; dragging c below 5 collapses all seven trails to a single periodic orbit."
+    },
+    {
+        "id": "234-truchet-tiles",
+        "title": "Truchet Tiles: Continuity from Chance",
+        "tagline": "30×30 quarter-circle Truchet tiles oriented by seeded random — deep indigo and terracotta arcs on warm cream, large-scale curves emerging from purely local chance",
+        "year": 2026,
+        "technique": "SVG / quarter-circle Truchet tiling / dual-color orientation mapping / seeded random / static generation / Python gen.py",
+        "path": "pieces/234-truchet-tiles",
+        "thumbnail": "pieces/234-truchet-tiles/thumbnail.svg",
+        "description": "A 30×30 grid of quarter-circle Truchet tiles rendered as a static SVG. Each cell is assigned one of two orientations by seeded random: arcs curving through the top-left and bottom-right corners (orientation A, deep indigo #1e1b4b) or arcs curving through the top-right and bottom-left corners (orientation B, dark terracotta #7c3030). Where adjacent cells share a matching edge midpoint the arcs merge into continuous flowing curves — large-scale structure emerging from purely local chance. The dual-color orientation encoding is the distinguishing feature: coloring by orientation lets the viewer trace each arc-stream independently across the grid, revealing the underlying flow topology of the random tiling. Generated entirely in Python with no external dependencies."
     }
 ]
