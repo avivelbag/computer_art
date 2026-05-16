@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>The Gyroid Unfolds — Triply Periodic Minimal Surface</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { background: #0d0510; overflow: hidden; }
+    canvas { display: block; width: 100vw; height: 100vh; }
+  </style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<script id="vert" type="x-shader/x-vertex">
+attribute vec2 aPos;
+void main() { gl_Position = vec4(aPos, 0.0, 1.0); }
+</script>
+<script id="frag" type="x-shader/x-fragment">
+precision highp float;
+uniform vec2  uRes;
+uniform float uTime;
+
+void main() {
+  // Map each screen pixel to [-pi, pi] x [-pi, pi] (one full gyroid period).
+  // Both axes span a full 2pi period so the cross-section tile repeats exactly once.
+  vec2 uv = (gl_FragCoord.xy / uRes - 0.5) * 6.28318;
+
+  // z-slice: one full period in ~20 s  (2pi / (2pi * 0.05) = 20 s)
+  float z = sin(uTime * 0.3141592) * 3.14159;
+
+  // Gentle ±10-degree tilt around the Y-axis so the surface is never seen
+  // perfectly flat, revealing the true 3-D structure of the gyroid.
+  float tilt = sin(uTime * 0.483) * 0.1745;
+  float cosT = cos(tilt);
+  float sinT = sin(tilt);
+  float rx = uv.x * cosT + z * sinT;
+  float ry = uv.y;
+  float rz = -uv.x * sinT + z * cosT;
+
+  // Gyroid implicit function: f = sin(x)cos(y) + sin(y)cos(z) + sin(z)cos(x).
+  // The zero set of f is the gyroid surface; this shader evaluates the 2-D
+  // slice through the tilted coordinate (rx, ry, rz).
+  float f = sin(rx) * cos(ry) + sin(ry) * cos(rz) + sin(rz) * cos(rx);
+
+  // Isocurve half-thickness in f-units.
+  float eps = 0.05;
+
+  // Color drift: isocurve shifts from gold (z near 0) toward orange (z near ±pi)
+  // to make the topological period of the animation perceptually obvious.
+  float zPhase = abs(z) / 3.14159;
+  vec3 goldHot  = vec3(0.95, 0.78, 0.30);
+  vec3 goldWarm = vec3(0.95, 0.52, 0.12);
+  vec3 primaryCol = mix(goldHot, goldWarm, zPhase);
+
+  // Near-black purple background; interior (f < 0) gets a complementary dark tint.
+  vec3 col = vec3(0.05, 0.03, 0.08);
+  if (f < 0.0) col = mix(col, vec3(0.08, 0.05, 0.18), 0.55);
+
+  // Secondary isocontours at f = ±0.5 in cool blue/cyan — topographic depth.
+  if (abs(f - 0.5) < eps * 0.65) col = vec3(0.28, 0.58, 0.92);
+  if (abs(f + 0.5) < eps * 0.65) col = vec3(0.22, 0.72, 0.85);
+
+  // Primary isocurve (the gyroid level set) in warm gold/orange.
+  if (abs(f) < eps) col = primaryCol;
+
+  gl_FragColor = vec4(col, 1.0);
+}
+</script>
+<script>
+const canvas = document.getElementById('c');
+const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+
+function mkShader(type, src) {
+  const sh = gl.createShader(type);
+  gl.shaderSource(sh, src);
+  gl.compileShader(sh);
+  if (!gl.getShaderParameter(sh, gl.COMPILE_STATUS))
+    console.error(gl.getShaderInfoLog(sh));
+  return sh;
+}
+
+const prog = gl.createProgram();
+gl.attachShader(prog, mkShader(gl.VERTEX_SHADER,   document.getElementById('vert').textContent));
+gl.attachShader(prog, mkShader(gl.FRAGMENT_SHADER, document.getElementById('frag').textContent));
+gl.linkProgram(prog);
+gl.useProgram(prog);
+
+const buf = gl.createBuffer();
+gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+gl.bufferData(gl.ARRAY_BUFFER,
+  new Float32Array([-1,-1, 1,-1, -1,1, 1,-1, 1,1, -1,1]),
+  gl.STATIC_DRAW);
+
+const aPos  = gl.getAttribLocation(prog, 'aPos');
+gl.enableVertexAttribArray(aPos);
+gl.vertexAttribPointer(aPos, 2, gl.FLOAT, false, 0, 0);
+
+const uRes  = gl.getUniformLocation(prog, 'uRes');
+const uTime = gl.getUniformLocation(prog, 'uTime');
+
+function resize() {
+  canvas.width  = window.innerWidth;
+  canvas.height = window.innerHeight;
+  gl.viewport(0, 0, canvas.width, canvas.height);
+  gl.uniform2f(uRes, canvas.width, canvas.height);
+}
+window.addEventListener('resize', resize);
+resize();
+
+const t0 = performance.now();
+function frame(ts) {
+  gl.uniform1f(uTime, (ts - t0) * 0.001);
+  gl.drawArrays(gl.TRIANGLES, 0, 6);
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>
