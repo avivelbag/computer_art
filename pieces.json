@@ -700,5 +700,14 @@
     "technique": "WebGL / GLSL fragment shader / implicit surface / level-set cross-section / triply periodic minimal surface",
     "path": "pieces/199-gyroid-cross-sections",
     "thumbnail": "pieces/199-gyroid-cross-sections/thumbnail.svg"
+  },
+  {
+    "id": "200-lsystem-trees",
+    "title": "L-System Branching Trees — Pen-Plotter Grammar",
+    "tagline": "Two L-system grammars — a symmetric branching plant (F→F[+F]F[-F]F) and a baroque bush (F→FF-[-F+F+F]+[+F-F-F]) — grow stroke by stroke from axiom to fractal canopy; ink-black on warm cream, then copper on near-black",
+    "year": 2026,
+    "technique": "canvas / L-system / turtle graphics / parametric grammar / requestAnimationFrame",
+    "path": "pieces/200-lsystem-trees",
+    "thumbnail": "pieces/200-lsystem-trees/thumbnail.svg"
   }
 ]

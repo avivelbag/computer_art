@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>L-System Branching Trees — Piece 200</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { background: #0d0a06; display: flex; align-items: center; justify-content: center; min-height: 100vh; overflow: hidden; }
+    canvas { display: block; width: 100vmin; height: 100vmin; }
+  </style>
+</head>
+<body>
+<canvas id="c" width="800" height="800"></canvas>
+<script>
+const W = 800, H = 800;
+const MARGIN = 0.08;
+
+const GRAMMARS = [
+  {
+    axiom: 'F',
+    rules: { F: 'F[+F]F[-F]F' },
+    angle: 25.7 * Math.PI / 180,
+    depth: 5,
+    bg: '#f5ede0',
+    ink: '#1a1007',
+    baseWidth: 2.8,
+    drawSecs: 16,
+    holdSecs: 2.5,
+    fadeSecs: 1.5,
+    jitter: 2 * Math.PI / 180,
+  },
+  {
+    axiom: 'F',
+    rules: { F: 'FF-[-F+F+F]+[+F-F-F]' },
+    angle: 22.5 * Math.PI / 180,
+    depth: 4,
+    bg: '#0d0a06',
+    ink: '#c87941',
+    baseWidth: 3.2,
+    drawSecs: 20,
+    holdSecs: 2.5,
+    fadeSecs: 1.5,
+    jitter: 2 * Math.PI / 180,
+  },
+];
+
+function expand(axiom, rules, depth) {
+  let s = axiom;
+  for (let d = 0; d < depth; d++) {
+    let t = '';
+    for (const c of s) t += rules[c] !== undefined ? rules[c] : c;
+    s = t;
+  }
+  return s;
+}
+
+/**
+ * Walk the L-system string with turtle graphics and collect line segments.
+ * Each segment records its bracket-nesting depth for line-width tapering.
+ * Symbols: F/G=draw forward, +=turn left, -=turn right, [=push state, ]=pop state.
+ */
+function interpret(str, turnAngle, startAngle) {
+  const stack = [];
+  const segs = [];
+  let x = 0, y = 0, a = startAngle, bd = 0;
+  for (const c of str) {
+    if (c === 'F' || c === 'G') {
+      const nx = x + Math.cos(a), ny = y + Math.sin(a);
+      segs.push({ x1: x, y1: y, x2: nx, y2: ny, d: bd });
+      x = nx; y = ny;
+    } else if (c === '+') {
+      a += turnAngle;
+    } else if (c === '-') {
+      a -= turnAngle;
+    } else if (c === '[') {
+      stack.push({ x, y, a, bd });
+      bd++;
+    } else if (c === ']') {
+      const st = stack.pop();
+      x = st.x; y = st.y; a = st.a; bd = st.bd;
+    }
+  }
+  return segs;
+}
+
+/**
+ * Scale and translate segments so their bounding box fills the canvas
+ * with MARGIN padding on all sides.
+ */
+function fitSegs(segs) {
+  let x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity;
+  for (const s of segs) {
+    x0 = Math.min(x0, s.x1, s.x2); x1 = Math.max(x1, s.x1, s.x2);
+    y0 = Math.min(y0, s.y1, s.y2); y1 = Math.max(y1, s.y1, s.y2);
+  }
+  const fw = x1 - x0 || 1, fh = y1 - y0 || 1;
+  const avail = 1 - 2 * MARGIN;
+  const sc = Math.min((W * avail) / fw, (H * avail) / fh);
+  const ox = (W - fw * sc) / 2 - x0 * sc;
+  const oy = (H - fh * sc) / 2 - y0 * sc;
+  return segs.map(s => ({
+    x1: s.x1 * sc + ox, y1: s.y1 * sc + oy,
+    x2: s.x2 * sc + ox, y2: s.y2 * sc + oy,
+    d: s.d,
+  }));
+}
+
+function build(grammar, angleOffset) {
+  const str = expand(grammar.axiom, grammar.rules, grammar.depth);
+  const raw = interpret(str, grammar.angle, -Math.PI / 2 + angleOffset);
+  return fitSegs(raw);
+}
+
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+ctx.lineJoin = 'round';
+ctx.lineCap = 'round';
+
+let gIdx = 0;
+let segs = build(GRAMMARS[0], 0);
+let t0 = null;
+let drawn = 0;
+
+function bgRgb(hex) {
+  return `${parseInt(hex.slice(1, 3), 16)},${parseInt(hex.slice(3, 5), 16)},${parseInt(hex.slice(5, 7), 16)}`;
+}
+
+/** Line width tapers exponentially with branch nesting depth. */
+function lw(grammar, depth) {
+  return Math.max(0.3, grammar.baseWidth * Math.pow(0.55, depth));
+}
+
+function fill(color) {
+  ctx.fillStyle = color;
+  ctx.fillRect(0, 0, W, H);
+}
+
+function clear(g) {
+  fill(g.bg);
+  drawn = 0;
+}
+
+function drawSegs(g, from, to) {
+  const end = Math.min(to, segs.length);
+  ctx.strokeStyle = g.ink;
+  for (let i = from; i < end; i++) {
+    const s = segs[i];
+    ctx.lineWidth = lw(g, s.d);
+    ctx.beginPath();
+    ctx.moveTo(s.x1, s.y1);
+    ctx.lineTo(s.x2, s.y2);
+    ctx.stroke();
+  }
+  return end;
+}
+
+function frame(ts) {
+  if (t0 === null) t0 = ts;
+  const g = GRAMMARS[gIdx];
+  const total = g.drawSecs + g.holdSecs + g.fadeSecs;
+  const ph = ((ts - t0) / 1000) % total;
+
+  if (ph < g.drawSecs) {
+    const target = Math.floor((ph / g.drawSecs) * segs.length);
+    if (target > drawn) drawn = drawSegs(g, drawn, target);
+  } else if (ph < g.drawSecs + g.holdSecs) {
+    if (drawn < segs.length) drawn = drawSegs(g, drawn, segs.length);
+  } else {
+    const t = (ph - g.drawSecs - g.holdSecs) / g.fadeSecs;
+    fill(`rgba(${bgRgb(g.bg)},${Math.min(t, 1).toFixed(3)})`);
+    if (t >= 1) {
+      gIdx = (gIdx + 1) % GRAMMARS.length;
+      const ng = GRAMMARS[gIdx];
+      const offset = (Math.random() - 0.5) * 2 * ng.jitter;
+      segs = build(ng, offset);
+      clear(ng);
+      t0 = ts;
+    }
+  }
+
+  requestAnimationFrame(frame);
+}
+
+clear(GRAMMARS[0]);
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>
