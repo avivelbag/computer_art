@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 480" width="480" height="480">
+  <rect width="480" height="480" fill="#050510"/>
+
+  <!-- Seven spiral trails diverging from a common origin, Rössler x-y projection style -->
+  <!-- Each spiral starts tightly coiled then diverges outward with a fold -->
+
+  <!-- Trail 0: red -->
+  <path d="M240,240 C255,220 275,205 285,215 C298,228 295,255 278,268 C258,283 228,280 215,262 C200,242 205,212 225,198 C248,182 282,185 298,208 C316,234 312,272 288,290 C260,310 218,308 196,284 C172,258 175,212 202,191 C232,168 278,170 300,198 C326,228 322,278 294,302"
+        fill="none" stroke="hsla(0,80%,50%,0.75)" stroke-width="1.8" stroke-linecap="round"/>
+
+  <!-- Trail 1: orange -->
+  <path d="M240,240 C254,218 273,202 282,213 C296,227 292,256 275,270 C254,286 223,282 210,264 C195,244 200,213 220,199 C243,183 278,187 296,210 C314,236 311,274 288,292 C260,312 218,310 196,286 C173,260 177,214 205,193 C236,170 283,173 305,202 C332,232 329,284 301,308"
+        fill="none" stroke="hsla(40,80%,55%,0.75)" stroke-width="1.8" stroke-linecap="round"/>
+
+  <!-- Trail 2: yellow -->
+  <path d="M240,240 C253,216 271,199 280,211 C293,226 290,256 273,271 C252,288 221,284 207,267 C192,247 197,216 217,201 C241,185 276,189 294,213 C312,240 309,278 287,296 C259,316 216,313 194,288 C170,261 174,214 202,193 C233,170 281,173 304,202 C332,234 329,286 301,311"
+        fill="none" stroke="hsla(75,80%,55%,0.75)" stroke-width="1.8" stroke-linecap="round"/>
+
+  <!-- Trail 3: green (center/reference) - brighter -->
+  <path d="M240,240 C252,214 269,196 278,209 C291,224 288,255 271,272 C249,290 218,286 204,269 C188,249 193,218 213,203 C237,186 274,191 292,216 C311,243 308,282 285,301 C257,321 213,317 191,291 C167,263 172,215 200,193 C232,170 280,173 304,203 C332,236 330,289 302,314"
+        fill="none" stroke="hsla(130,85%,60%,0.90)" stroke-width="2.2" stroke-linecap="round"/>
+
+  <!-- Trail 4: cyan -->
+  <path d="M240,240 C251,212 267,193 276,207 C289,222 286,254 268,273 C246,292 215,287 201,270 C185,250 190,219 211,204 C235,187 273,193 291,218 C310,246 307,286 284,305 C255,325 211,321 188,295 C163,266 168,217 197,194 C229,171 279,174 304,204 C333,238 331,291 303,317"
+        fill="none" stroke="hsla(185,80%,55%,0.75)" stroke-width="1.8" stroke-linecap="round"/>
+
+  <!-- Trail 5: blue -->
+  <path d="M240,240 C250,210 265,190 274,205 C287,221 283,253 265,274 C243,294 212,289 198,272 C181,251 186,220 208,205 C232,188 271,194 290,220 C309,249 305,289 282,308 C253,328 208,324 185,298 C159,268 164,218 193,195 C225,171 276,174 302,205 C332,239 330,293 302,319"
+        fill="none" stroke="hsla(230,80%,60%,0.75)" stroke-width="1.8" stroke-linecap="round"/>
+
+  <!-- Trail 6: violet -->
+  <path d="M240,240 C249,208 263,187 272,203 C284,220 281,253 262,275 C239,296 208,291 194,274 C177,252 182,220 205,205 C229,188 269,195 288,222 C307,251 304,292 280,312 C250,332 204,327 181,300 C155,270 160,219 190,195 C222,171 274,174 301,206 C331,241 330,296 302,322"
+        fill="none" stroke="hsla(280,80%,60%,0.75)" stroke-width="1.8" stroke-linecap="round"/>
+
+  <!-- Starting point dots (clustered together showing initial closeness) -->
+  <circle cx="240" cy="240" r="3.5" fill="hsla(130,85%,65%,1.0)"/>
+  <circle cx="241" cy="240" r="2.5" fill="hsla(0,80%,60%,0.9)"/>
+  <circle cx="242" cy="240" r="2.5" fill="hsla(280,80%,65%,0.9)"/>
+  <circle cx="239" cy="241" r="2.5" fill="hsla(185,80%,60%,0.9)"/>
+
+  <!-- Labels -->
+  <text x="240" y="472" text-anchor="middle" fill="#7ec8e3" font-family="system-ui,sans-serif" font-size="13" letter-spacing="0.08em">RÖSSLER ENSEMBLE</text>
+  <text x="240" y="18" text-anchor="middle" fill="#446" font-family="system-ui,sans-serif" font-size="10">x-y projection · 7 trajectories · a=0.2 b=0.2 c=5.7</text>
+</svg>
