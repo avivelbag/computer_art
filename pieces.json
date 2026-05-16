@@ -691,5 +691,14 @@
     "technique": "canvas 2D / ImageData / Chladni figures / standing wave modes / colour LUT / pixel shader",
     "path": "pieces/194-chladni",
     "thumbnail": "pieces/194-chladni/thumbnail.svg"
+  },
+  {
+    "id": "199-gyroid-cross-sections",
+    "title": "The Gyroid Unfolds — Triply Periodic Minimal Surface",
+    "tagline": "A WebGL fragment shader takes animated cross-sections of the gyroid implicit surface f = sin(x)cos(y)+sin(y)cos(z)+sin(z)cos(x); the z-slice sweeps −π to π every 20 seconds while the plane rocks ±10°, tracing labyrinthine gold level-set curves on a near-black field as topology evolves",
+    "year": 2026,
+    "technique": "WebGL / GLSL fragment shader / implicit surface / level-set cross-section / triply periodic minimal surface",
+    "path": "pieces/199-gyroid-cross-sections",
+    "thumbnail": "pieces/199-gyroid-cross-sections/thumbnail.svg"
   }
 ]
