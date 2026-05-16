@@ -1,0 +1,107 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300" width="400" height="300">
+  <rect width="400" height="300" fill="#07071a"/>
+
+  <!-- Divider line between phasor and wave panels -->
+  <line x1="200" y1="0" x2="200" y2="300" stroke="#181830" stroke-width="1"/>
+
+  <!-- === LEFT PANEL: phasor chain (5 harmonics, mid-rotation) === -->
+
+  <!-- Orbit circles (faint) -->
+  <circle cx="100" cy="150" r="55" fill="none" stroke="#f5a62328" stroke-width="0.8"/>
+  <circle cx="143" cy="121" r="18" fill="none" stroke="#f56e2328" stroke-width="0.8"/>
+  <circle cx="155" cy="107" r="10" fill="none" stroke="#b523f528" stroke-width="0.8"/>
+  <circle cx="159" cy="100" r="6"  fill="none" stroke="#5b5bf528" stroke-width="0.8"/>
+  <circle cx="163" cy="96"  r="4"  fill="none" stroke="#23a8f528" stroke-width="0.8"/>
+
+  <!-- Phasor arms -->
+  <!-- H1: center -> 55px at ~315° -->
+  <line x1="100" y1="150" x2="139" y2="111" stroke="#f5a623" stroke-width="1.6"/>
+  <circle cx="139" cy="111" r="2.5" fill="#f5a623"/>
+
+  <!-- H2: 18px at ~150° -->
+  <line x1="139" y1="111" x2="123" y2="120" stroke="#f56e23" stroke-width="1.4"/>
+  <circle cx="123" cy="120" r="2" fill="#f56e23"/>
+
+  <!-- H3: 10px at ~60° -->
+  <line x1="123" y1="120" x2="128" y2="111" stroke="#b523f5" stroke-width="1.2"/>
+  <circle cx="128" cy="111" r="2" fill="#b523f5"/>
+
+  <!-- H4: 6px at ~210° -->
+  <line x1="128" y1="111" x2="123" y2="114" stroke="#5b5bf5" stroke-width="1.0"/>
+  <circle cx="123" cy="114" r="1.8" fill="#5b5bf5"/>
+
+  <!-- H5: 4px at ~0° -->
+  <line x1="123" y1="114" x2="127" y2="114" stroke="#23a8f5" stroke-width="0.9"/>
+  <circle cx="127" cy="114" r="1.5" fill="#23a8f5"/>
+
+  <!-- Connector dashed line from tip to right panel -->
+  <line x1="127" y1="114" x2="200" y2="114" stroke="rgba(255,255,255,0.15)" stroke-width="0.8" stroke-dasharray="3,4"/>
+
+  <!-- Center pivot -->
+  <circle cx="100" cy="150" r="3" fill="#333350"/>
+
+  <!-- Panel label -->
+  <text x="8" y="16" font-family="system-ui,sans-serif" font-size="8" fill="#333" letter-spacing="1.5" text-anchor="start">PHASORS</text>
+
+  <!-- === RIGHT PANEL: partial square wave trace === -->
+  <!-- Panel label -->
+  <text x="208" y="16" font-family="system-ui,sans-serif" font-size="8" fill="#333" letter-spacing="1.5" text-anchor="start">WAVE</text>
+
+  <!-- Zero axis -->
+  <line x1="200" y1="150" x2="400" y2="150" stroke="rgba(255,255,255,0.07)" stroke-width="0.5"/>
+
+  <!-- Partial square-wave trace (amber) — approximated with path -->
+  <!-- Dot at current tip -->
+  <circle cx="201" cy="114" r="4" fill="#fff" opacity="0.9"/>
+
+  <!-- Wave trail: rightmost = oldest, leftmost = newest (present at left edge) -->
+  <!-- A rough square wave with ~5 harmonics -->
+  <path d="
+    M201,114
+    L205,110 L208,108 L212,107 L216,107
+    L220,108 L224,112 L226,118 L228,128
+    L229,138 L230,148 L231,152 L232,155
+    L234,158 L238,162 L242,165 L246,168
+    L250,170 L254,170 L258,168 L262,165
+    L266,162 L268,157 L270,152 L271,148
+    L272,143 L273,138 L274,133 L276,130
+    L278,128 L282,127 L286,128 L290,130
+    L292,133 L293,137 L294,141 L295,145
+    L296,148 L297,150 L298,150 L300,150
+    L302,149 L304,147 L306,143 L308,137
+    L310,131 L312,126 L314,122 L316,119
+    L318,117 L322,116 L326,117 L330,119
+    L334,123 L336,129 L338,136 L340,143
+    L342,149 L343,151 L344,151 L346,151
+    L348,149 L350,145 L352,140 L354,134
+    L356,128 L358,122 L362,118 L366,117
+    L370,118 L374,121 L378,126 L382,132
+    L386,139 L390,145 L392,149 L394,151
+    L396,151 L398,150 L400,150
+  " fill="none" stroke="#f5a623" stroke-width="2" stroke-linejoin="round"/>
+
+  <!-- Harmonic toggle buttons (H1-H5 shown as on, H6-H10 off) -->
+  <rect x="200" y="255" width="200" height="45" fill="#0c0c1e"/>
+  <rect x="204" y="261" width="30" height="20" rx="3" fill="#12122a" stroke="#f5a62380" stroke-width="1"/>
+  <text x="219" y="275" font-family="system-ui,sans-serif" font-size="9" font-weight="700" fill="#f5a623" text-anchor="middle">H1</text>
+  <rect x="238" y="261" width="30" height="20" rx="3" fill="#12122a" stroke="#f56e2380" stroke-width="1"/>
+  <text x="253" y="275" font-family="system-ui,sans-serif" font-size="9" font-weight="700" fill="#f56e23" text-anchor="middle">H2</text>
+  <rect x="272" y="261" width="30" height="20" rx="3" fill="#12122a" stroke="#b523f580" stroke-width="1"/>
+  <text x="287" y="275" font-family="system-ui,sans-serif" font-size="9" font-weight="700" fill="#b523f5" text-anchor="middle">H3</text>
+  <rect x="306" y="261" width="30" height="20" rx="3" fill="#12122a" stroke="#5b5bf580" stroke-width="1"/>
+  <text x="321" y="275" font-family="system-ui,sans-serif" font-size="9" font-weight="700" fill="#5b5bf5" text-anchor="middle">H4</text>
+  <rect x="340" y="261" width="30" height="20" rx="3" fill="#12122a" stroke="#23a8f580" stroke-width="1"/>
+  <text x="355" y="275" font-family="system-ui,sans-serif" font-size="9" font-weight="700" fill="#23a8f5" text-anchor="middle">H5</text>
+  <rect x="374" y="261" width="22" height="20" rx="3" fill="#12122a" stroke="#25254080" stroke-width="1"/>
+  <text x="385" y="275" font-family="system-ui,sans-serif" font-size="9" font-weight="700" fill="#555" text-anchor="middle">H6</text>
+
+  <!-- Left panel H-buttons -->
+  <rect x="0" y="255" width="200" height="45" fill="#0c0c1e"/>
+  <text x="8" y="272" font-family="system-ui,sans-serif" font-size="7" fill="#444" letter-spacing="1">HARMONICS</text>
+  <rect x="4" y="277" width="36" height="20" rx="3" fill="#2a2a58" stroke="#4848a0" stroke-width="1"/>
+  <text x="22" y="291" font-family="system-ui,sans-serif" font-size="9" font-weight="700" fill="#fff" text-anchor="middle">Square</text>
+  <rect x="44" y="277" width="42" height="20" rx="3" fill="#14142c" stroke="#252240" stroke-width="1"/>
+  <text x="65" y="291" font-family="system-ui,sans-serif" font-size="9" font-weight="700" fill="#888" text-anchor="middle">Sawtooth</text>
+  <rect x="90" y="277" width="38" height="20" rx="3" fill="#14142c" stroke="#252240" stroke-width="1"/>
+  <text x="109" y="291" font-family="system-ui,sans-serif" font-size="9" font-weight="700" fill="#888" text-anchor="middle">Triangle</text>
+</svg>
