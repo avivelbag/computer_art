@@ -1,0 +1,151 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300" width="400" height="300">
+  <defs>
+    <!-- Green wavelength (550 nm) hue: ~126° -->
+    <radialGradient id="w1" cx="95" cy="100" r="200" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#00e864" stop-opacity="0.0"/>
+      <stop offset="40%" stop-color="#00e864" stop-opacity="0.55"/>
+      <stop offset="100%" stop-color="#00e864" stop-opacity="0.0"/>
+    </radialGradient>
+    <radialGradient id="w2" cx="95" cy="200" r="200" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#00e864" stop-opacity="0.0"/>
+      <stop offset="40%" stop-color="#00e864" stop-opacity="0.55"/>
+      <stop offset="100%" stop-color="#00e864" stop-opacity="0.0"/>
+    </radialGradient>
+    <!-- Interference fringe bands on the screen (right panel) -->
+    <linearGradient id="fringes" x1="0" y1="0" x2="0" y2="1" gradientUnits="objectBoundingBox">
+      <stop offset="0%"   stop-color="#000810"/>
+      <stop offset="10%"  stop-color="#003820" stop-opacity="0.6"/>
+      <stop offset="20%"  stop-color="#00e864" stop-opacity="0.5"/>
+      <stop offset="30%"  stop-color="#001a08" stop-opacity="0.2"/>
+      <stop offset="40%"  stop-color="#000810"/>
+      <stop offset="50%"  stop-color="#00e864" stop-opacity="0.9"/>
+      <stop offset="60%"  stop-color="#000810"/>
+      <stop offset="70%"  stop-color="#001a08" stop-opacity="0.2"/>
+      <stop offset="80%"  stop-color="#00e864" stop-opacity="0.5"/>
+      <stop offset="90%"  stop-color="#003820" stop-opacity="0.6"/>
+      <stop offset="100%" stop-color="#000810"/>
+    </linearGradient>
+    <clipPath id="left-clip">
+      <rect x="0" y="0" width="240" height="300"/>
+    </clipPath>
+    <clipPath id="right-clip">
+      <rect x="241" y="0" width="159" height="300"/>
+    </clipPath>
+  </defs>
+
+  <!-- Background -->
+  <rect width="400" height="300" fill="#03031a"/>
+
+  <!-- ===== LEFT PANEL: Wave field ===== -->
+
+  <!-- Incident plane wave stripes (left of barrier, dim) -->
+  <g clip-path="url(#left-clip)" opacity="0.35">
+    <!-- Vertical wave crests as thin green bars -->
+    <rect x="9"  y="0" width="3" height="300" fill="#00e864" opacity="0.4"/>
+    <rect x="37" y="0" width="3" height="300" fill="#00e864" opacity="0.4"/>
+    <rect x="65" y="0" width="3" height="300" fill="#00e864" opacity="0.4"/>
+  </g>
+
+  <!-- Barrier at x=95: solid fill with two slit gaps -->
+  <!-- Top segment (0 → 92) -->
+  <rect x="92" y="0"   width="5" height="92"  fill="#1a1a2e"/>
+  <!-- Middle segment (108 → 192) -->
+  <rect x="92" y="108" width="5" height="84"  fill="#1a1a2e"/>
+  <!-- Bottom segment (208 → 300) -->
+  <rect x="92" y="208" width="5" height="92"  fill="#1a1a2e"/>
+  <!-- Barrier outline highlight -->
+  <line x1="92" y1="0"   x2="92" y2="92"  stroke="#2a2a44" stroke-width="1"/>
+  <line x1="92" y1="108" x2="92" y2="192" stroke="#2a2a44" stroke-width="1"/>
+  <line x1="92" y1="208" x2="92" y2="300" stroke="#2a2a44" stroke-width="1"/>
+
+  <!-- Circular wave rings from slit 1 (95, 100) -->
+  <g clip-path="url(#left-clip)">
+    <circle cx="95" cy="100" r="18"  fill="none" stroke="#00e864" stroke-width="2.5" opacity="0.80"/>
+    <circle cx="95" cy="100" r="38"  fill="none" stroke="#00e864" stroke-width="2.0" opacity="0.65"/>
+    <circle cx="95" cy="100" r="60"  fill="none" stroke="#00e864" stroke-width="1.5" opacity="0.50"/>
+    <circle cx="95" cy="100" r="85"  fill="none" stroke="#00e864" stroke-width="1.2" opacity="0.38"/>
+    <circle cx="95" cy="100" r="112" fill="none" stroke="#00e864" stroke-width="1.0" opacity="0.25"/>
+    <circle cx="95" cy="100" r="140" fill="none" stroke="#00e864" stroke-width="0.8" opacity="0.15"/>
+  </g>
+
+  <!-- Circular wave rings from slit 2 (95, 200) -->
+  <g clip-path="url(#left-clip)">
+    <circle cx="95" cy="200" r="18"  fill="none" stroke="#00e864" stroke-width="2.5" opacity="0.80"/>
+    <circle cx="95" cy="200" r="38"  fill="none" stroke="#00e864" stroke-width="2.0" opacity="0.65"/>
+    <circle cx="95" cy="200" r="60"  fill="none" stroke="#00e864" stroke-width="1.5" opacity="0.50"/>
+    <circle cx="95" cy="200" r="85"  fill="none" stroke="#00e864" stroke-width="1.2" opacity="0.38"/>
+    <circle cx="95" cy="200" r="112" fill="none" stroke="#00e864" stroke-width="1.0" opacity="0.25"/>
+    <circle cx="95" cy="200" r="140" fill="none" stroke="#00e864" stroke-width="0.8" opacity="0.15"/>
+  </g>
+
+  <!-- Constructive interference bright bands (diagonal rays rightward) -->
+  <!-- Central maximum: straight ahead (angle 0) -->
+  <g clip-path="url(#left-clip)" opacity="0.5">
+    <!-- m=0 band: centered at y=150, going straight right from (97,150) -->
+    <polygon points="97,140 240,135 240,165 97,160" fill="#00e864" opacity="0.30"/>
+    <!-- m=+1 band: first bright fringe above center (sinθ=0.5 for d=2λ) -->
+    <polygon points="97,92  240,30  240,60  97,100"  fill="#00e864" opacity="0.18"/>
+    <!-- m=-1 band: first bright fringe below center -->
+    <polygon points="97,200 240,240 240,270 97,208" fill="#00e864" opacity="0.18"/>
+  </g>
+
+  <!-- ===== Divider ===== -->
+  <line x1="240" y1="0" x2="240" y2="300" stroke="#101025" stroke-width="1"/>
+
+  <!-- ===== RIGHT PANEL: Detector screen ===== -->
+
+  <!-- Background of screen panel -->
+  <rect x="241" y="0" width="159" height="300" fill="#03031a"/>
+
+  <!-- Intensity gradient bands -->
+  <rect x="241" y="0" width="159" height="300" fill="url(#fringes)"/>
+
+  <!-- Intensity profile curve (white line tracing I(θ)) -->
+  <polyline
+    points="
+      243,0
+      243,15   247,22   252,30   261,40   248,50
+      244,60   243,70   244,80   250,90   268,100
+      305,110  340,120  362,130  378,140  393,150
+      378,160  362,170  340,180  305,190  268,200
+      250,210  244,220  243,230  244,240  248,250
+      261,260  252,270  247,278  243,285  243,300
+    "
+    fill="none"
+    stroke="rgba(255,255,255,0.75)"
+    stroke-width="1.5"
+    stroke-linejoin="round"/>
+
+  <!-- Central axis tick -->
+  <line x1="241" y1="150" x2="248" y2="150" stroke="rgba(255,255,255,0.25)" stroke-width="0.7"/>
+
+  <!-- ===== Labels ===== -->
+  <text x="8" y="14" font-family="system-ui,sans-serif" font-size="8" fill="#2a2a44" letter-spacing="1.5">WAVE FIELD</text>
+  <text x="249" y="14" font-family="system-ui,sans-serif" font-size="8" fill="#2a2a44" letter-spacing="1.5">DETECTOR</text>
+
+  <!-- ===== Toolbar hint ===== -->
+  <rect x="0" y="268" width="400" height="32" fill="#09091a" opacity="0.9"/>
+  <!-- d slider hint -->
+  <text x="10" y="281" font-family="system-ui,sans-serif" font-size="8" fill="#444">d</text>
+  <rect x="18" y="277" width="55" height="2" rx="1" fill="#222238"/>
+  <circle cx="40" cy="278" r="4" fill="#6060c0"/>
+  <text x="76" y="281" font-family="system-ui,sans-serif" font-size="8" fill="#666">2.0λ</text>
+  <!-- a slider hint -->
+  <text x="112" y="281" font-family="system-ui,sans-serif" font-size="8" fill="#444">a</text>
+  <rect x="120" y="277" width="55" height="2" rx="1" fill="#222238"/>
+  <circle cx="130" cy="278" r="4" fill="#6060c0"/>
+  <text x="178" y="281" font-family="system-ui,sans-serif" font-size="8" fill="#666">0.5λ</text>
+  <!-- wavelength swatch -->
+  <circle cx="214" cy="278" r="5" fill="#00e864"/>
+  <text x="222" y="281" font-family="system-ui,sans-serif" font-size="8" fill="#666">550 nm</text>
+  <!-- N buttons -->
+  <rect x="280" y="271" width="18" height="14" rx="2" fill="#14142c" stroke="#222240" stroke-width="1"/>
+  <text x="289" y="281" font-family="system-ui,sans-serif" font-size="8" fill="#666" text-anchor="middle">1</text>
+  <rect x="302" y="271" width="18" height="14" rx="2" fill="#2a2a58" stroke="#4848a0" stroke-width="1"/>
+  <text x="311" y="281" font-family="system-ui,sans-serif" font-size="8" fill="#fff" text-anchor="middle">2</text>
+  <rect x="324" y="271" width="18" height="14" rx="2" fill="#14142c" stroke="#222240" stroke-width="1"/>
+  <text x="333" y="281" font-family="system-ui,sans-serif" font-size="8" fill="#666" text-anchor="middle">5</text>
+
+  <text x="8"   y="295" font-family="system-ui,sans-serif" font-size="7" fill="#333">Slits</text>
+  <text x="280" y="295" font-family="system-ui,sans-serif" font-size="7" fill="#333" letter-spacing="1">SLITS</text>
+</svg>

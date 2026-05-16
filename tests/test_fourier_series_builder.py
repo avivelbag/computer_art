@@ -201,10 +201,11 @@ def test_readme_mentions_phasor():
 
 # ---- Edge cases ----
 
-def test_pieces_json_entry_is_last():
-    """Piece 213 should be appended as the final entry (most recent)."""
+def test_pieces_json_entry_exists():
+    """Piece 213 must be present in pieces.json."""
     data = json.loads(PIECES_JSON.read_text())
-    assert data[-1]["id"] == "213-fourier-series-builder"
+    ids = [e["id"] for e in data]
+    assert "213-fourier-series-builder" in ids
 
 
 def test_pieces_json_no_duplicate_id():
