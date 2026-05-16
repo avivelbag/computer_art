@@ -337,23 +337,31 @@ const harmonics = Array.from({ length: NUM_H }, (_, i) => ({
   n: i + 1,
   amp: i === 0 ? 1.0 : 0.0,
   on: i === 0,
+  phase: 0,
 }));
 
-// Preset definitions: [amp, on] per harmonic
+// Preset definitions: [amp, on, phase] per harmonic.
+// Negative coefficients are encoded as a π phase offset so the phasor
+// model can represent the sign alternation in the sawtooth/triangle formulas.
 const PRESETS = {
   square: Array.from({ length: NUM_H }, (_, i) => {
     const n = i + 1;
     const isOdd = n % 2 === 1;
-    return { amp: isOdd ? 1 / n : 0, on: isOdd };
+    return { amp: isOdd ? 1 / n : 0, on: isOdd, phase: 0 };
   }),
   sawtooth: Array.from({ length: NUM_H }, (_, i) => {
+    // f(x) = 2/π · Σ (-1)^(k+1) · sin(kx)/k, k=1..N
+    // (-1)^(k+1) is positive for odd k, negative for even k → even n gets π phase
     const n = i + 1;
-    return { amp: 1 / n, on: true };
+    return { amp: 1 / n, on: true, phase: n % 2 === 0 ? Math.PI : 0 };
   }),
   triangle: Array.from({ length: NUM_H }, (_, i) => {
+    // f(x) = 8/π² · Σ (-1)^k · sin((2k+1)x)/(2k+1)², k=0..N
+    // For odd n only; n = 2k+1 → k = (n-1)/2; negative when k is odd (n ≡ 3 mod 4)
     const n = i + 1;
     const isOdd = n % 2 === 1;
-    return { amp: isOdd ? 1 / (n * n) : 0, on: isOdd };
+    const k = (n - 1) / 2;
+    return { amp: isOdd ? 1 / (n * n) : 0, on: isOdd, phase: isOdd && k % 2 === 1 ? Math.PI : 0 };
   }),
 };
 
@@ -405,8 +413,9 @@ function syncButtons() {
 function applyPreset(name) {
   const p = PRESETS[name];
   for (let i = 0; i < NUM_H; i++) {
-    harmonics[i].amp = p[i].amp;
-    harmonics[i].on  = p[i].on;
+    harmonics[i].amp   = p[i].amp;
+    harmonics[i].on    = p[i].on;
+    harmonics[i].phase = p[i].phase;
   }
   waveTrail = [];
   syncButtons();
@@ -465,7 +474,7 @@ function drawPhasors() {
 
   for (const h of active) {
     const r = h.amp * scale;
-    const angle = h.n * theta;
+    const angle = h.n * theta + h.phase;
     const nx = x + r * Math.cos(angle);
     const ny = y + r * Math.sin(angle);
 
@@ -570,8 +579,9 @@ document.getElementById('btn-triangle').addEventListener('click', () => applyPre
 
 document.getElementById('btn-reset').addEventListener('click', () => {
   for (let i = 0; i < NUM_H; i++) {
-    harmonics[i].amp = i === 0 ? 1.0 : 0;
-    harmonics[i].on  = i === 0;
+    harmonics[i].amp   = i === 0 ? 1.0 : 0;
+    harmonics[i].on    = i === 0;
+    harmonics[i].phase = 0;
   }
   waveTrail = [];
   syncButtons();
