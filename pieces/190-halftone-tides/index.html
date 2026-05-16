@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Halftone Tides — Interference Wave Dot Grid</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { background: #1a0a2e; display: flex; align-items: center; justify-content: center; min-height: 100vh; }
+    canvas { display: block; box-shadow: 0 4px 32px rgba(0,0,0,0.6); }
+  </style>
+</head>
+<body>
+<canvas id="canvas" width="600" height="600"></canvas>
+<script>
+  const canvas = document.getElementById('canvas');
+  const ctx    = canvas.getContext('2d');
+  const W = 600, H = 600;
+
+  const BG  = '#1a0a2e';
+  const DOT = '#f7c95b';
+
+  const COLS = 40, ROWS = 40;
+  const CELL_W = W / COLS;
+  const CELL_H = H / ROWS;
+  const MAX_R  = Math.min(CELL_W, CELL_H) * 0.45;
+
+  // Four traveling sine waves with independent directions, spatial frequencies,
+  // temporal frequencies, and phase offsets. The vector-sum of incommensurate
+  // plane waves produces traveling moiré-like interference — not achievable
+  // with a single radial driver.
+  const WAVES = [
+    { kx:  0.08, ky:  0.06, freq: 1.1, phase: 0.0 },
+    { kx: -0.05, ky:  0.10, freq: 0.7, phase: 1.2 },
+    { kx:  0.12, ky: -0.04, freq: 1.5, phase: 2.4 },
+    { kx: -0.07, ky: -0.09, freq: 0.9, phase: 3.7 },
+  ];
+
+  function waveValue(cx, cy, t) {
+    let v = 0;
+    for (const w of WAVES) v += Math.sin(w.kx * cx + w.ky * cy + w.freq * t + w.phase);
+    return v / WAVES.length;
+  }
+
+  function dotRadius(cx, cy, t) {
+    const v    = waveValue(cx, cy, t);
+    const norm = Math.max(0.1, Math.min(0.9, v * 0.5 + 0.5));
+    return MAX_R * norm;
+  }
+
+  const FPS_CAP  = 60;
+  const FRAME_MS = 1000 / FPS_CAP;
+
+  let t       = 0;
+  let lastNow = 0;
+
+  function render(now) {
+    requestAnimationFrame(render);
+    if (now - lastNow < FRAME_MS) return;
+    const dt = Math.min(now - lastNow, 50) / 1000;
+    lastNow = now;
+    t += dt * 1.5;
+
+    ctx.fillStyle = BG;
+    ctx.fillRect(0, 0, W, H);
+
+    ctx.fillStyle = DOT;
+    ctx.beginPath();
+    for (let row = 0; row < ROWS; row++) {
+      for (let col = 0; col < COLS; col++) {
+        const cx = (col + 0.5) * CELL_W;
+        const cy = (row + 0.5) * CELL_H;
+        const r  = dotRadius(cx, cy, t);
+        ctx.moveTo(cx + r, cy);
+        ctx.arc(cx, cy, r, 0, Math.PI * 2);
+      }
+    }
+    ctx.fill();
+  }
+
+  requestAnimationFrame(render);
+</script>
+</body>
+</html>

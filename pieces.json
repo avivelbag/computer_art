@@ -664,5 +664,14 @@
     "technique": "canvas 2D / Voronoi Lloyd relaxation / weighted centroid stipple / spatial grid / density Gaussians",
     "path": "pieces/187-voronoi-stipple",
     "thumbnail": "pieces/187-voronoi-stipple/thumbnail.svg"
+  },
+  {
+    "id": "190-halftone-tides",
+    "title": "Halftone Tides — Interference Wave Dot Grid",
+    "tagline": "A 40×40 halftone dot grid whose radii are driven by the superposition of four traveling plane waves — independent directions, spatial frequencies, and temporal frequencies — generating a traveling moiré-like interference pattern; deep indigo background with warm gold dots, animated at 60 fps",
+    "year": 2026,
+    "technique": "canvas 2D / halftone dot grid / multi-wave interference / traveling sine waves / radius clamping",
+    "path": "pieces/190-halftone-tides",
+    "thumbnail": "pieces/190-halftone-tides/thumbnail.svg"
   }
 ]
