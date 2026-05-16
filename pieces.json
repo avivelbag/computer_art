@@ -818,5 +818,15 @@
     "path": "pieces/208-double-pendulum",
     "thumbnail": "pieces/208-double-pendulum/thumbnail.svg",
     "description": "A double pendulum with two rigid arms is integrated via 4th-order Runge-Kutta using the exact Lagrangian equations of motion — no small-angle approximation. A twin pendulum started 0.001° offset in θ₁ diverges exponentially, with gold and teal trails whose separation embodies the Lyapunov exponent λ ≈ 3–7 s⁻¹. Initial angle sliders, mass-ratio control, and trail-length settings let the user explore the boundary between regular and chaotic motion. Trail color encodes time: older segments fade, recent segments glow bright."
+  },
+  {
+    "id": "212-game-of-life",
+    "title": "Four Rules, Infinite Complexity: Game of Life",
+    "tagline": "Four birth-and-death rules on a 120×80 toroidal grid: paint cells, load presets (Glider, Blinker, Pulsar, Gosper Gun), watch the pattern library update live, and toggle heat-map age tinting",
+    "year": 2026,
+    "technique": "canvas / Conway's Game of Life / cellular automaton / ImageData / pattern detection",
+    "path": "pieces/212-game-of-life",
+    "thumbnail": "pieces/212-game-of-life/thumbnail.svg",
+    "description": "Conway's Game of Life on a 120×80 toroidal grid rendered via ImageData for maximum speed. Four preset patterns (Glider, Blinker, Pulsar, Gosper Glider Gun) are loadable with one click; cells can be painted by mouse-drag. A sidebar keeps the four rules always visible alongside a live pattern-library scan detecting Blocks, Beehives, Blinkers, Toads, Beacons, and Gliders in real time. An optional heat-map mode tints long-lived cells deep red and newborn cells bright amber, making the temporal structure of the automaton visible. Speed ranges from 1 to 60 generations per second."
   }
 ]

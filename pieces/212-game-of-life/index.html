@@ -1,0 +1,637 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Game of Life — Four Rules, Infinite Complexity</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{
+  background:#0a0a12;
+  color:#888;
+  font:11px/1.4 system-ui,sans-serif;
+  display:flex;
+  flex-direction:column;
+  height:100vh;
+  overflow:hidden;
+  user-select:none;
+}
+#main{
+  flex:1 1 0;
+  display:flex;
+  min-height:0;
+  overflow:hidden;
+}
+#canvas-wrap{
+  flex:1 1 0;
+  position:relative;
+  overflow:hidden;
+  cursor:crosshair;
+}
+canvas{
+  display:block;
+  width:100%;
+  height:100%;
+  image-rendering:pixelated;
+}
+#sidebar{
+  flex:0 0 185px;
+  background:#0c0c1e;
+  border-left:1px solid #1a1a30;
+  display:flex;
+  flex-direction:column;
+  overflow:hidden;
+  padding:10px 9px 10px;
+  gap:8px;
+}
+#rules-panel h3,#stats-panel h3,#pattern-panel h3{
+  font-size:10px;
+  font-weight:700;
+  color:#c8a96e;
+  letter-spacing:0.08em;
+  text-transform:uppercase;
+  margin-bottom:6px;
+}
+#rules-panel ol{
+  padding-left:14px;
+  font-size:9.5px;
+  color:#bbb;
+  line-height:1.9;
+}
+#rules-panel ol li em{
+  color:#c8a96e;
+  font-style:normal;
+  font-weight:700;
+}
+.divider{border:none;border-top:1px solid #1a1a30}
+.stat-row{
+  display:flex;
+  justify-content:space-between;
+  font-size:10px;
+  color:#aaa;
+  padding:2px 0;
+}
+.stat-val{
+  color:#e0c070;
+  font-weight:700;
+  font-variant-numeric:tabular-nums;
+}
+#pattern-list{font-size:9.5px;color:#777;line-height:1.9}
+#pattern-list .found{color:#a0d080;font-weight:700}
+#controls{
+  flex:0 0 auto;
+  background:#09091f;
+  border-top:1px solid #15152f;
+  padding:6px 12px 8px;
+  display:flex;
+  align-items:center;
+  gap:10px;
+  flex-wrap:wrap;
+}
+#btn-row{display:flex;gap:6px;flex-wrap:wrap}
+.ctrl-btn{
+  background:none;
+  border:1px solid #2a2a50;
+  color:#666;
+  font-size:10px;
+  padding:4px 10px;
+  cursor:pointer;
+  border-radius:2px;
+  letter-spacing:0.06em;
+  white-space:nowrap;
+}
+.ctrl-btn:hover{color:#aaa;border-color:#44447a}
+.ctrl-btn.active{color:#c8a96e;border-color:#c8a96e}
+#presets{display:flex;gap:5px;align-items:center;flex-wrap:wrap}
+#presets span{font-size:10px;color:#555}
+.preset-btn{
+  background:none;
+  border:1px solid #222240;
+  color:#555;
+  font-size:9.5px;
+  padding:3px 8px;
+  cursor:pointer;
+  border-radius:2px;
+  letter-spacing:0.05em;
+}
+.preset-btn:hover{color:#aaa;border-color:#44447a}
+.param{display:flex;align-items:center;gap:6px}
+.param label{
+  font-size:10px;
+  font-weight:700;
+  color:#c8a96e;
+  white-space:nowrap;
+}
+.param input[type=range]{
+  width:90px;
+  accent-color:#c8a96e;
+  height:4px;
+  cursor:pointer;
+}
+.param .val{font-size:10px;color:#aaa;min-width:36px;text-align:right}
+#info-pane{
+  position:fixed;
+  bottom:0;left:0;right:0;
+  background:#0c0c24;
+  border-top:1px solid #2a2a50;
+  padding:14px 24px 14px;
+  transform:translateY(100%);
+  transition:transform 0.3s ease;
+  z-index:10;
+  max-height:60vh;
+  overflow-y:auto;
+}
+#info-pane.open{transform:translateY(0)}
+#info-pane h2{
+  font-size:13px;
+  font-weight:700;
+  color:#c8a96e;
+  margin-bottom:10px;
+  letter-spacing:0.08em;
+}
+#info-pane h3{
+  font-size:11px;
+  font-weight:700;
+  color:#c8a96e;
+  margin:10px 0 4px;
+}
+#info-pane p{
+  font-size:11px;
+  color:#999;
+  line-height:1.75;
+  max-width:780px;
+  margin-bottom:7px;
+}
+#info-pane strong{color:#c8a96e}
+#pane-close{
+  position:absolute;
+  top:10px;right:14px;
+  background:none;border:none;
+  color:#555;font-size:16px;cursor:pointer;
+}
+#pane-close:hover{color:#aaa}
+</style>
+</head>
+<body>
+
+<div id="main">
+  <div id="canvas-wrap"><canvas id="c"></canvas></div>
+
+  <div id="sidebar">
+    <div id="rules-panel">
+      <h3>The Four Rules</h3>
+      <ol>
+        <li><em>&lt; 2</em> live neighbors → dies (underpopulation)</li>
+        <li><em>2 or 3</em> live neighbors → survives</li>
+        <li><em>&gt; 3</em> live neighbors → dies (overpopulation)</li>
+        <li>Dead + <em>exactly 3</em> → born (reproduction)</li>
+      </ol>
+    </div>
+    <hr class="divider"/>
+    <div id="stats-panel">
+      <h3>Statistics</h3>
+      <div class="stat-row"><span>Generation</span><span class="stat-val" id="gen-count">0</span></div>
+      <div class="stat-row"><span>Live cells</span><span class="stat-val" id="live-count">0</span></div>
+    </div>
+    <hr class="divider"/>
+    <div id="pattern-panel">
+      <h3>Pattern Library</h3>
+      <div id="pattern-list">
+        <div>Block: <span id="cnt-block">–</span></div>
+        <div>Beehive: <span id="cnt-beehive">–</span></div>
+        <div>Blinker: <span id="cnt-blinker">–</span></div>
+        <div>Toad: <span id="cnt-toad">–</span></div>
+        <div>Beacon: <span id="cnt-beacon">–</span></div>
+        <div>Glider: <span id="cnt-glider">–</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="controls">
+  <div id="btn-row">
+    <button class="ctrl-btn active" id="btn-play">Pause</button>
+    <button class="ctrl-btn" id="btn-step">Step</button>
+    <button class="ctrl-btn" id="btn-clear">Clear</button>
+    <button class="ctrl-btn" id="btn-heat">Heat Map: Off</button>
+    <button class="ctrl-btn" id="btn-about">About</button>
+  </div>
+  <div id="presets">
+    <span>Presets:</span>
+    <button class="preset-btn" data-p="glider">Glider</button>
+    <button class="preset-btn" data-p="blinker">Blinker</button>
+    <button class="preset-btn" data-p="pulsar">Pulsar</button>
+    <button class="preset-btn" data-p="gun">Glider Gun</button>
+    <button class="preset-btn" data-p="random">Random</button>
+  </div>
+  <div class="param">
+    <label>Speed</label>
+    <input type="range" id="sl-speed" min="1" max="60" value="10" step="1">
+    <span class="val" id="vspeed">10 g/s</span>
+  </div>
+</div>
+
+<div id="info-pane">
+  <button id="pane-close">&#x2715;</button>
+  <h2>Game of Life — Turing-Complete Cellular Automaton</h2>
+  <h3>Conway's Biography</h3>
+  <p>John Horton Conway (1937–2020) invented the Game of Life in 1970 while at Cambridge, publishing it through Martin Gardner's <strong>Scientific American</strong> column. Conway was searching for a simple two-dimensional rule system that could exhibit complex self-organizing behavior, inspired by questions about the theoretical possibility of machine self-reproduction.</p>
+  <h3>Von Neumann's Self-Reproducing Automata</h3>
+  <p>In the late 1940s, John von Neumann designed a 29-state cellular automaton capable of <strong>self-reproduction</strong>: a configuration that could read a description of any machine, including itself, and construct a copy. Conway's Life reduces this to just 2 states and 4 rules while retaining the same computational power — a remarkable compression of complexity into simplicity.</p>
+  <h3>Turing-Completeness</h3>
+  <p>Game of Life is <strong>Turing-complete</strong>: any computation describable algorithmically can be performed inside it. This was proven by constructing logic gates (AND, OR, NOT) from glider collisions, then wiring them into a universal computer. Paul Rendell built a Turing machine inside Life in 2000; since then, entire computers — including ones that run Life inside Life — have been constructed from gliders and still lifes.</p>
+  <h3>The Gosper Gun and Unbounded Growth</h3>
+  <p>Conway initially conjectured that no pattern could grow without bound. In 1970, Bill Gosper at MIT found the <strong>Gosper Glider Gun</strong>, which fires a new glider every 30 generations, disproving Conway's conjecture. This was the first "gun" — a period-30 oscillator that produces infinitely many gliders and was the key to proving Turing-completeness.</p>
+  <h3>The Halting-Problem Connection</h3>
+  <p>Because Life is Turing-complete, the halting problem applies: given an arbitrary Life pattern, there is <strong>no general algorithm</strong> to decide whether it will eventually stabilize, enter a periodic cycle, or grow forever. The fate of a pattern is undecidable in exactly the same sense that deciding whether an arbitrary program halts is undecidable.</p>
+</div>
+
+<script>
+const W = 120, H = 80;
+
+// flat Uint8Array: index = y*W+x
+let grid = new Uint8Array(W * H);
+let next = new Uint8Array(W * H);
+let age  = new Uint32Array(W * H); // generations spent alive
+
+let generation = 0;
+let running = true;
+let heatMap = false;
+let speed = 10;
+let lastTs = 0;
+let accumulator = 0;
+let firstFrame = true;
+
+let isPainting = false;
+let paintValue = 1;
+
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d', { willReadFrequently: false });
+let imgData = null;
+
+function resize() {
+  const wrap = canvas.parentElement;
+  canvas.width  = wrap.clientWidth;
+  canvas.height = wrap.clientHeight;
+  imgData = ctx.createImageData(canvas.width, canvas.height);
+}
+window.addEventListener('resize', () => { resize(); render(); });
+resize();
+
+// ── simulation ────────────────────────────────────────────────────────────
+
+/**
+ * Count live Moore-neighborhood cells (toroidal wrap).
+ * Uses a direct loop rather than array arithmetic for clarity.
+ */
+function neighbors(x, y) {
+  let n = 0;
+  const ym = (y - 1 + H) % H, yp = (y + 1) % H;
+  const xm = (x - 1 + W) % W, xp = (x + 1) % W;
+  n += grid[ym * W + xm];
+  n += grid[ym * W + x];
+  n += grid[ym * W + xp];
+  n += grid[y  * W + xm];
+  n += grid[y  * W + xp];
+  n += grid[yp * W + xm];
+  n += grid[yp * W + x];
+  n += grid[yp * W + xp];
+  return n;
+}
+
+/**
+ * Advance one generation: apply the four Conway rules to every cell,
+ * update the age buffer (age increments while alive, resets to 0 on death),
+ * swap the grid buffers, and return the new live-cell count.
+ */
+function step() {
+  let live = 0;
+  for (let y = 0; y < H; y++) {
+    for (let x = 0; x < W; x++) {
+      const i = y * W + x;
+      const n = neighbors(x, y);
+      const cur = grid[i];
+      // Rules: survive with 2-3 neighbors; born from dead with exactly 3
+      const nxt = cur ? (n === 2 || n === 3 ? 1 : 0) : (n === 3 ? 1 : 0);
+      next[i] = nxt;
+      age[i]  = nxt ? (cur ? age[i] + 1 : 1) : 0;
+      live   += nxt;
+    }
+  }
+  const tmp = grid; grid = next; next = tmp;
+  generation++;
+  document.getElementById('gen-count').textContent  = generation;
+  document.getElementById('live-count').textContent = live;
+  return live;
+}
+
+function clearGrid() {
+  grid.fill(0);
+  age.fill(0);
+  generation = 0;
+  document.getElementById('gen-count').textContent  = 0;
+  document.getElementById('live-count').textContent = 0;
+}
+
+// ── rendering ─────────────────────────────────────────────────────────────
+
+/**
+ * Map age in [1,∞) to an RGB triple for heat-map mode.
+ * Young cells (age 1) render as bright amber-yellow; old cells (age ≥ 80)
+ * saturate to deep red, making long-lived structures visually distinct.
+ */
+function heatRGB(a) {
+  const t = Math.min(a / 80, 1);
+  return [
+    Math.round(232 - 32 * t),
+    Math.round(200 - 180 * t),
+    Math.round(100 - 90  * t)
+  ];
+}
+
+/**
+ * Write the current grid state into the canvas ImageData pixel buffer.
+ * Each logical grid cell covers a rectangular block of canvas pixels.
+ * Uses exact floor division so the cell boundaries are always sharp.
+ */
+function render() {
+  if (!imgData) return;
+  const cw = canvas.width, ch = canvas.height;
+  const data = imgData.data;
+  for (let py = 0; py < ch; py++) {
+    const gy = Math.floor(py * H / ch);
+    const row = gy * W;
+    const off0 = py * cw;
+    for (let px = 0; px < cw; px++) {
+      const gx = Math.floor(px * W / cw);
+      const i = row + gx;
+      const off = (off0 + px) * 4;
+      if (grid[i]) {
+        if (heatMap) {
+          const [r, g, b] = heatRGB(age[i]);
+          data[off]   = r;
+          data[off+1] = g;
+          data[off+2] = b;
+        } else {
+          data[off]   = 200;
+          data[off+1] = 169;
+          data[off+2] = 110; // #c8a96e warm amber
+        }
+      } else {
+        data[off]   = 10;
+        data[off+1] = 10;
+        data[off+2] = 18; // near-black #0a0a12
+      }
+      data[off+3] = 255;
+    }
+  }
+  ctx.putImageData(imgData, 0, 0);
+}
+
+// ── pattern detection ──────────────────────────────────────────────────────
+
+const PATTERNS = {
+  // still lifes
+  block:   [[0,0],[1,0],[0,1],[1,1]],
+  beehive: [[1,0],[2,0],[0,1],[3,1],[1,2],[2,2]],
+  // oscillators (one phase each — we also check the alternate phase below)
+  blinkerH: [[0,0],[1,0],[2,0]],
+  blinkerV: [[0,0],[0,1],[0,2]],
+  toadA:    [[1,0],[2,0],[3,0],[0,1],[1,1],[2,1]],
+  beaconA:  [[0,0],[1,0],[0,1],[3,2],[2,3],[3,3]],
+  // glider (all four phase-0 rotations)
+  glider0: [[1,0],[2,1],[0,2],[1,2],[2,2]],
+  glider1: [[2,0],[0,1],[2,1],[1,2],[2,2]],
+  glider2: [[0,0],[1,0],[2,0],[2,1],[1,2]],
+  glider3: [[0,0],[1,0],[2,0],[0,1],[1,2]],
+};
+
+/**
+ * Return the number of times the given pattern (array of [dx,dy] offsets)
+ * appears in the grid, scanning every (x,y) origin.
+ * A visited-cell mask prevents the same live cell contributing to multiple
+ * overlapping match counts.
+ */
+function scanFor(pats) {
+  let count = 0;
+  const visited = new Uint8Array(W * H);
+  for (let y = 0; y < H; y++) {
+    for (let x = 0; x < W; x++) {
+      for (const pat of pats) {
+        let match = true;
+        for (const [dx, dy] of pat) {
+          if (!grid[((y+dy+H)%H)*W + ((x+dx+W)%W)]) { match = false; break; }
+        }
+        if (match) {
+          const anchorIdx = ((y+pat[0][1]+H)%H)*W + ((x+pat[0][0]+W)%W);
+          if (!visited[anchorIdx]) { visited[anchorIdx] = 1; count++; }
+        }
+      }
+    }
+  }
+  return count;
+}
+
+let scanGen = 0;
+
+/**
+ * Run the pattern library scan (every 5 generations) and update the sidebar.
+ * The scan is throttled because it's O(grid * patterns) and doesn't need
+ * sub-generation resolution.
+ */
+function updatePatterns() {
+  if (++scanGen % 5 !== 0) return;
+  const nBlock   = scanFor([PATTERNS.block]);
+  const nBeehive = scanFor([PATTERNS.beehive]);
+  const nBlinker = scanFor([PATTERNS.blinkerH, PATTERNS.blinkerV]);
+  const nToad    = scanFor([PATTERNS.toadA]);
+  const nBeacon  = scanFor([PATTERNS.beaconA]);
+  const nGlider  = scanFor([PATTERNS.glider0, PATTERNS.glider1, PATTERNS.glider2, PATTERNS.glider3]);
+
+  function fmt(n, id) {
+    const el = document.getElementById(id);
+    if (n > 0) { el.textContent = n; el.className = 'found'; }
+    else        { el.textContent = '–'; el.className = ''; }
+  }
+  fmt(nBlock,   'cnt-block');
+  fmt(nBeehive, 'cnt-beehive');
+  fmt(nBlinker, 'cnt-blinker');
+  fmt(nToad,    'cnt-toad');
+  fmt(nBeacon,  'cnt-beacon');
+  fmt(nGlider,  'cnt-glider');
+}
+
+// ── presets ───────────────────────────────────────────────────────────────
+
+/**
+ * Place a list of [col,row] live cells onto the grid at offset (ox,oy).
+ * Wraps toroidally for cells that land outside the grid bounds.
+ */
+function placeCells(cells, ox, oy) {
+  for (const [cx, cy] of cells) {
+    const gx = (ox + cx + W) % W;
+    const gy = (oy + cy + H) % H;
+    const i  = gy * W + gx;
+    grid[i] = 1;
+    age[i]  = age[i] || 1;
+  }
+}
+
+const GLIDER_CELLS  = [[1,0],[2,1],[0,2],[1,2],[2,2]];
+const BLINKER_CELLS = [[0,0],[1,0],[2,0]];
+const PULSAR_CELLS  = [
+  [2,0],[3,0],[4,0],[8,0],[9,0],[10,0],
+  [0,2],[5,2],[7,2],[12,2],
+  [0,3],[5,3],[7,3],[12,3],
+  [0,4],[5,4],[7,4],[12,4],
+  [2,5],[3,5],[4,5],[8,5],[9,5],[10,5],
+  [2,7],[3,7],[4,7],[8,7],[9,7],[10,7],
+  [0,8],[5,8],[7,8],[12,8],
+  [0,9],[5,9],[7,9],[12,9],
+  [0,10],[5,10],[7,10],[12,10],
+  [2,12],[3,12],[4,12],[8,12],[9,12],[10,12]
+];
+// Gosper Glider Gun (period-30; fires a new glider every 30 generations)
+const GUN_CELLS = [
+  [24,0],
+  [22,1],[24,1],
+  [12,2],[13,2],[20,2],[21,2],[34,2],[35,2],
+  [11,3],[15,3],[20,3],[21,3],[34,3],[35,3],
+  [0,4],[1,4],[10,4],[16,4],[20,4],[21,4],
+  [0,5],[1,5],[10,5],[14,5],[16,5],[17,5],[22,5],[24,5],
+  [10,6],[16,6],[24,6],
+  [11,7],[15,7],
+  [12,8],[13,8]
+];
+
+function loadPreset(name) {
+  clearGrid();
+  if (name === 'random') {
+    for (let i = 0; i < grid.length; i++) {
+      if (Math.random() < 0.3) { grid[i] = 1; age[i] = 1; }
+    }
+    let live = 0;
+    for (let i = 0; i < grid.length; i++) live += grid[i];
+    document.getElementById('live-count').textContent = live;
+    return;
+  }
+  const tbl = { glider: GLIDER_CELLS, blinker: BLINKER_CELLS, pulsar: PULSAR_CELLS, gun: GUN_CELLS };
+  const cells = tbl[name];
+  if (!cells) return;
+  const maxX = cells.reduce((m, c) => Math.max(m, c[0]), 0);
+  const maxY = cells.reduce((m, c) => Math.max(m, c[1]), 0);
+  placeCells(cells, Math.floor((W - maxX) / 2), Math.floor((H - maxY) / 2));
+  let live = 0;
+  for (let i = 0; i < grid.length; i++) live += grid[i];
+  document.getElementById('live-count').textContent = live;
+}
+
+// ── mouse interaction ─────────────────────────────────────────────────────
+
+function canvasToGrid(e) {
+  const r  = canvas.getBoundingClientRect();
+  return [
+    Math.max(0, Math.min(W-1, Math.floor((e.clientX - r.left) / r.width  * W))),
+    Math.max(0, Math.min(H-1, Math.floor((e.clientY - r.top)  / r.height * H)))
+  ];
+}
+
+canvas.addEventListener('mousedown', e => {
+  const [gx, gy] = canvasToGrid(e);
+  paintValue = grid[gy*W+gx] ? 0 : 1;
+  isPainting = true;
+  grid[gy*W+gx] = paintValue;
+  age[gy*W+gx]  = paintValue ? 1 : 0;
+  render();
+});
+canvas.addEventListener('mousemove', e => {
+  if (!isPainting) return;
+  const [gx, gy] = canvasToGrid(e);
+  grid[gy*W+gx] = paintValue;
+  age[gy*W+gx]  = paintValue ? 1 : 0;
+  render();
+});
+window.addEventListener('mouseup', () => { isPainting = false; });
+canvas.addEventListener('mouseleave', () => { isPainting = false; });
+
+// ── controls ──────────────────────────────────────────────────────────────
+
+const btnPlay = document.getElementById('btn-play');
+btnPlay.addEventListener('click', () => {
+  running = !running;
+  btnPlay.textContent = running ? 'Pause' : 'Play';
+  btnPlay.classList.toggle('active', running);
+});
+
+document.getElementById('btn-step').addEventListener('click', () => {
+  running = false;
+  btnPlay.textContent = 'Play';
+  btnPlay.classList.remove('active');
+  step();
+  updatePatterns();
+  render();
+});
+
+document.getElementById('btn-clear').addEventListener('click', () => {
+  clearGrid();
+  render();
+});
+
+const btnHeat = document.getElementById('btn-heat');
+btnHeat.addEventListener('click', () => {
+  heatMap = !heatMap;
+  btnHeat.textContent = heatMap ? 'Heat Map: On' : 'Heat Map: Off';
+  btnHeat.classList.toggle('active', heatMap);
+  render();
+});
+
+document.getElementById('btn-about').addEventListener('click', () => {
+  document.getElementById('info-pane').classList.toggle('open');
+});
+document.getElementById('pane-close').addEventListener('click', () => {
+  document.getElementById('info-pane').classList.remove('open');
+});
+
+const slSpeed = document.getElementById('sl-speed');
+const vSpeed  = document.getElementById('vspeed');
+slSpeed.addEventListener('input', () => {
+  speed = parseInt(slSpeed.value, 10);
+  vSpeed.textContent = speed + ' g/s';
+});
+
+document.querySelectorAll('.preset-btn').forEach(btn => {
+  btn.addEventListener('click', () => { loadPreset(btn.dataset.p); render(); });
+});
+
+// ── main loop ─────────────────────────────────────────────────────────────
+
+function loop(ts) {
+  if (firstFrame) { lastTs = ts; firstFrame = false; }
+  if (!document.hidden && running) {
+    const dt = Math.min(ts - lastTs, 200); // cap to avoid post-tab-switch burst
+    accumulator += dt;
+    const interval = 1000 / speed;
+    // cap steps per frame so a very low speed never starves the renderer
+    let steps = 0;
+    while (accumulator >= interval && steps < 20) {
+      step();
+      updatePatterns();
+      accumulator -= interval;
+      steps++;
+    }
+    if (steps > 0) render();
+  }
+  lastTs = ts;
+  requestAnimationFrame(loop);
+}
+
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden) { lastTs = performance.now(); accumulator = 0; }
+});
+
+loadPreset('random');
+render();
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>
