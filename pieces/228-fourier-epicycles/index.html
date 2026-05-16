@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Piece 228 — Fourier Epicycles: Draw Anything with Rotating Circles</title>
+<link rel="stylesheet" href="../../lib/panel.css"/>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{
+  background:#060612;
+  color:#999;
+  font:12px/1.5 system-ui,sans-serif;
+  display:flex;
+  flex-direction:column;
+  height:100vh;
+  overflow:hidden;
+  user-select:none;
+}
+#canvas-wrap{
+  flex:1 1 0;
+  position:relative;
+  min-height:0;
+  cursor:default;
+}
+canvas{
+  display:block;
+  width:100%;
+  height:100%;
+}
+#controls{
+  flex:0 0 auto;
+  background:#09091e;
+  border-top:1px solid #18183a;
+  padding:7px 14px 9px;
+  display:flex;
+  align-items:center;
+  gap:14px;
+  flex-wrap:wrap;
+}
+.ctrl{display:flex;align-items:center;gap:6px}
+.ctrl label{
+  font-size:10px;
+  color:#b09050;
+  letter-spacing:0.06em;
+  text-transform:uppercase;
+}
+button{
+  background:#10102a;
+  border:1px solid #26264a;
+  color:#777;
+  font:10px system-ui,sans-serif;
+  padding:4px 10px;
+  border-radius:3px;
+  cursor:pointer;
+  letter-spacing:0.04em;
+  transition:background 0.12s,color 0.12s;
+}
+button:hover{background:#18183a;color:#bbb}
+button.active{
+  background:#1e1e3a;
+  border-color:#c0a060;
+  color:#c0a060;
+}
+#step-less,#step-more{
+  padding:4px 8px;
+  font-size:13px;
+  line-height:1;
+}
+input[type=range]{
+  width:100px;
+  accent-color:#c0a060;
+  cursor:pointer;
+}
+#n-val{
+  font-size:11px;
+  color:#c0a060;
+  min-width:30px;
+  text-align:center;
+}
+#hint{
+  font-size:10px;
+  color:#333;
+  flex:1;
+  text-align:right;
+}
+</style>
+</head>
+<body>
+<div id="canvas-wrap">
+  <canvas id="c"></canvas>
+</div>
+<div id="controls">
+  <div class="ctrl">
+    <label>Harmonics</label>
+    <button id="step-less">−</button>
+    <span id="n-val">32</span>
+    <button id="step-more">+</button>
+    <input type="range" id="harm-slider" min="1" max="512" value="32"/>
+  </div>
+  <button id="btn-heart">♥ Heart</button>
+  <button id="btn-fig8">∞ Figure-8</button>
+  <button id="btn-draw">✏ Draw Path</button>
+  <div id="hint">Press ✏ then drag on canvas to draw your own path</div>
+</div>
+
+<script>
+// ---------------------------------------------------------------------------
+// Palette
+// ---------------------------------------------------------------------------
+const BG_COLOR    = '#060612';
+const RING_COLOR  = 'rgba(192,160,60,0.28)';   // gold epicycle ring outline
+const SPOKE_COLOR = 'rgba(192,160,60,0.55)';   // spoke from pivot to next pivot
+const TIP_COLOR   = '#ff5555';                 // coral tip dot
+const TRACE_HI    = [255, 255, 255];            // white path (newest)
+const ANNOT_COLOR = 'rgba(180,140,50,0.45)';   // canvas annotation text
+
+// ---------------------------------------------------------------------------
+// Constants
+// ---------------------------------------------------------------------------
+const TWO_PI       = Math.PI * 2;
+const N_SAMPLES    = 512;   // DFT input size
+const PERIOD_MS    = 5000;  // ms for one full revolution
+const TAIL_BUCKETS = 16;    // alpha-bucket count for the fading tail
+
+// ---------------------------------------------------------------------------
+// State
+// ---------------------------------------------------------------------------
+const canvas = document.getElementById('c');
+const ctx    = canvas.getContext('2d');
+let W = 0, H = 0;
+
+/** @type {Array<{re:number,im:number,amp:number,phase:number,freq:number}>} */
+let fourier    = [];
+let nHarmonics = 32;
+
+/** Ring buffer holding the tip positions for the fading trace. */
+let tail = [];
+
+/** Animation time in [0, 2π). */
+let time   = 0;
+let lastTs = null;
+
+/** Draw-mode state. */
+let drawMode  = false;
+let isDrawing = false;
+let drawnPts  = [];
+
+// ---------------------------------------------------------------------------
+// DFT
+// ---------------------------------------------------------------------------
+
+/**
+ * Compute an O(N²) DFT treating each sample as a complex number z[n] = x[n] + i·y[n].
+ *
+ * Formula: Z[k] = (1/N) Σₙ z[n] · e^(−i 2π k n / N)
+ *
+ * Returns components sorted by amplitude descending so the most visually
+ * significant harmonics are always included first when the count is limited.
+ *
+ * @param {Array<{x:number,y:number}>} pts - N centred sample points
+ * @returns {Array<{re:number,im:number,amp:number,phase:number,freq:number}>}
+ */
+function computeDFT(pts) {
+  const N = pts.length;
+  const out = new Array(N);
+  for (let k = 0; k < N; k++) {
+    let re = 0, im = 0;
+    for (let n = 0; n < N; n++) {
+      const ang = (TWO_PI * k * n) / N;
+      const c   = Math.cos(ang);
+      const s   = Math.sin(ang);
+      // Real part of z[n]·e^(−iθ): x·cos θ + y·sin θ
+      // Imag part of z[n]·e^(−iθ): −x·sin θ + y·cos θ
+      re += pts[n].x * c + pts[n].y * s;
+      im += -pts[n].x * s + pts[n].y * c;
+    }
+    re /= N;
+    im /= N;
+    out[k] = {
+      re, im,
+      amp:   Math.hypot(re, im),
+      phase: Math.atan2(im, re),
+      freq:  k,
+    };
+  }
+  out.sort((a, b) => b.amp - a.amp);
+  return out;
+}
+
+// ---------------------------------------------------------------------------
+// Resampling
+// ---------------------------------------------------------------------------
+
+/**
+ * Resample an arbitrary-length path to exactly `n` evenly-spaced points
+ * along the arc using linear interpolation. Preserves the relative shape
+ * regardless of how unevenly the user drew the original strokes.
+ *
+ * @param {Array<{x:number,y:number}>} pts
+ * @param {number} n
+ * @returns {Array<{x:number,y:number}>}
+ */
+function resample(pts, n) {
+  if (pts.length < 2) return pts;
+  const lens = [0];
+  for (let i = 1; i < pts.length; i++) {
+    const dx = pts[i].x - pts[i - 1].x;
+    const dy = pts[i].y - pts[i - 1].y;
+    lens.push(lens[i - 1] + Math.hypot(dx, dy));
+  }
+  const total = lens[lens.length - 1];
+  if (total === 0) return pts;
+  const out = [];
+  for (let i = 0; i < n; i++) {
+    const target = (i / n) * total;
+    let lo = 0, hi = lens.length - 2;
+    while (lo < hi) {
+      const mid = (lo + hi) >> 1;
+      if (lens[mid + 1] < target) lo = mid + 1;
+      else hi = mid;
+    }
+    const span = lens[lo + 1] - lens[lo] || 1;
+    const t    = (target - lens[lo]) / span;
+    out.push({
+      x: pts[lo].x + t * (pts[lo + 1].x - pts[lo].x),
+      y: pts[lo].y + t * (pts[lo + 1].y - pts[lo].y),
+    });
+  }
+  return out;
+}
+
+// ---------------------------------------------------------------------------
+// Preset paths (centred on origin, scaled to canvas)
+// ---------------------------------------------------------------------------
+
+/**
+ * Parametric heart curve scaled so it fits within `r` pixels.
+ * Formula: x = 16 sin³t,  y = −(13 cos t − 5 cos 2t − 2 cos 3t − cos 4t)
+ */
+function heartPoints(r, n) {
+  const pts = [];
+  for (let i = 0; i < n; i++) {
+    const t = (TWO_PI * i) / n;
+    pts.push({
+      x:  r * (16 * Math.pow(Math.sin(t), 3)) / 16,
+      y: -r * (13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t)) / 16,
+    });
+  }
+  return pts;
+}
+
+/**
+ * Lemniscate of Bernoulli (figure-8):
+ * x = r cos t / (1 + sin²t),  y = r sin t cos t / (1 + sin²t)
+ */
+function fig8Points(r, n) {
+  const pts = [];
+  for (let i = 0; i < n; i++) {
+    const t = (TWO_PI * i) / n;
+    const d = 1 + Math.sin(t) * Math.sin(t);
+    pts.push({
+      x: r * Math.cos(t) / d,
+      y: r * Math.sin(t) * Math.cos(t) / d,
+    });
+  }
+  return pts;
+}
+
+// ---------------------------------------------------------------------------
+// Path loading
+// ---------------------------------------------------------------------------
+
+/**
+ * Centre the provided points, resample to N_SAMPLES, run the DFT, and reset
+ * the animation. The slider max is capped to the number of harmonics found.
+ *
+ * @param {Array<{x:number,y:number}>} rawPts - Arbitrary-scale path points
+ */
+function loadPath(rawPts) {
+  let minX = Infinity, maxX = -Infinity;
+  let minY = Infinity, maxY = -Infinity;
+  for (const p of rawPts) {
+    if (p.x < minX) minX = p.x;
+    if (p.x > maxX) maxX = p.x;
+    if (p.y < minY) minY = p.y;
+    if (p.y > maxY) maxY = p.y;
+  }
+  const cx = (minX + maxX) / 2;
+  const cy = (minY + maxY) / 2;
+  const centred = rawPts.map(p => ({ x: p.x - cx, y: p.y - cy }));
+  const sampled = resample(centred, N_SAMPLES);
+  fourier    = computeDFT(sampled);
+  nHarmonics = Math.min(nHarmonics, fourier.length);
+  document.getElementById('harm-slider').max   = fourier.length;
+  document.getElementById('harm-slider').value = nHarmonics;
+  document.getElementById('n-val').textContent  = nHarmonics;
+  tail   = [];
+  time   = 0;
+  lastTs = null;
+}
+
+function loadHeart() {
+  loadPath(heartPoints(Math.min(W, H) * 0.34, N_SAMPLES));
+}
+
+function loadFig8() {
+  loadPath(fig8Points(Math.min(W, H) * 0.36, N_SAMPLES));
+}
+
+// ---------------------------------------------------------------------------
+// Drawing mode
+// ---------------------------------------------------------------------------
+
+function startDrawMode() {
+  drawMode = true;
+  drawnPts = [];
+  document.getElementById('btn-draw').classList.add('active');
+  document.getElementById('hint').textContent = 'Drag to draw — release to compute epicycles';
+  canvas.style.cursor = 'crosshair';
+}
+
+function endDrawMode() {
+  drawMode  = false;
+  isDrawing = false;
+  document.getElementById('btn-draw').classList.remove('active');
+  document.getElementById('hint').textContent = 'Press ✏ then drag on canvas to draw your own path';
+  canvas.style.cursor = 'default';
+  if (drawnPts.length < 4) return;
+  // Close path by appending first point so the DFT sees a periodic signal
+  drawnPts.push({ ...drawnPts[0] });
+  loadPath(drawnPts);
+}
+
+canvas.addEventListener('mousedown', e => {
+  if (!drawMode) return;
+  isDrawing = true;
+  const r = canvas.getBoundingClientRect();
+  const sx = W / canvas.getBoundingClientRect().width;
+  const sy = H / canvas.getBoundingClientRect().height;
+  drawnPts = [{ x: (e.clientX - r.left) * sx, y: (e.clientY - r.top) * sy }];
+});
+
+canvas.addEventListener('mousemove', e => {
+  if (!isDrawing) return;
+  const r  = canvas.getBoundingClientRect();
+  const sx = W / r.width;
+  const sy = H / r.height;
+  drawnPts.push({ x: (e.clientX - r.left) * sx, y: (e.clientY - r.top) * sy });
+});
+
+canvas.addEventListener('mouseup', () => {
+  if (!isDrawing) return;
+  endDrawMode();
+});
+
+canvas.addEventListener('mouseleave', () => {
+  if (!isDrawing) return;
+  endDrawMode();
+});
+
+canvas.addEventListener('touchstart', e => {
+  e.preventDefault();
+  if (!drawMode) return;
+  isDrawing = true;
+  const r  = canvas.getBoundingClientRect();
+  const sx = W / r.width;
+  const sy = H / r.height;
+  const t  = e.touches[0];
+  drawnPts = [{ x: (t.clientX - r.left) * sx, y: (t.clientY - r.top) * sy }];
+}, { passive: false });
+
+canvas.addEventListener('touchmove', e => {
+  e.preventDefault();
+  if (!isDrawing) return;
+  const r  = canvas.getBoundingClientRect();
+  const sx = W / r.width;
+  const sy = H / r.height;
+  const t  = e.touches[0];
+  drawnPts.push({ x: (t.clientX - r.left) * sx, y: (t.clientY - r.top) * sy });
+}, { passive: false });
+
+canvas.addEventListener('touchend', () => {
+  if (!isDrawing) return;
+  endDrawMode();
+});
+
+// ---------------------------------------------------------------------------
+// Rendering helpers
+// ---------------------------------------------------------------------------
+
+/**
+ * Draw all active epicycles starting from canvas centre (cx, cy).
+ * Each harmonic k draws: a thin circle ring of radius amp[k], and a spoke
+ * from the previous pivot to the new pivot. The angle of rotation for
+ * harmonic k at time t (radians) is: freq[k] · t + phase[k].
+ *
+ * @param {number} cx  - Canvas centre x
+ * @param {number} cy  - Canvas centre y
+ * @param {number} t   - Animation time in [0, 2π)
+ * @returns {{x:number, y:number}} tip position
+ */
+function drawEpicycles(cx, cy, t) {
+  let x = cx, y = cy;
+  const n = Math.min(nHarmonics, fourier.length);
+
+  ctx.lineWidth = 1;
+
+  for (let i = 0; i < n; i++) {
+    const { amp, phase, freq } = fourier[i];
+    const prevX = x;
+    const prevY = y;
+    const ang   = freq * t + phase;
+    x += amp * Math.cos(ang);
+    y += amp * Math.sin(ang);
+
+    if (amp < 0.3) continue; // skip imperceptibly small circles
+
+    // Ring
+    ctx.beginPath();
+    ctx.arc(prevX, prevY, amp, 0, TWO_PI);
+    ctx.strokeStyle = RING_COLOR;
+    ctx.stroke();
+
+    // Spoke
+    ctx.beginPath();
+    ctx.moveTo(prevX, prevY);
+    ctx.lineTo(x, y);
+    ctx.strokeStyle = SPOKE_COLOR;
+    ctx.stroke();
+  }
+
+  return { x, y };
+}
+
+/**
+ * Render the fading tail by batching consecutive points into TAIL_BUCKETS
+ * groups, each drawn with increasing opacity from oldest (faint) to newest
+ * (bright). This avoids one ctx.stroke() per point while still producing
+ * a smooth fade.
+ */
+function renderTail() {
+  if (tail.length < 2) return;
+  const len = tail.length;
+  ctx.lineWidth = 1.6;
+  for (let b = 0; b < TAIL_BUCKETS; b++) {
+    const i0 = Math.floor(b       * len / TAIL_BUCKETS);
+    const i1 = Math.floor((b + 1) * len / TAIL_BUCKETS);
+    if (i1 < i0 + 1) continue;
+    const alpha = ((b + 1) / TAIL_BUCKETS) * 0.88;
+    ctx.beginPath();
+    ctx.moveTo(tail[i0].x, tail[i0].y);
+    for (let i = i0 + 1; i <= i1; i++) {
+      ctx.lineTo(tail[i].x, tail[i].y);
+    }
+    ctx.strokeStyle = `rgba(${TRACE_HI[0]},${TRACE_HI[1]},${TRACE_HI[2]},${alpha.toFixed(3)})`;
+    ctx.stroke();
+  }
+}
+
+/**
+ * Draw the harmonic annotation in the top-left corner.
+ */
+function renderAnnotation() {
+  const total = fourier.length;
+  const n     = Math.min(nHarmonics, total);
+  ctx.font      = '11px system-ui,sans-serif';
+  ctx.fillStyle = ANNOT_COLOR;
+  ctx.fillText(`${n} / ${total} harmonics`, 12, 20);
+}
+
+// ---------------------------------------------------------------------------
+// Animation loop
+// ---------------------------------------------------------------------------
+
+/**
+ * Main rAF loop. Advances time by dt/PERIOD_MS · 2π, then draws everything.
+ *
+ * @param {DOMHighResTimeStamp} ts
+ */
+function frame(ts) {
+  if (lastTs === null) lastTs = ts;
+  const dt = ts - lastTs;
+  lastTs   = ts;
+
+  time = (time + (TWO_PI * dt) / PERIOD_MS) % TWO_PI;
+
+  // Background
+  ctx.fillStyle = BG_COLOR;
+  ctx.fillRect(0, 0, W, H);
+
+  const cx = W / 2, cy = H / 2;
+
+  // Draw-mode preview stroke
+  if (drawMode && drawnPts.length > 1) {
+    ctx.beginPath();
+    ctx.moveTo(drawnPts[0].x, drawnPts[0].y);
+    for (let i = 1; i < drawnPts.length; i++) ctx.lineTo(drawnPts[i].x, drawnPts[i].y);
+    ctx.strokeStyle = 'rgba(192,160,60,0.6)';
+    ctx.lineWidth   = 1.5;
+    ctx.stroke();
+  }
+
+  // Fading trace
+  renderTail();
+
+  if (fourier.length > 0) {
+    const tip = drawEpicycles(cx, cy, time);
+
+    // Append tip; limit buffer to avoid unbounded growth
+    tail.push({ x: tip.x, y: tip.y });
+    if (tail.length > N_SAMPLES * 2) tail.shift();
+
+    // Tip dot
+    ctx.beginPath();
+    ctx.arc(tip.x, tip.y, 4, 0, TWO_PI);
+    ctx.fillStyle = TIP_COLOR;
+    ctx.fill();
+  }
+
+  renderAnnotation();
+
+  requestAnimationFrame(frame);
+}
+
+// ---------------------------------------------------------------------------
+// Resize
+// ---------------------------------------------------------------------------
+
+function resize() {
+  const wrap = document.getElementById('canvas-wrap');
+  W = wrap.clientWidth;
+  H = wrap.clientHeight;
+  canvas.width  = W;
+  canvas.height = H;
+}
+
+// ---------------------------------------------------------------------------
+// Control wiring
+// ---------------------------------------------------------------------------
+
+document.getElementById('harm-slider').addEventListener('input', e => {
+  nHarmonics = parseInt(e.target.value, 10);
+  document.getElementById('n-val').textContent = nHarmonics;
+  tail   = [];
+  time   = 0;
+  lastTs = null;
+});
+
+document.getElementById('step-less').addEventListener('click', () => {
+  nHarmonics = Math.max(1, nHarmonics - 1);
+  document.getElementById('n-val').textContent  = nHarmonics;
+  document.getElementById('harm-slider').value  = nHarmonics;
+  tail   = [];
+  time   = 0;
+  lastTs = null;
+});
+
+document.getElementById('step-more').addEventListener('click', () => {
+  nHarmonics = Math.min(fourier.length || 512, nHarmonics + 1);
+  document.getElementById('n-val').textContent  = nHarmonics;
+  document.getElementById('harm-slider').value  = nHarmonics;
+  tail   = [];
+  time   = 0;
+  lastTs = null;
+});
+
+document.getElementById('btn-heart').addEventListener('click', () => {
+  nHarmonics = 32;
+  loadHeart();
+});
+
+document.getElementById('btn-fig8').addEventListener('click', () => {
+  nHarmonics = 32;
+  loadFig8();
+});
+
+document.getElementById('btn-draw').addEventListener('click', () => {
+  if (!drawMode) startDrawMode();
+});
+
+window.addEventListener('resize', () => { resize(); loadHeart(); });
+
+// ---------------------------------------------------------------------------
+// Boot
+// ---------------------------------------------------------------------------
+
+resize();
+loadHeart();
+requestAnimationFrame(frame);
+</script>
+<script src="../../lib/panel.js"></script>
+<script>
+GalleryPanel.init({
+  title: 'Fourier Epicycles — How it works',
+  sections: [
+    {
+      heading: 'The DFT equation',
+      body: 'X[k] = (1/N) Σₙ z[n] · e^(−i 2π k n / N)  where z[n] = x[n] + i·y[n] packs both coordinates into one complex number. For each frequency k the result X[k] has magnitude |X[k]| (epicycle radius) and argument arg(X[k]) (starting angle). Summing all N components exactly reconstructs every original sample.',
+    },
+    {
+      heading: 'What each circle represents',
+      body: 'Each rotating ring is one frequency component. Frequency k means k full rotations per cycle. The largest-amplitude ring dominates the overall shape; fast small rings add fine detail — corners, cusps, spikes. Harmonics are sorted by radius so the + button always adds the next most significant one. This is the same principle as JPEG: discard high-frequency components to trade detail for file size.',
+    },
+    {
+      heading: 'Harmonic control (slider and +/− buttons)',
+      body: 'Start at 1 harmonic (a single circle) and press + one step at a time. Each added ring snaps the traced path closer to the target shape. The heart needs ~20 harmonics to look smooth; a sharp star or square needs 60+. The bottom-left annotation shows how many harmonics are active out of the 512 computed.',
+    },
+    {
+      heading: 'Fading tail',
+      body: 'The white trace is a ring buffer capped at 1 024 tip positions. Older segments fade toward black (divided into 16 opacity buckets) so the most recently drawn part always glows brightest. After exactly one revolution (5 seconds) the path loops back and the tip retraces the same curve, revealing how well the current harmonic count approximates the original.',
+    },
+    {
+      heading: 'Draw your own path',
+      body: 'Press ✏ Draw Path, then drag a closed shape on the canvas (a letter, star, or face). On mouse-up the piece resamples your stroke to 512 evenly-spaced points, runs the O(N²) DFT, and immediately starts the epicycle replay. The DFT is invertible — any closed curve can be reconstructed exactly with enough harmonics — so the animation will eventually trace whatever you draw.',
+    },
+  ],
+});
+</script>
+</body>
+</html>
