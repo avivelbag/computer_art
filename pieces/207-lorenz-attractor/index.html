@@ -298,32 +298,6 @@ function integrateN(traj){
   }
 }
 
-// Draw a trajectory as a polyline with globalAlpha fade
-function drawTraj(traj, color){
-  if(traj.filled < 2) return;
-  ctx.strokeStyle = color;
-  ctx.lineWidth = 1.0;
-
-  const n = traj.filled;
-  const startIdx = traj.head; // oldest point
-
-  // Older segments are more transparent (fading trail)
-  const segments = n - 1;
-  for(let i = 0; i < segments; i++){
-    const t = i / segments; // 0 = oldest, 1 = newest
-    ctx.globalAlpha = t * t * 0.85 + 0.02;
-
-    const ai = ((startIdx + i)     % MAX_PTS) * 2;
-    const bi = ((startIdx + i + 1) % MAX_PTS) * 2;
-
-    ctx.beginPath();
-    ctx.moveTo(traj.pts[ai], traj.pts[ai+1]);
-    ctx.lineTo(traj.pts[bi], traj.pts[bi+1]);
-    ctx.stroke();
-  }
-  ctx.globalAlpha = 1.0;
-}
-
 // Fade the canvas each frame for the ghost trail effect
 function fadeCanvas(){
   ctx.globalAlpha = FADE_ALPHA;

@@ -335,13 +335,17 @@ class TestRK4:
         xr, yr, zr = x0, y0, z0
         for _ in range(n * int(DT / dt_fine)):
             dx, dy, dz = lorenz_deriv(xr, yr, zr)
-            xr += dt_fine * dx; yr += dt_fine * dy; zr += dt_fine * dz
+            xr += dt_fine * dx
+            yr += dt_fine * dy
+            zr += dt_fine * dz
 
         # Coarse Euler
         xe, ye, ze = x0, y0, z0
         for _ in range(n):
             dx, dy, dz = lorenz_deriv(xe, ye, ze)
-            xe += DT * dx; ye += DT * dy; ze += DT * dz
+            xe += DT * dx
+            ye += DT * dy
+            ze += DT * dz
 
         # RK4
         xk, yk, zk = x0, y0, z0
