@@ -948,5 +948,15 @@
         "path": "pieces/238-curl-noise",
         "thumbnail": "pieces/238-curl-noise/thumbnail.png",
         "description": "3,000 particles follow a 2D curl-noise vector field derived from a scalar potential P(x,y,t) via central finite differences — vx = ∂P/∂y, vy = −∂P/∂x — guaranteeing divergence-free flow where particles never pile up. The underlying potential uses 3D value noise with slow temporal drift (z = t×0.0003) so the field evolves without jump cuts. Each frame a semi-transparent near-black fill fades the trails, creating the ink-in-water look without ever fully clearing the canvas. Particles wrap toroidally. Color encodes instantaneous speed through a deep violet → electric cyan → pale gold gradient."
+    },
+    {
+        "id": "240-n-body-gravity",
+        "title": "Orbital Memory: N-Body Gravity in Slow Time",
+        "tagline": "Newtonian N-body simulation with leapfrog integration — figure-8 choreography and random near-stable configurations leave color-coded fading orbital trails on a near-black canvas",
+        "year": 2026,
+        "technique": "canvas / N-body gravity / leapfrog integration / inverse-square law / orbital trails / requestAnimationFrame",
+        "path": "pieces/240-n-body-gravity",
+        "thumbnail": "pieces/240-n-body-gravity/thumbnail.png",
+        "description": "Newtonian N-body simulation integrating the softened inverse-square law F ∝ 1/(r² + ε²)^(3/2) via kick-drift-kick leapfrog at 4 sub-steps per frame. The default configuration is a solar-system analogue — one heavy central body with four lighter planets on Keplerian circular orbits — chosen because it remains visually stable for well over 30 s. A 'Figure-8' button switches to the Chenciner–Montgomery choreography and a 'Randomize' button spawns 4–6 bodies with jittered ring positions and zeroed net momentum, producing a variety of near-stable dances. Each body leaves a 300-position fading trail that is the visual centerpiece; bodies are color-coded from warm amber (heaviest) to cool violet (lightest). The system resets to a new random configuration when any body escapes the canvas or after ~30 s."
     }
 ]
