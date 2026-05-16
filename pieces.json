@@ -918,5 +918,15 @@
         "path": "pieces/228-fourier-epicycles",
         "thumbnail": "pieces/228-fourier-epicycles/thumbnail.svg",
         "description": "An interactive canvas that decomposes any closed 2D path into rotating circles (epicycles) via the Discrete Fourier Transform. Both x and y coordinates are packed into a single complex signal z[n] = x[n] + i·y[n]; the DFT X[k] = (1/N) Σ z[n]·e^(−i2πkn/N) extracts N frequency components, each with a radius |X[k]| and starting angle arg(X[k]). Components are sorted by amplitude so the +/− buttons add harmonics in order of visual impact. Default paths are a parametric heart (16 sin³t, −(13 cos t − 5 cos 2t − 2 cos 3t − cos 4t)) and a lemniscate of Bernoulli. Clicking ✏ Draw Path enters draw mode: drag any closed shape, release, and the piece resamples the stroke to 512 arc-length-uniform points, runs the O(N²) DFT (< 30 ms), and immediately starts the epicycle replay. The white trace fades in 16 alpha buckets; after one 5-second revolution it perfectly retraces the approximation. A slide-out educational panel covers the DFT formula, what each circle's radius and speed represent, how JPEG compression uses the same idea, and the Gibbs phenomenon at sharp corners."
+    },
+    {
+        "id": "232-double-pendulum",
+        "title": "Double Pendulum: Painting Chaos",
+        "tagline": "Seven pendulums started 0.002 rad apart paint diverging spectral trails — deterministic chaos made visible through Lagrangian mechanics and RK4",
+        "year": 2026,
+        "technique": "canvas / Lagrangian double pendulum / chaos theory / RK4 integration / multi-trajectory / Lyapunov exponent",
+        "path": "pieces/232-double-pendulum",
+        "thumbnail": "pieces/232-double-pendulum/thumbnail.svg",
+        "description": "Seven identical double pendulums start with θ₁ offset by 0.002 rad between neighbors, integrated simultaneously via 4th-order Runge-Kutta using the exact Lagrangian equations of motion (no small-angle approximation). Each traces a colored trail (spectral palette: red through violet) that persists and fades over 500 frames on a near-black canvas, turning deterministic chaos into layered ink-trail art. A live Chaos Meter tracks max|θ₂[i] − θ₂[center]|, showing how divergence grows as the Lyapunov exponent amplifies tiny initial differences. Sliders control initial angle θ₁, gravity g, and arm lengths l₁ and l₂; any change resets and replays all seven trajectories."
     }
 ]

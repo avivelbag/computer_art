@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Piece 232 — Double Pendulum: Painting Chaos</title>
+<link rel="stylesheet" href="../../lib/panel.css"/>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{
+  background:#08080e;
+  color:#888;
+  font:12px/1.5 system-ui,sans-serif;
+  display:flex;
+  flex-direction:column;
+  height:100vh;
+  overflow:hidden;
+  user-select:none;
+}
+#canvas-wrap{
+  flex:1 1 0;
+  position:relative;
+  min-height:0;
+}
+canvas{display:block;width:100%;height:100%}
+#chaos-meter{
+  position:absolute;
+  top:12px;left:12px;
+  background:rgba(8,8,20,0.82);
+  border:1px solid #1a1a32;
+  border-radius:4px;
+  padding:8px 12px 9px;
+  min-width:160px;
+}
+.cm-title{
+  font-size:9px;
+  color:#c8a96e;
+  letter-spacing:0.10em;
+  text-transform:uppercase;
+  margin-bottom:6px;
+}
+#chaos-bar-wrap{
+  background:#111120;
+  border-radius:2px;
+  height:5px;
+  overflow:hidden;
+  margin-bottom:5px;
+}
+#chaos-bar{
+  height:100%;
+  width:0%;
+  background:linear-gradient(90deg,#22cc66,#ffaa22,#ff3344);
+  border-radius:2px;
+}
+#chaos-val{font-size:9px;color:#aaa}
+#controls{
+  flex:0 0 auto;
+  background:#09091e;
+  border-top:1px solid #18183a;
+  padding:7px 14px 9px;
+  display:flex;
+  align-items:center;
+  gap:14px;
+  flex-wrap:wrap;
+}
+.ctrl{display:flex;align-items:center;gap:6px;flex:1;min-width:100px}
+.ctrl label{
+  font-size:10px;
+  color:#c8a96e;
+  letter-spacing:0.06em;
+  text-transform:uppercase;
+  white-space:nowrap;
+  min-width:20px;
+}
+.ctrl input[type=range]{flex:1;accent-color:#c8a96e;cursor:pointer}
+.ctrl .val{font-size:10px;color:#aaa;min-width:38px;text-align:right}
+button{
+  background:#10102a;
+  border:1px solid #26264a;
+  color:#777;
+  font:10px system-ui,sans-serif;
+  padding:4px 10px;
+  border-radius:3px;
+  cursor:pointer;
+  letter-spacing:0.04em;
+  transition:background 0.12s,color 0.12s;
+}
+button:hover{background:#18183a;color:#bbb}
+</style>
+</head>
+<body>
+<div id="canvas-wrap">
+  <canvas id="c"></canvas>
+  <div id="chaos-meter">
+    <div class="cm-title">Chaos Meter</div>
+    <div id="chaos-bar-wrap"><div id="chaos-bar"></div></div>
+    <div id="chaos-val">&#916;&#952;&#8322; = 0.000 rad</div>
+  </div>
+</div>
+<div id="controls">
+  <div class="ctrl">
+    <label>&#952;&#8321;</label>
+    <input type="range" id="sl-t1" min="-170" max="170" value="120" step="1"/>
+    <span class="val" id="v-t1">120&deg;</span>
+  </div>
+  <div class="ctrl">
+    <label>g</label>
+    <input type="range" id="sl-g" min="1" max="20" value="9.81" step="0.1"/>
+    <span class="val" id="v-g">9.8</span>
+  </div>
+  <div class="ctrl">
+    <label>l&#8321;</label>
+    <input type="range" id="sl-l1" min="0.3" max="2.0" value="1.0" step="0.05"/>
+    <span class="val" id="v-l1">1.00</span>
+  </div>
+  <div class="ctrl">
+    <label>l&#8322;</label>
+    <input type="range" id="sl-l2" min="0.3" max="2.0" value="1.0" step="0.05"/>
+    <span class="val" id="v-l2">1.00</span>
+  </div>
+  <button id="btn-reset">Reset</button>
+</div>
+
+<script>
+// ---------------------------------------------------------------------------
+// Constants
+// ---------------------------------------------------------------------------
+const N_PEND = 7;
+const TRAIL_MAX = 500;
+const TRAIL_BUCKETS = 16;
+const STEPS_PER_FRAME = 4;
+const DT = 0.012;
+const M1 = 1.0, M2 = 1.0;
+const DEG = Math.PI / 180;
+
+// Spectral hues for 7 pendulums: red → orange → yellow → green → cyan → blue → violet
+const HUES = [0, 40, 75, 130, 185, 230, 280];
+
+// Angle offsets: k * 0.002 rad for k in {-3,-2,-1,0,1,2,3}
+const OFFSETS = [-3, -2, -1, 0, 1, 2, 3].map(k => k * 0.002);
+
+// Index of the reference (unperturbed) trajectory
+const REF_IDX = 3;
+
+// ---------------------------------------------------------------------------
+// Simulation state
+// ---------------------------------------------------------------------------
+let theta1_0 = 120 * DEG;
+const theta2_0 = 0.0;  // second arm starts hanging straight down
+let gravity = 9.81;
+let l1 = 1.0, l2 = 1.0;
+
+/** @type {Array<[number,number,number,number]>} State vectors [t1,w1,t2,w2] per pendulum. */
+let states = [];
+
+/** @type {Array<Array<{x:number,y:number}>>} Trail point arrays, one per pendulum. */
+let trails = [];
+
+/**
+ * Reset all pendulums to their initial states and clear trail data.
+ * Each pendulum gets theta1 offset by OFFSETS[i] from theta1_0.
+ */
+function init() {
+  states = OFFSETS.map(off => [theta1_0 + off, 0.0, theta2_0, 0.0]);
+  trails = Array.from({length: N_PEND}, () => []);
+  updateChaos(0);
+}
+
+// ---------------------------------------------------------------------------
+// Physics — Lagrangian double pendulum equations of motion
+// ---------------------------------------------------------------------------
+
+/**
+ * Compute time derivatives of [theta1, omega1, theta2, omega2].
+ * Derived from Euler-Lagrange equations for a double pendulum.
+ * Uses global g, l1, l2 (controlled by sliders); masses m1=m2=1.
+ *
+ * @param {[number,number,number,number]} s - Current state
+ * @returns {[number,number,number,number]}
+ */
+function deriv(s) {
+  const [t1, w1, t2, w2] = s;
+  const delta = t1 - t2;
+  const sinD = Math.sin(delta);
+  const cosD = Math.cos(delta);
+  // Mass-matrix determinant factor (with m1=m2=1): 3 - cos(2*delta)
+  const denom = 2 * M1 + M2 - M2 * Math.cos(2 * delta);
+
+  const dw1 = (
+    -gravity * (2 * M1 + M2) * Math.sin(t1)
+    - M2 * gravity * Math.sin(t1 - 2 * t2)
+    - 2 * sinD * M2 * (w2 * w2 * l2 + w1 * w1 * l1 * cosD)
+  ) / (l1 * denom);
+
+  const dw2 = (
+    2 * sinD * (
+      w1 * w1 * l1 * (M1 + M2)
+      + gravity * (M1 + M2) * Math.cos(t1)
+      + w2 * w2 * l2 * M2 * cosD
+    )
+  ) / (l2 * denom);
+
+  return [w1, dw1, w2, dw2];
+}
+
+/**
+ * Advance state by one RK4 step of size DT.
+ *
+ * @param {[number,number,number,number]} s
+ * @returns {[number,number,number,number]}
+ */
+function rk4(s) {
+  const k1 = deriv(s);
+  const s2 = s.map((v, i) => v + 0.5 * DT * k1[i]);
+  const k2 = deriv(s2);
+  const s3 = s.map((v, i) => v + 0.5 * DT * k2[i]);
+  const k3 = deriv(s3);
+  const s4 = s.map((v, i) => v + DT * k3[i]);
+  const k4 = deriv(s4);
+  return s.map((v, i) => v + (DT / 6) * (k1[i] + 2 * k2[i] + 2 * k3[i] + k4[i]));
+}
+
+// ---------------------------------------------------------------------------
+// Geometry
+// ---------------------------------------------------------------------------
+
+/**
+ * Convert a pendulum state to canvas pixel coordinates.
+ *
+ * @param {[number,number,number,number]} s - State vector
+ * @param {number} cx - Pivot x in canvas pixels
+ * @param {number} cy - Pivot y in canvas pixels
+ * @param {number} sc - Pixels per unit length
+ * @returns {{x1,y1,x2,y2}}
+ */
+function getPos(s, cx, cy, sc) {
+  const [t1, , t2] = s;
+  const x1 = cx + sc * l1 * Math.sin(t1);
+  const y1 = cy + sc * l1 * Math.cos(t1);
+  const x2 = x1 + sc * l2 * Math.sin(t2);
+  const y2 = y1 + sc * l2 * Math.cos(t2);
+  return {x1, y1, x2, y2};
+}
+
+// ---------------------------------------------------------------------------
+// Rendering
+// ---------------------------------------------------------------------------
+
+/**
+ * Draw a fading trail for one pendulum.
+ * Points are split into TRAIL_BUCKETS groups and drawn with increasing
+ * alpha so recent segments glow brightest.
+ *
+ * @param {Array<{x:number,y:number}>} trail
+ * @param {number} hue - HSL hue in degrees
+ */
+function drawTrail(trail, hue) {
+  if (trail.length < 2) return;
+  const n = trail.length;
+  for (let b = 0; b < TRAIL_BUCKETS; b++) {
+    const i0 = Math.floor(b * n / TRAIL_BUCKETS);
+    const i1 = Math.floor((b + 1) * n / TRAIL_BUCKETS);
+    if (i1 <= i0) continue;
+    const t = (b + 1) / TRAIL_BUCKETS;
+    const alpha = t * t * 0.88;
+    const lightness = Math.round(30 + 30 * t);
+    ctx.beginPath();
+    ctx.moveTo(trail[i0].x, trail[i0].y);
+    for (let i = i0 + 1; i <= i1; i++) ctx.lineTo(trail[i].x, trail[i].y);
+    ctx.strokeStyle = `hsla(${hue},85%,${lightness}%,${alpha.toFixed(3)})`;
+    ctx.lineWidth = 0.5 + 1.2 * t;
+    ctx.stroke();
+  }
+}
+
+/**
+ * Draw one pendulum as two thin rods with circular joints/bobs.
+ *
+ * @param {[number,number,number,number]} s
+ * @param {number} cx
+ * @param {number} cy
+ * @param {number} sc
+ * @param {number} hue
+ * @param {number} alpha - Overall opacity (0–1)
+ */
+function drawPendulum(s, cx, cy, sc, hue, alpha) {
+  const {x1, y1, x2, y2} = getPos(s, cx, cy, sc);
+  ctx.globalAlpha = alpha;
+  ctx.strokeStyle = `hsl(${hue},70%,55%)`;
+  ctx.lineWidth = 1.4;
+  ctx.lineCap = 'round';
+  ctx.beginPath();
+  ctx.moveTo(cx, cy);
+  ctx.lineTo(x1, y1);
+  ctx.lineTo(x2, y2);
+  ctx.stroke();
+  ctx.fillStyle = `hsl(${hue},70%,65%)`;
+  for (const [bx, by] of [[x1, y1], [x2, y2]]) {
+    ctx.beginPath();
+    ctx.arc(bx, by, 3.5, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.globalAlpha = 1.0;
+}
+
+// ---------------------------------------------------------------------------
+// Chaos meter
+// ---------------------------------------------------------------------------
+
+/**
+ * Update the Chaos Meter UI with the current max divergence value.
+ * Normalizes divergence to [0,1] using pi as the saturation point.
+ *
+ * @param {number} maxDiv - Max |theta2[i] - theta2[REF_IDX]| in radians
+ */
+function updateChaos(maxDiv) {
+  const pct = Math.min(100, (maxDiv / Math.PI) * 100);
+  document.getElementById('chaos-bar').style.width = pct.toFixed(1) + '%';
+  document.getElementById('chaos-val').textContent =
+    'Δθ₂ = ' + maxDiv.toFixed(3) + ' rad';
+}
+
+// ---------------------------------------------------------------------------
+// Canvas & animation
+// ---------------------------------------------------------------------------
+
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+let W = 0, H = 0;
+
+function resize() {
+  const wrap = document.getElementById('canvas-wrap');
+  W = wrap.clientWidth;
+  H = wrap.clientHeight;
+  canvas.width = W;
+  canvas.height = H;
+}
+
+let hidden = false;
+document.addEventListener('visibilitychange', () => {
+  hidden = document.hidden;
+  if (!hidden) requestAnimationFrame(loop);
+});
+
+function loop() {
+  if (hidden) return;
+
+  // Advance physics
+  for (let step = 0; step < STEPS_PER_FRAME; step++) {
+    states = states.map(rk4);
+  }
+
+  // Layout: pivot in upper-centre; scale adapts to arm lengths
+  const cx = W / 2;
+  const cy = H * 0.28;
+  const sc = Math.min(W, H) * 0.35 / (l1 + l2);
+
+  // Append new tip positions to each trail
+  states.forEach((s, i) => {
+    const {x2, y2} = getPos(s, cx, cy, sc);
+    trails[i].push({x: x2, y: y2});
+    if (trails[i].length > TRAIL_MAX) trails[i].shift();
+  });
+
+  // Compute chaos divergence: max |theta2[i] - theta2[center]|
+  const refT2 = states[REF_IDX][2];
+  let maxDiv = 0;
+  states.forEach((s, i) => {
+    if (i !== REF_IDX) {
+      const d = Math.abs(s[2] - refT2);
+      if (d > maxDiv) maxDiv = d;
+    }
+  });
+  updateChaos(maxDiv);
+
+  // Clear
+  ctx.fillStyle = '#08080e';
+  ctx.fillRect(0, 0, W, H);
+
+  // Pivot marker
+  ctx.beginPath();
+  ctx.arc(cx, cy, 4, 0, Math.PI * 2);
+  ctx.fillStyle = '#1e1e42';
+  ctx.fill();
+
+  // Draw trails (all pendulums; center trail drawn last so it sits on top)
+  HUES.forEach((hue, i) => { if (i !== REF_IDX) drawTrail(trails[i], hue); });
+  drawTrail(trails[REF_IDX], HUES[REF_IDX]);
+
+  // Draw pendulums: non-center slightly transparent, center more prominent
+  HUES.forEach((hue, i) => {
+    if (i !== REF_IDX) drawPendulum(states[i], cx, cy, sc, hue, 0.45);
+  });
+  drawPendulum(states[REF_IDX], cx, cy, sc, HUES[REF_IDX], 0.85);
+
+  // Re-draw pivot on top
+  ctx.beginPath();
+  ctx.arc(cx, cy, 4, 0, Math.PI * 2);
+  ctx.fillStyle = '#2a2a55';
+  ctx.fill();
+
+  requestAnimationFrame(loop);
+}
+
+// ---------------------------------------------------------------------------
+// Slider wiring
+// ---------------------------------------------------------------------------
+
+document.getElementById('sl-t1').addEventListener('input', function () {
+  theta1_0 = parseFloat(this.value) * DEG;
+  document.getElementById('v-t1').textContent = this.value + '°';
+  init();
+});
+document.getElementById('sl-g').addEventListener('input', function () {
+  gravity = parseFloat(this.value);
+  document.getElementById('v-g').textContent = gravity.toFixed(1);
+  init();
+});
+document.getElementById('sl-l1').addEventListener('input', function () {
+  l1 = parseFloat(this.value);
+  document.getElementById('v-l1').textContent = l1.toFixed(2);
+  init();
+});
+document.getElementById('sl-l2').addEventListener('input', function () {
+  l2 = parseFloat(this.value);
+  document.getElementById('v-l2').textContent = l2.toFixed(2);
+  init();
+});
+document.getElementById('btn-reset').addEventListener('click', init);
+
+window.addEventListener('resize', () => { resize(); init(); });
+
+// ---------------------------------------------------------------------------
+// Boot
+// ---------------------------------------------------------------------------
+resize();
+init();
+requestAnimationFrame(loop);
+</script>
+
+<script src="../../lib/panel.js"></script>
+<script>
+GalleryPanel.init({
+  title: 'Double Pendulum — Painting Chaos',
+  sections: [
+    {
+      heading: 'Lagrangian mechanics',
+      body: 'The Lagrangian L = T − V (kinetic minus potential energy) encodes the full physics. For a double pendulum with arms l₁, l₂ and equal masses m₁ = m₂ = 1, applying the Euler–Lagrange equation d/dt(∂L/∂θ̇ᵢ) − ∂L/∂θᵢ = 0 to each angle yields two coupled nonlinear ordinary differential equations. Unlike the single pendulum, which has one conserved quantity and is always periodic, the double pendulum has two degrees of freedom coupled nonlinearly and is non-integrable — no third constant of motion exists to constrain the trajectories.',
+    },
+    {
+      heading: 'Equations of motion',
+      body: 'θ₁′′ = [−g(2m₁+m₂)sinθ₁ − m₂g·sin(θ₁−2θ₂) − 2sin(δ)·m₂(ω₂²l₂ + ω₁²l₁cosδ)] / [l₁(2m₁+m₂−m₂cos(2δ))], where δ = θ₁−θ₂. A symmetric expression governs θ₂′′. These are integrated via 4th-order Runge-Kutta: four derivative estimates per step (weights 1/6, 1/3, 1/3, 1/6) give O(dt⁴) accuracy, preserving energy far better than Euler integration over the thousands of steps needed to reveal chaos.',
+    },
+    {
+      heading: 'Sensitive dependence on initial conditions',
+      body: 'Seven identical double pendulums start with θ₁ values differing by only 0.002 rad (≈0.11°) between neighbors. At first their colored trails overlap; within seconds they diverge dramatically. This exponential amplification of tiny differences is the hallmark of chaos: the equations are deterministic, but prediction horizon is finite. Weather forecasting faces exactly the same mathematics — the atmosphere is governed by deterministic PDEs, yet errors double roughly every five days.',
+    },
+    {
+      heading: 'Lyapunov exponents',
+      body: 'If two trajectories start ε apart, after time t their separation is approximately ε·e^(λt) where λ is the maximal Lyapunov exponent. For the double pendulum λ ≈ 3–7 s⁻¹ depending on initial conditions. The Chaos Meter tracks max|θ₂[i] − θ₂[center]| across all seven trajectories. When it saturates near π rad the pendulums are fully de-correlated — any information about their common origin is gone.',
+    },
+    {
+      heading: 'Try it',
+      body: 'Drag θ₁ below 60° and watch the Chaos Meter slow dramatically — small-angle motion is nearly regular. Increase l₂ relative to l₁ to shift which arm dominates and when chaos sets in. Lower g to see how reduced restoring force changes the onset. Hit Reset anytime to restart with the current parameters and watch the trails initially overlap before diverging again.',
+    },
+  ],
+});
+</script>
+</body>
+</html>
