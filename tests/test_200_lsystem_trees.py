@@ -2,8 +2,6 @@
 import json
 import pathlib
 
-import pytest
-
 REPO = pathlib.Path(__file__).parent.parent
 PIECES_JSON = REPO / "pieces.json"
 PIECE_DIR = REPO / "pieces" / "200-lsystem-trees"
