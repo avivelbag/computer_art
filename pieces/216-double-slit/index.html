@@ -4,6 +4,7 @@
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Double-Slit Diffraction — Piece 216</title>
+  <link rel="stylesheet" href="../../lib/panel.css"/>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -573,6 +574,27 @@ document.getElementById('pane-close').addEventListener('click', () => {
 
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape') document.getElementById('info-pane').classList.remove('open');
+});
+
+</script>
+<script src="../../lib/panel.js"></script>
+<script>
+GalleryPanel.init({
+  title: 'Double-Slit Diffraction',
+  sections: [
+    {
+      heading: 'How it works',
+      body: 'Light passes through two narrow slits and the waves from each opening interfere. Where crests meet crests the screen glows bright (constructive interference); where a crest meets a trough they cancel, producing a dark band.',
+    },
+    {
+      heading: 'Key concepts',
+      body: 'Fringe spacing Δy = λL/d: wider slit separation d packs fringes closer together; longer wavelength λ spreads them apart. The single-slit sinc² envelope modulates the grating pattern, suppressing fringes near slit-width minima.',
+    },
+    {
+      heading: 'Try this',
+      body: 'Drag the d-sep slider left to widen the fringes, then right to compress them. Switch to 5 slits to watch the peaks sharpen into spectrometer-grade spikes. Sweep the wavelength slider from 380 nm violet to 700 nm red and see fringe spacing scale linearly.',
+    },
+  ],
 });
 </script>
 </body>

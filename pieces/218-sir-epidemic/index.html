@@ -4,6 +4,7 @@
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>SIR Epidemic — Piece 218</title>
+  <link rel="stylesheet" href="../../lib/panel.css"/>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -532,6 +533,26 @@
     initParticles();
     updateR0Display();
     loop();
+  </script>
+  <script src="../../lib/panel.js"></script>
+  <script>
+    GalleryPanel.init({
+      title: 'SIR Epidemic Model',
+      sections: [
+        {
+          heading: 'How it works',
+          body: 'Every dot belongs to one of three compartments — Susceptible (blue), Infected (red), or Recovered (green). When an infected dot comes close to a susceptible one there is a per-contact chance of transmission. Recovered dots are permanently immune.',
+        },
+        {
+          heading: 'Key concepts',
+          body: 'R₀ = β/γ is the basic reproduction number. When R₀ > 1 the epidemic grows exponentially; when R₀ < 1 each case causes fewer than one new case and the outbreak fades. Vaccination pre-places people in the Recovered compartment, shrinking the susceptible pool until the effective R₀ drops below 1 — herd immunity.',
+        },
+        {
+          heading: 'Try this',
+          body: 'Lower the β (transmission) slider and watch the red infected peak in the chart flatten and widen — the same total outbreak, stretched over a longer time. Raise the Vaccination slider until R₀ drops below 1 to stop the epidemic entirely. Try a high β with zero vaccination and hit Restart to watch the disease race through the population.',
+        },
+      ],
+    });
   </script>
 </body>
 </html>
