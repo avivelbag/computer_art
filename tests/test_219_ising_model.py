@@ -345,7 +345,6 @@ def metropolis_step(spins, N, T, rng):
 
     Modifies spins in-place and returns the number of accepted flips.
     """
-    import random as _random
     e4 = math.exp(-4 / T)
     e8 = math.exp(-8 / T)
     accepted = 0
@@ -401,10 +400,6 @@ class TestIsingPhysics:
 
     def test_zero_temperature_no_uphill_flips(self):
         """At T → 0 exp(−ΔE/T) → 0: no unfavourable flip should be accepted in a fully aligned state."""
-        import random as _random
-        N = 10
-        spins = make_spins(N, aligned=True)
-        rng = _random.Random(7)
         T_cold = 0.01
         e4 = math.exp(-4 / T_cold)
         assert e4 < 1e-10, "At T=0.01, uphill probability must be negligibly small"
