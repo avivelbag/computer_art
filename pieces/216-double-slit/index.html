@@ -1,0 +1,579 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Double-Slit Diffraction — Piece 216</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: #03031a;
+      color: #aaa;
+      font: 11px/1.4 system-ui, sans-serif;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      overflow: hidden;
+      user-select: none;
+    }
+
+    #main-area {
+      flex: 1 1 0;
+      display: flex;
+      min-height: 0;
+    }
+
+    #wave-wrap {
+      flex: 0 0 60%;
+      position: relative;
+      border-right: 1px solid #101025;
+    }
+
+    #screen-wrap {
+      flex: 1 1 0;
+      position: relative;
+    }
+
+    #wave-wrap canvas, #screen-wrap canvas {
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+    }
+
+    .panel-label {
+      position: absolute;
+      top: 6px; left: 8px;
+      font-size: 8px;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: #2a2a44;
+      pointer-events: none;
+      z-index: 2;
+    }
+
+    #toolbar {
+      flex: 0 0 auto;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 10px;
+      background: #09091a;
+      border-top: 1px solid #111128;
+      flex-wrap: wrap;
+    }
+
+    .sep { width: 1px; height: 18px; background: #1e1e32; flex-shrink: 0; }
+
+    label {
+      font-size: 10px;
+      color: #666;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    input[type="range"] {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 80px; height: 3px;
+      border-radius: 2px;
+      background: #222238;
+      cursor: pointer;
+      outline: none;
+      vertical-align: middle;
+    }
+
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 10px; height: 10px;
+      border-radius: 50%;
+      background: #6060c0;
+      cursor: pointer;
+    }
+
+    input[type="range"]::-moz-range-thumb {
+      width: 10px; height: 10px;
+      border-radius: 50%;
+      border: none;
+      background: #6060c0;
+      cursor: pointer;
+    }
+
+    .val-label { color: #888; min-width: 4.5em; font-size: 10px; }
+
+    #nm-swatch {
+      display: inline-block;
+      width: 12px; height: 12px;
+      border-radius: 50%;
+      flex-shrink: 0;
+      border: 1px solid #333;
+    }
+
+    button {
+      background: #14142c;
+      color: #888;
+      border: 1px solid #222240;
+      border-radius: 4px;
+      padding: 4px 10px;
+      font: 11px/1 system-ui, sans-serif;
+      cursor: pointer;
+      transition: background 0.12s, color 0.12s, border-color 0.12s;
+      white-space: nowrap;
+    }
+
+    button:hover { background: #1e1e3c; color: #ddd; border-color: #333360; }
+    button.active { background: #2a2a58; color: #fff; border-color: #4848a0; }
+
+    #info-btn { margin-left: auto; font-size: 13px; padding: 3px 8px; }
+
+    #info-pane {
+      position: fixed;
+      top: 0; right: 0;
+      width: 360px; height: 100vh;
+      background: #10101f;
+      border-left: 1px solid #22223a;
+      transform: translateX(100%);
+      transition: transform 0.28s ease;
+      overflow-y: auto;
+      padding: 20px 18px 28px;
+      z-index: 100;
+    }
+
+    #info-pane.open { transform: translateX(0); }
+
+    #pane-close {
+      position: absolute;
+      top: 10px; right: 10px;
+      background: none; border: none;
+      color: #555; font-size: 20px;
+      cursor: pointer; padding: 4px 6px;
+      border-radius: 3px;
+    }
+
+    #pane-close:hover { color: #eee; background: #202035; }
+
+    .pane-title {
+      font-size: 14px; font-weight: 700;
+      color: #ddd; line-height: 1.4;
+      margin-bottom: 14px; padding-right: 28px;
+    }
+
+    .pane-section { margin-bottom: 16px; }
+
+    .pane-section h3 {
+      font-size: 9px; text-transform: uppercase;
+      letter-spacing: 0.1em; color: #555;
+      margin-bottom: 6px;
+    }
+
+    .pane-section p {
+      font-size: 12px; color: #999;
+      line-height: 1.65; margin-bottom: 5px;
+    }
+
+    .formula {
+      font-family: 'Courier New', monospace;
+      font-size: 11px; color: #c8a96e;
+      background: #14141f;
+      border-left: 2px solid #c8a96e;
+      padding: 6px 10px; margin: 8px 0;
+      border-radius: 2px;
+      line-height: 1.6;
+    }
+
+    .pane-hint {
+      margin-top: 18px; padding: 10px 12px;
+      background: #141428;
+      border-radius: 5px; border-left: 2px solid #333360;
+    }
+
+    .pane-hint p { font-size: 11px; color: #777; line-height: 1.6; }
+
+    .pane-section strong { color: #ccc; }
+
+    @media (max-width: 520px) { #info-pane { width: 100%; } }
+  </style>
+</head>
+<body>
+
+<div id="main-area">
+  <div id="wave-wrap">
+    <span class="panel-label">wave field</span>
+    <canvas id="wave-canvas"></canvas>
+  </div>
+  <div id="screen-wrap">
+    <span class="panel-label">detector screen</span>
+    <canvas id="screen-canvas"></canvas>
+  </div>
+</div>
+
+<div id="toolbar">
+  <label>
+    d<sub style="font-size:8px">sep</sub>
+    <input id="d-slider" type="range" min="0.5" max="5" step="0.05" value="2"/>
+    <span class="val-label" id="d-val">2.0 &#955;</span>
+  </label>
+  <label>
+    a<sub style="font-size:8px">width</sub>
+    <input id="a-slider" type="range" min="0.1" max="2" step="0.05" value="0.5"/>
+    <span class="val-label" id="a-val">0.5 &#955;</span>
+  </label>
+  <label>
+    &#955;
+    <input id="nm-slider" type="range" min="380" max="700" step="5" value="550"/>
+    <span id="nm-swatch"></span>
+    <span class="val-label" id="nm-val">550 nm</span>
+  </label>
+  <div class="sep"></div>
+  <span style="font-size:9px;color:#444;letter-spacing:.1em;text-transform:uppercase">Slits</span>
+  <button id="n1-btn">1</button>
+  <button id="n2-btn" class="active">2</button>
+  <button id="n5-btn">5</button>
+  <button id="info-btn" aria-label="About">&#8505;</button>
+</div>
+
+<aside id="info-pane" aria-label="About Double-Slit Diffraction">
+  <button id="pane-close" aria-label="Close">&#215;</button>
+  <div class="pane-title">Double-Slit Diffraction</div>
+
+  <div class="pane-section">
+    <h3>Huygens-Fresnel Principle</h3>
+    <p>Every point on a wavefront acts as a new source of <strong>secondary spherical wavelets</strong>.
+    The total field anywhere downstream is the superposition of all these wavelets, each carrying the
+    same frequency and phase as the original wave at that point.</p>
+    <p>A narrow slit doesn't merely let light through — it <strong>diffracts</strong> it. Each slit acts
+    as a row of closely spaced point sources spreading energy in all directions. Even a single slit
+    produces a broad diffracted beam whose intensity envelope follows sinc²(&#960;a·sin&#952;/&#955;),
+    where a is the slit width.</p>
+  </div>
+
+  <div class="pane-section">
+    <h3>Path-Length Difference and Fringes</h3>
+    <p>With two slits separated by d, waves travel different distances to any point on the screen. When
+    the <strong>path-length difference</strong> equals a whole number of wavelengths, the two waves
+    arrive in phase and reinforce each other — a <strong>bright fringe</strong>. When the difference
+    equals a half-integer number of wavelengths, they cancel — a <strong>dark fringe</strong>.</p>
+    <div class="formula">Bright: d &#183; sin&#952; = m &#183; &#955; &nbsp;&nbsp; m = 0, &#177;1, &#177;2, &#8230;
+Dark:   d &#183; sin&#952; = (m + &#189;) &#183; &#955;</div>
+    <p>The fringe spacing on a screen at distance L is &#916;y&nbsp;=&nbsp;&#955;L/d. Wider slit separation
+    means <em>closer</em> fringes; longer wavelength means <em>wider</em> fringes. Use the sliders to
+    verify this directly.</p>
+  </div>
+
+  <div class="pane-section">
+    <h3>The Full Intensity Formula (N Slits)</h3>
+    <p>For N identical slits of width a, separated center-to-center by d, the Fraunhofer diffraction
+    intensity at angle &#952; is:</p>
+    <div class="formula">I(&#952;) = sinc&#178;(&#946;) &#215; [sin(N&#948;) / (N&#183;sin&#948;)]&#178;
+&#946; = &#960;a&#183;sin&#952;/&#955;,  &#948; = &#960;d&#183;sin&#952;/&#955;
+sinc(x) = sin(x)/x</div>
+    <p>The <strong>sinc&#178; factor</strong> is the single-slit envelope — it suppresses or eliminates
+    fringes where |sin&#952;| &#8776; &#955;/a. The <strong>grating factor</strong> in brackets creates
+    sharp principal maxima (at &#948; = m&#960;) and N&#8722;2 weaker secondary maxima between them.
+    Toggle to 5 slits to see how a diffraction grating sharpens peaks into needle-like spikes.</p>
+  </div>
+
+  <div class="pane-section">
+    <h3>Young's Experiment and Quantum Mechanics</h3>
+    <p>Thomas Young performed this experiment in 1801 using sunlight and two tiny holes in a card,
+    measuring the wavelength of visible light for the first time. His result — that light is a wave —
+    contradicted Newton's corpuscular theory and stood for nearly a century.</p>
+    <p>The quantum revelation: <strong>single particles</strong> (electrons, neutrons, C&#8325;&#8320;
+    fullerene molecules) fired one at a time through a double slit produce the identical interference
+    pattern. Each particle passes through <em>both slits simultaneously</em> as a probability amplitude
+    &#968;. The Born rule |&#968;|&#178; gives exactly the intensity formula above.</p>
+    <p>The <strong>de Broglie wavelength</strong> &#955;&nbsp;=&nbsp;h/p connects a particle's momentum p
+    to its wave behavior. An electron accelerated through 50 V has &#955;&nbsp;&#8776;&nbsp;0.17&nbsp;nm —
+    comparable to atomic spacings, which is why electron diffraction is used to map crystal structures.</p>
+  </div>
+
+  <div class="pane-hint">
+    <p>&#128161; <strong>Try this:</strong> Set slits to 5 and increase d — the principal maxima
+    sharpen into spikes exactly as in a spectrometer grating. Then reduce a to its minimum to widen
+    the single-slit envelope and reveal more bright fringes. Finally, sweep &#955; through the full
+    visible range and watch the fringe spacing scale linearly with wavelength.</p>
+  </div>
+</aside>
+
+<script>
+const TWO_PI = Math.PI * 2;
+const LAMBDA_PX = 28;     // pixels per wavelength in the wave canvas
+const SIN_THETA_MAX = 0.95; // angular range displayed on the detector screen
+
+let d = 2.0;      // slit separation (in units of &#955;)
+let a = 0.5;      // slit width (in units of &#955;)
+let N = 2;        // number of slits
+let waveNm = 550; // wavelength in nanometres (affects color only)
+let phase = 0;    // animation phase (radians)
+let lastTs = null;
+let lastDrawTs = 0;
+
+const waveCanvas   = document.getElementById('wave-canvas');
+const screenCanvas = document.getElementById('screen-canvas');
+const wCtx = waveCanvas.getContext('2d');
+const sCtx = screenCanvas.getContext('2d');
+const waveWrap   = document.getElementById('wave-wrap');
+const screenWrap = document.getElementById('screen-wrap');
+
+/** Map wavelength 380–700 nm to HSL hue 270–0 degrees. */
+function wavelengthToHue(nm) {
+  return 270 * (700 - nm) / 320;
+}
+
+/**
+ * Convert HSL to [r, g, b] in 0–255.
+ * h in degrees, s/l in [0, 1].
+ */
+function hslRgb(h, s, l) {
+  h /= 360;
+  if (s === 0) { const v = Math.round(l * 255); return [v, v, v]; }
+  const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+  const p = 2 * l - q;
+  const ch = t => {
+    if (t < 0) t += 1;
+    if (t > 1) t -= 1;
+    if (t < 1 / 6) return p + (q - p) * 6 * t;
+    if (t < 1 / 2) return q;
+    if (t < 2 / 3) return p + (q - p) * (2 / 3 - t) * 6;
+    return p;
+  };
+  return [
+    Math.round(ch(h + 1 / 3) * 255),
+    Math.round(ch(h)         * 255),
+    Math.round(ch(h - 1 / 3) * 255),
+  ];
+}
+
+/** sinc(x) = sin(x)/x, with sinc(0) = 1. */
+function sinc(x) {
+  return Math.abs(x) < 1e-10 ? 1.0 : Math.sin(x) / x;
+}
+
+/**
+ * Fraunhofer diffraction intensity I(sinTheta) for the current N, d, a settings.
+ * All lengths are implicitly in units of &#955;, so the result is dimensionless &#8712; [0, 1].
+ *
+ * For N=1: I = sinc&#178;(&#960;a&#183;sin&#952;/&#955;)
+ * For N=2: reduces to cos&#178;(&#960;d&#183;sin&#952;/&#955;) &#215; sinc&#178;(...)
+ * For general N: full grating formula with N-2 secondary maxima.
+ */
+function intensity(sinTheta) {
+  const beta  = Math.PI * a * sinTheta;  // pi * a * sinTheta / lambda
+  const delta = Math.PI * d * sinTheta;  // pi * d * sinTheta / lambda
+  const env   = sinc(beta) ** 2;
+  if (N === 1) return env;
+  const denom = N * Math.sin(delta);
+  // Near delta = m*pi the grating factor -> 1 (principal maximum)
+  const g = Math.abs(denom) < 1e-10 ? 1.0 : Math.sin(N * delta) / denom;
+  return env * g * g;
+}
+
+/** Y-coordinates (pixels) of slit centers in the wave canvas. */
+function slitYPositions(canvasH) {
+  const cy = canvasH / 2;
+  if (N === 1) return [cy];
+  const spacing = d * LAMBDA_PX;
+  return Array.from({ length: N }, (_, i) => cy + (i - (N - 1) / 2) * spacing);
+}
+
+/**
+ * Render the 2D interference field onto wave-canvas using ImageData.
+ * Left of the barrier: dim plane wave. Right of barrier: cylindrical waves from
+ * each slit, superposed. Amplitude is mapped to lightness via wavelength hue.
+ */
+function drawWave(ph) {
+  const W = waveCanvas.width;
+  const H = waveCanvas.height;
+  const hue = wavelengthToHue(waveNm);
+  const imgData = wCtx.createImageData(W, H);
+  const px = imgData.data;
+
+  const bx       = Math.floor(W * 0.38); // barrier x position
+  const bt       = 4;                    // barrier thickness in pixels
+  const slits    = slitYPositions(H);
+  const halfSlit = (a * LAMBDA_PX) / 2;
+
+  for (let py = 0; py < H; py++) {
+    for (let x = 0; x < W; x++) {
+      const idx = (py * W + x) * 4;
+
+      // Solid barrier (opaque, except at slit openings)
+      if (x >= bx && x < bx + bt) {
+        let inSlit = false;
+        for (const sy of slits) {
+          if (Math.abs(py - sy) <= halfSlit) { inSlit = true; break; }
+        }
+        if (!inSlit) {
+          px[idx] = 22; px[idx + 1] = 22; px[idx + 2] = 38; px[idx + 3] = 255;
+          continue;
+        }
+        // Pixels inside a slit opening fall through to diffraction calculation below
+      }
+
+      if (x < bx) {
+        // Incident region: dim rightward-traveling plane wave
+        const amp = Math.cos(TWO_PI * x / LAMBDA_PX - ph);
+        const l   = Math.max(0, amp) * 0.30 + 0.02;
+        const [r, g, b] = hslRgb(hue, 0.5, l);
+        px[idx] = r; px[idx + 1] = g; px[idx + 2] = b; px[idx + 3] = 255;
+      } else {
+        // Diffraction region: sum cylindrical waves from each slit
+        let amp = 0;
+        for (const sy of slits) {
+          const dx   = x - bx;
+          const dy   = py - sy;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          // 1/sqrt(r) cylindrical decay clamped to prevent near-field singularity
+          const decay = dist < 1 ? 1.0 : Math.min(1.0, 3.5 / Math.sqrt(dist));
+          amp += decay * Math.cos(TWO_PI * dist / LAMBDA_PX - ph);
+        }
+        amp /= N;
+        // Only crests are bright; troughs fade to black (wave visually pulsing forward)
+        const l = Math.max(0, amp) * 0.85;
+        const [r, g, b] = hslRgb(hue, 1.0, l);
+        px[idx] = r; px[idx + 1] = g; px[idx + 2] = b; px[idx + 3] = 255;
+      }
+    }
+  }
+
+  wCtx.putImageData(imgData, 0, 0);
+}
+
+/**
+ * Render the analytical intensity pattern onto screen-canvas.
+ * Each pixel row maps to sin(theta); brightness encodes I(theta).
+ * A white intensity-profile curve is drawn on top.
+ */
+function drawScreen() {
+  const W = screenCanvas.width;
+  const H = screenCanvas.height;
+  const hue = wavelengthToHue(waveNm);
+  const imgData = sCtx.createImageData(W, H);
+  const px = imgData.data;
+
+  for (let py = 0; py < H; py++) {
+    // Map y pixel linearly to sin(theta) in [-SIN_THETA_MAX, +SIN_THETA_MAX]
+    const sinTheta = ((py / (H - 1)) * 2 - 1) * SIN_THETA_MAX;
+    const I = intensity(sinTheta);
+    // sqrt for perceptual brightness linearisation
+    const l = Math.sqrt(I) * 0.85;
+    const [r, g, b] = hslRgb(hue, 1.0, l);
+    for (let x = 0; x < W; x++) {
+      const i = (py * W + x) * 4;
+      px[i] = r; px[i + 1] = g; px[i + 2] = b; px[i + 3] = 255;
+    }
+  }
+
+  sCtx.putImageData(imgData, 0, 0);
+
+  // White intensity profile curve overlaid on the gradient
+  sCtx.beginPath();
+  for (let py = 0; py < H; py++) {
+    const sinTheta = ((py / (H - 1)) * 2 - 1) * SIN_THETA_MAX;
+    const I = intensity(sinTheta);
+    const cx = 2 + I * (W - 4);
+    if (py === 0) sCtx.moveTo(cx, py);
+    else          sCtx.lineTo(cx, py);
+  }
+  sCtx.strokeStyle = 'rgba(255,255,255,0.75)';
+  sCtx.lineWidth = 1.5;
+  sCtx.stroke();
+
+  // Central-axis tick mark
+  sCtx.beginPath();
+  sCtx.moveTo(0, H / 2);
+  sCtx.lineTo(8, H / 2);
+  sCtx.strokeStyle = 'rgba(255,255,255,0.18)';
+  sCtx.lineWidth = 0.5;
+  sCtx.stroke();
+}
+
+function resize() {
+  // Cap internal wave canvas resolution to limit per-pixel computation cost
+  waveCanvas.width  = Math.min(waveWrap.offsetWidth,  500);
+  waveCanvas.height = Math.min(waveWrap.offsetHeight, 420);
+
+  screenCanvas.width  = screenWrap.offsetWidth;
+  screenCanvas.height = Math.min(screenWrap.offsetHeight, 420);
+
+  drawScreen();
+}
+
+const ro = new ResizeObserver(resize);
+ro.observe(document.body);
+resize();
+
+// ---- Animation loop ----
+function frame(ts) {
+  if (lastTs !== null) {
+    const dt = Math.min((ts - lastTs) / 1000, 0.05); // cap delta to avoid jump on tab-switch
+    phase = (phase + TWO_PI * dt * 0.75) % TWO_PI;
+  }
+  lastTs = ts;
+
+  // Throttle wave canvas to ~30 fps to keep CPU manageable
+  if (ts - lastDrawTs > 33) {
+    lastDrawTs = ts;
+    drawWave(phase);
+  }
+
+  requestAnimationFrame(frame);
+}
+
+requestAnimationFrame(frame);
+
+// ---- Toolbar wiring ----
+
+document.getElementById('d-slider').addEventListener('input', e => {
+  d = parseFloat(e.target.value);
+  document.getElementById('d-val').textContent = d.toFixed(1) + ' λ';
+  drawScreen();
+});
+
+document.getElementById('a-slider').addEventListener('input', e => {
+  a = parseFloat(e.target.value);
+  document.getElementById('a-val').textContent = a.toFixed(1) + ' λ';
+  drawScreen();
+});
+
+document.getElementById('nm-slider').addEventListener('input', e => {
+  waveNm = parseInt(e.target.value);
+  document.getElementById('nm-val').textContent = waveNm + ' nm';
+  updateSwatch();
+  drawScreen();
+});
+
+function updateSwatch() {
+  const hue = wavelengthToHue(waveNm);
+  document.getElementById('nm-swatch').style.background = `hsl(${hue}deg,100%,55%)`;
+}
+
+updateSwatch();
+
+function setN(n) {
+  N = n;
+  document.getElementById('n1-btn').classList.toggle('active', N === 1);
+  document.getElementById('n2-btn').classList.toggle('active', N === 2);
+  document.getElementById('n5-btn').classList.toggle('active', N === 5);
+  drawScreen();
+}
+
+document.getElementById('n1-btn').addEventListener('click', () => setN(1));
+document.getElementById('n2-btn').addEventListener('click', () => setN(2));
+document.getElementById('n5-btn').addEventListener('click', () => setN(5));
+
+document.getElementById('info-btn').addEventListener('click', () => {
+  document.getElementById('info-pane').classList.toggle('open');
+});
+
+document.getElementById('pane-close').addEventListener('click', () => {
+  document.getElementById('info-pane').classList.remove('open');
+});
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') document.getElementById('info-pane').classList.remove('open');
+});
+</script>
+</body>
+</html>

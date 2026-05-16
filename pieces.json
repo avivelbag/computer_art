@@ -838,5 +838,15 @@
         "path": "pieces/213-fourier-series-builder",
         "thumbnail": "pieces/213-fourier-series-builder/thumbnail.svg",
         "description": "An interactive Fourier series builder split across two panels: on the left, each active harmonic is drawn as a rotating phasor arrow chained tip-to-tail at frequencies 1x through 10x; on the right, the tip position is recorded continuously to draw the composite waveform. Preset buttons load the classic square, sawtooth, and triangle wave harmonic recipes; the H1–H10 toggle buttons let you add or remove individual harmonics to hear — and see — exactly what each one contributes. A slide-out panel explains Fourier’s theorem in plain prose with inline formulas for all three waveforms."
+    },
+    {
+        "id": "216-double-slit",
+        "title": "Double-Slit Diffraction — Light as a Wave",
+        "tagline": "Animate wavefronts from 1, 2, or 5 slits; watch the Fraunhofer interference pattern update live as you tune slit separation, width, and wavelength across the visible spectrum",
+        "year": 2026,
+        "technique": "canvas / wave interference / double-slit diffraction / Huygens principle / ImageData / requestAnimationFrame",
+        "path": "pieces/216-double-slit",
+        "thumbnail": "pieces/216-double-slit/thumbnail.svg",
+        "description": "A split-canvas simulation of Fraunhofer diffraction. The left 60% renders a top-down wave-propagation view: a plane wave hits a barrier with N slit openings; cylindrical waves radiate outward from each slit and their superposition creates a live animated interference pattern. The right 40% is the detector screen, computing the analytical intensity I(θ) = sinc²(πa·sinθ/λ) × [sin(Nδ)/(N·sinδ)]² for the current controls and displaying it as a bright vertical intensity bar with a profile curve. Sliders control slit separation d (0.5λ – 5λ), slit width a (0.1λ – 2λ), and wavelength (380 – 700 nm with live color preview); buttons toggle between single slit, double slit, and 5-slit diffraction grating. A slide-out panel covers the Huygens-Fresnel principle, fringe position equations, Young’s 1801 experiment, and the quantum-mechanical connection via the de Broglie wavelength."
     }
 ]
