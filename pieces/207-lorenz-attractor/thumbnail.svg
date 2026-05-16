@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300" width="400" height="300">
+  <rect width="400" height="300" fill="#06061a"/>
+  <!-- Left lobe of butterfly wing (amber) -->
+  <path d="M200,150 C180,130 140,110 120,120 C90,135 85,160 100,175 C115,188 145,185 165,170 C180,158 195,145 200,150
+           C200,150 190,165 185,178 C175,198 160,210 140,208 C115,205 100,185 105,162 C108,148 120,136 135,130
+           C155,122 178,128 195,142 Z"
+        fill="none" stroke="#c8a96e" stroke-width="1.2" opacity="0.9"/>
+  <path d="M200,150 C185,135 155,118 135,122 C110,128 100,148 108,165 C116,182 140,188 160,178 C178,169 194,153 200,150"
+        fill="none" stroke="#c8a96e" stroke-width="0.7" opacity="0.6"/>
+  <path d="M200,150 C182,138 148,120 128,125 C103,132 94,155 104,172 C113,186 138,190 158,181 C176,172 195,155 200,150"
+        fill="none" stroke="#c8a96e" stroke-width="0.4" opacity="0.4"/>
+
+  <!-- Right lobe of butterfly wing (amber) -->
+  <path d="M200,150 C220,130 260,110 280,120 C310,135 315,160 300,175 C285,188 255,185 235,170 C220,158 205,145 200,150
+           C200,150 210,165 215,178 C225,198 240,210 260,208 C285,205 300,185 295,162 C292,148 280,136 265,130
+           C245,122 222,128 205,142 Z"
+        fill="none" stroke="#c8a96e" stroke-width="1.2" opacity="0.9"/>
+  <path d="M200,150 C215,135 245,118 265,122 C290,128 300,148 292,165 C284,182 260,188 240,178 C222,169 206,153 200,150"
+        fill="none" stroke="#c8a96e" stroke-width="0.7" opacity="0.6"/>
+
+  <!-- Twin trajectory teal -->
+  <path d="M200,152 C180,132 138,113 118,123 C88,138 83,163 98,178 C114,192 145,188 166,172 C181,160 196,147 200,152"
+        fill="none" stroke="#4ecdc4" stroke-width="0.8" opacity="0.7"/>
+  <path d="M200,152 C222,132 262,113 282,123 C312,138 317,163 302,178 C286,192 255,188 234,172 C219,160 204,147 200,152"
+        fill="none" stroke="#4ecdc4" stroke-width="0.8" opacity="0.7"/>
+
+  <!-- Inner spiral details -->
+  <ellipse cx="155" cy="152" rx="18" ry="12" fill="none" stroke="#c8a96e" stroke-width="0.5" opacity="0.5"/>
+  <ellipse cx="245" cy="152" rx="18" ry="12" fill="none" stroke="#c8a96e" stroke-width="0.5" opacity="0.5"/>
+
+  <!-- Center point -->
+  <circle cx="200" cy="150" r="2" fill="#c8a96e" opacity="0.8"/>
+
+  <!-- Labels -->
+  <text x="200" y="280" font-family="system-ui,sans-serif" font-size="11" fill="#c8a96e" text-anchor="middle" opacity="0.7">σ=10  ρ=28  β=8/3</text>
+  <text x="200" y="18" font-family="system-ui,sans-serif" font-size="10" fill="#555" text-anchor="middle" letter-spacing="2">LORENZ ATTRACTOR</text>
+</svg>

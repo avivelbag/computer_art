@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Lorenz Attractor — Chaos Butterfly</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{
+  background:#06061a;
+  color:#888;
+  font:12px/1.4 system-ui,sans-serif;
+  display:flex;
+  flex-direction:column;
+  height:100vh;
+  overflow:hidden;
+  user-select:none;
+}
+#canvas-wrap{
+  flex:1 1 0;
+  position:relative;
+  min-height:0;
+}
+canvas{
+  display:block;
+  width:100%;
+  height:100%;
+}
+#controls{
+  flex:0 0 auto;
+  background:#09091f;
+  border-top:1px solid #15152f;
+  padding:8px 16px 10px;
+  display:flex;
+  align-items:center;
+  gap:24px;
+}
+.param{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  flex:1;
+}
+.param label{
+  font-size:14px;
+  font-weight:700;
+  color:#c8a96e;
+  min-width:22px;
+}
+.param input[type=range]{
+  flex:1;
+  accent-color:#c8a96e;
+  height:4px;
+  cursor:pointer;
+}
+.param .val{
+  font-size:11px;
+  color:#aaa;
+  min-width:36px;
+  text-align:right;
+}
+#info-btn{
+  flex:0 0 auto;
+  background:none;
+  border:1px solid #2a2a50;
+  color:#666;
+  font-size:11px;
+  padding:4px 10px;
+  cursor:pointer;
+  border-radius:2px;
+  letter-spacing:0.06em;
+}
+#info-btn:hover{color:#aaa;border-color:#44447a}
+
+/* slide-out info pane */
+#info-pane{
+  position:fixed;
+  bottom:0;left:0;right:0;
+  background:#0c0c24;
+  border-top:1px solid #2a2a50;
+  padding:14px 20px 12px;
+  transform:translateY(100%);
+  transition:transform 0.3s ease;
+  z-index:10;
+}
+#info-pane.open{transform:translateY(0)}
+#info-pane h2{
+  font-size:13px;
+  font-weight:700;
+  color:#c8a96e;
+  margin-bottom:6px;
+  letter-spacing:0.08em;
+}
+#info-pane p{
+  font-size:11px;
+  color:#999;
+  line-height:1.6;
+  max-width:700px;
+}
+#pane-close{
+  position:absolute;
+  top:10px;right:14px;
+  background:none;border:none;
+  color:#555;font-size:16px;cursor:pointer;
+}
+#pane-close:hover{color:#aaa}
+
+/* legend dots */
+#legend{
+  position:absolute;
+  top:10px;left:12px;
+  display:flex;
+  flex-direction:column;
+  gap:4px;
+  pointer-events:none;
+}
+.leg{
+  display:flex;
+  align-items:center;
+  gap:6px;
+  font-size:10px;
+  color:#666;
+}
+.leg-dot{
+  width:8px;height:8px;
+  border-radius:50%;
+  flex-shrink:0;
+}
+</style>
+</head>
+<body>
+<div id="canvas-wrap">
+  <canvas id="c"></canvas>
+  <div id="legend">
+    <div class="leg"><div class="leg-dot" style="background:#c8a96e"></div>Trajectory A</div>
+    <div class="leg"><div class="leg-dot" style="background:#4ecdc4"></div>Trajectory B (ε-offset)</div>
+  </div>
+</div>
+
+<div id="controls">
+  <div class="param">
+    <label>σ</label>
+    <input type="range" id="sl-sigma" min="1" max="20" step="0.1" value="10">
+    <span class="val" id="vl-sigma">10.0</span>
+  </div>
+  <div class="param">
+    <label>ρ</label>
+    <input type="range" id="sl-rho" min="1" max="50" step="0.1" value="28">
+    <span class="val" id="vl-rho">28.0</span>
+  </div>
+  <div class="param">
+    <label>β</label>
+    <input type="range" id="sl-beta" min="0.1" max="8" step="0.01" value="2.67">
+    <span class="val" id="vl-beta">2.67</span>
+  </div>
+  <button id="info-btn">About ▴</button>
+</div>
+
+<div id="info-pane">
+  <button id="pane-close">✕</button>
+  <h2>The Lorenz Attractor</h2>
+  <p>
+    In 1963 Edward Lorenz derived three equations to model warm air rising in convection rolls
+    (the same process that drives thunderstorms). The variables x, y, z represent the rotation
+    rate and temperature gradient of the roll. The system is <em>deterministic</em> — given a
+    starting point the future is fixed — yet <em>chaotic</em>: two trajectories starting a
+    hair's breadth apart diverge exponentially. The teal path begins just ε = 10⁻⁴ away from
+    the amber path; watch how quickly they separate. This is why Lorenz called it the butterfly
+    effect: a butterfly flapping its wings in Brazil might set off a tornado in Texas. The
+    equations are integrated using fourth-order Runge-Kutta (RK4) at dt = 0.005.
+  </p>
+</div>
+
+<script>(function(){
+'use strict';
+
+// --- Lorenz parameters (mutable via sliders) ---
+let SIGMA = 10.0, RHO = 28.0, BETA = 8.0/3.0;
+
+// --- Integration constants ---
+const DT = 0.005;
+const DT2 = DT / 2;
+const DT6 = DT / 6;
+
+// --- Trail settings ---
+// Max line segments stored per trajectory
+const MAX_PTS = 3000;
+// Steps computed per animation frame
+const BATCH = 15;
+// Fade fraction applied each frame (alpha blend over canvas)
+const FADE_ALPHA = 0.03;
+
+// --- Camera: fixed rotation angles ---
+const YAW   = 0.3;   // radians around z-axis
+const PITCH  = 0.5;  // radians lifting the view
+
+// Pre-compute rotation matrix columns for project()
+// We rotate: first yaw (in XY), then pitch (tilt Z toward viewer)
+// Simplified 2D projection: u = x*cy - y*sy, v = z*cp - (x*sy+y*cy)*sp
+const cy = Math.cos(YAW),   sy = Math.sin(YAW);
+const cp = Math.cos(PITCH), sp = Math.sin(PITCH);
+
+// --- Canvas setup ---
+const canvas = document.getElementById('c');
+const ctx    = canvas.getContext('2d');
+
+let W = 0, H = 0, CX = 0, CY = 0, SCALE = 0;
+
+function resize(){
+  const wrap = canvas.parentElement;
+  W = canvas.width  = wrap.clientWidth;
+  H = canvas.height = wrap.clientHeight;
+  CX = W / 2; CY = H / 2;
+  // Lorenz attractor spans roughly [-20,20] in u and [-3,53] in v (with these angles)
+  SCALE = Math.min(W, H) / 70;
+}
+
+window.addEventListener('resize', resize);
+resize();
+
+// --- Trajectory state ---
+// Each trajectory is a ring buffer of [u,v] screen-space coordinates
+function makeTraj(){
+  return {
+    pts: new Float32Array(MAX_PTS * 2),
+    head: 0,
+    filled: 0,
+    x: 0, y: 0, z: 0
+  };
+}
+
+let trajA = makeTraj();
+let trajB = makeTraj();
+
+// Lorenz derivative vector
+function deriv(x, y, z){
+  return [
+    SIGMA * (y - x),
+    x * (RHO - z) - y,
+    x * y - BETA * z
+  ];
+}
+
+// One RK4 step, returns [x,y,z]
+function rk4(x, y, z){
+  const [dx1,dy1,dz1] = deriv(x,          y,          z         );
+  const [dx2,dy2,dz2] = deriv(x+DT2*dx1,  y+DT2*dy1,  z+DT2*dz1);
+  const [dx3,dy3,dz3] = deriv(x+DT2*dx2,  y+DT2*dy2,  z+DT2*dz2);
+  const [dx4,dy4,dz4] = deriv(x+DT *dx3,  y+DT *dy3,  z+DT *dz3);
+  return [
+    x + DT6*(dx1+2*dx2+2*dx3+dx4),
+    y + DT6*(dy1+2*dy2+2*dy3+dy4),
+    z + DT6*(dz1+2*dz2+2*dz3+dz4)
+  ];
+}
+
+// Project 3D point to canvas 2D
+function project(x, y, z){
+  // Rotate yaw in XY plane then pitch to lift z
+  const u =  x*cy - y*sy;
+  const v =  z*cp - (x*sy + y*cy)*sp;
+  return [CX + u*SCALE, CY - v*SCALE + 10];
+}
+
+// Append one projected point to trajectory ring buffer
+function appendPt(traj, x, y, z){
+  const [pu, pv] = project(x, y, z);
+  const idx = traj.head * 2;
+  traj.pts[idx]   = pu;
+  traj.pts[idx+1] = pv;
+  traj.head = (traj.head + 1) % MAX_PTS;
+  if(traj.filled < MAX_PTS) traj.filled++;
+}
+
+// Warm up an integrator to put it on the attractor
+function warmup(x, y, z, steps){
+  for(let i=0;i<steps;i++) [x,y,z] = rk4(x,y,z);
+  return [x,y,z];
+}
+
+// Reset both trajectories from a fresh starting point
+function resetTrajs(){
+  const [x0,y0,z0] = warmup(0.1, 0.0, 1.0, 2000);
+  const EPS = 1e-4;
+  trajA = makeTraj();
+  trajA.x = x0; trajA.y = y0; trajA.z = z0;
+  trajB = makeTraj();
+  trajB.x = x0 + EPS; trajB.y = y0; trajB.z = z0;
+}
+
+resetTrajs();
+
+// Integrate BATCH steps for one trajectory
+function integrateN(traj){
+  for(let i=0;i<BATCH;i++){
+    [traj.x,traj.y,traj.z] = rk4(traj.x,traj.y,traj.z);
+    appendPt(traj, traj.x, traj.y, traj.z);
+  }
+}
+
+// Fade the canvas each frame for the ghost trail effect
+function fadeCanvas(){
+  ctx.globalAlpha = FADE_ALPHA;
+  ctx.fillStyle = '#06061a';
+  ctx.fillRect(0, 0, W, H);
+  ctx.globalAlpha = 1.0;
+}
+
+function frame(){
+  integrateN(trajA);
+  integrateN(trajB);
+
+  fadeCanvas();
+
+  // Draw only the newest BATCH segments each frame for performance
+  // (older trail fades naturally via fadeCanvas)
+  ctx.lineWidth = 1.0;
+
+  // Amber trajectory (A)
+  const segA = Math.min(BATCH + 1, trajA.filled);
+  if(segA >= 2){
+    ctx.strokeStyle = '#c8a96e';
+    const startA = ((trajA.head - segA + MAX_PTS) % MAX_PTS);
+    for(let i = 0; i < segA - 1; i++){
+      const ai = ((startA + i)     % MAX_PTS) * 2;
+      const bi = ((startA + i + 1) % MAX_PTS) * 2;
+      ctx.globalAlpha = 0.5 + 0.5 * (i / (segA-1));
+      ctx.beginPath();
+      ctx.moveTo(trajA.pts[ai], trajA.pts[ai+1]);
+      ctx.lineTo(trajA.pts[bi], trajA.pts[bi+1]);
+      ctx.stroke();
+    }
+  }
+
+  // Teal trajectory (B)
+  const segB = Math.min(BATCH + 1, trajB.filled);
+  if(segB >= 2){
+    ctx.strokeStyle = '#4ecdc4';
+    const startB = ((trajB.head - segB + MAX_PTS) % MAX_PTS);
+    for(let i = 0; i < segB - 1; i++){
+      const ai = ((startB + i)     % MAX_PTS) * 2;
+      const bi = ((startB + i + 1) % MAX_PTS) * 2;
+      ctx.globalAlpha = 0.5 + 0.5 * (i / (segB-1));
+      ctx.beginPath();
+      ctx.moveTo(trajB.pts[ai], trajB.pts[ai+1]);
+      ctx.lineTo(trajB.pts[bi], trajB.pts[bi+1]);
+      ctx.stroke();
+    }
+  }
+
+  ctx.globalAlpha = 1.0;
+  requestAnimationFrame(frame);
+}
+
+// --- Slider wiring ---
+function fmt(v){ return v.toFixed(v < 10 ? 2 : 1); }
+
+function bindSlider(id, valId, onChange){
+  const sl = document.getElementById(id);
+  const vl = document.getElementById(valId);
+  sl.addEventListener('input', function(){
+    const v = parseFloat(this.value);
+    vl.textContent = fmt(v);
+    onChange(v);
+  });
+}
+
+bindSlider('sl-sigma', 'vl-sigma', function(v){ SIGMA = v; resetTrajs(); });
+bindSlider('sl-rho',   'vl-rho',   function(v){ RHO   = v; resetTrajs(); });
+bindSlider('sl-beta',  'vl-beta',  function(v){ BETA  = v; resetTrajs(); });
+
+// Display initial beta value as fraction approximation
+document.getElementById('vl-beta').textContent = '2.67';
+
+// --- Info pane toggle ---
+const pane    = document.getElementById('info-pane');
+const infoBtn = document.getElementById('info-btn');
+const closeBtn= document.getElementById('pane-close');
+
+infoBtn.addEventListener('click', function(){
+  pane.classList.toggle('open');
+  infoBtn.textContent = pane.classList.contains('open') ? 'About ▾' : 'About ▴';
+});
+closeBtn.addEventListener('click', function(){
+  pane.classList.remove('open');
+  infoBtn.textContent = 'About ▴';
+});
+
+// Initial clear
+ctx.fillStyle = '#06061a';
+ctx.fillRect(0,0,W,H);
+
+requestAnimationFrame(frame);
+})();</script>
+</body>
+</html>
