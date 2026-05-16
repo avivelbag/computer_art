@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300" width="400" height="300">
+  <rect width="400" height="300" fill="#07071a"/>
+
+  <!-- Left wing — multiple concentric spiral traces in violet→cyan -->
+  <path d="M200,152 C178,128 122,108 96,130 C70,152 82,196 122,210 C158,222 196,196 200,152Z"
+        fill="none" stroke="#280880" stroke-width="2.5" opacity="0.6"/>
+  <path d="M200,152 C182,132 132,115 109,134 C86,153 97,191 132,203 C163,213 197,189 200,152Z"
+        fill="none" stroke="#3818a8" stroke-width="2" opacity="0.7"/>
+  <path d="M200,152 C186,136 142,122 121,138 C100,154 110,186 141,196 C168,204 198,183 200,152Z"
+        fill="none" stroke="#1848b8" stroke-width="1.8" opacity="0.75"/>
+  <path d="M200,152 C189,140 150,128 132,142 C114,156 123,181 149,189 C172,196 199,178 200,152Z"
+        fill="none" stroke="#0870c8" stroke-width="1.5" opacity="0.8"/>
+  <path d="M200,152 C192,143 158,134 142,146 C127,157 135,177 157,183 C176,188 199,173 200,152Z"
+        fill="none" stroke="#0098d8" stroke-width="1.2" opacity="0.85"/>
+  <path d="M200,152 C195,146 165,139 152,149 C139,159 146,174 164,178 C179,181 199,168 200,152Z"
+        fill="none" stroke="#00b8d8" stroke-width="1" opacity="0.9"/>
+  <path d="M200,152 C197,148 172,143 161,152 C150,160 156,172 171,175 C182,177 199,164 200,152Z"
+        fill="none" stroke="#00d0d8" stroke-width="0.8" opacity="0.95"/>
+
+  <!-- Right wing — mirror of left wing -->
+  <path d="M200,152 C222,128 278,108 304,130 C330,152 318,196 278,210 C242,222 204,196 200,152Z"
+        fill="none" stroke="#280880" stroke-width="2.5" opacity="0.6"/>
+  <path d="M200,152 C218,132 268,115 291,134 C314,153 303,191 268,203 C237,213 203,189 200,152Z"
+        fill="none" stroke="#3818a8" stroke-width="2" opacity="0.7"/>
+  <path d="M200,152 C214,136 258,122 279,138 C300,154 290,186 259,196 C232,204 202,183 200,152Z"
+        fill="none" stroke="#1848b8" stroke-width="1.8" opacity="0.75"/>
+  <path d="M200,152 C211,140 250,128 268,142 C286,156 277,181 251,189 C228,196 201,178 200,152Z"
+        fill="none" stroke="#0870c8" stroke-width="1.5" opacity="0.8"/>
+  <path d="M200,152 C208,143 242,134 258,146 C273,157 265,177 243,183 C224,188 201,173 200,152Z"
+        fill="none" stroke="#0098d8" stroke-width="1.2" opacity="0.85"/>
+  <path d="M200,152 C205,146 235,139 248,149 C261,159 254,174 236,178 C221,181 201,168 200,152Z"
+        fill="none" stroke="#00b8d8" stroke-width="1" opacity="0.9"/>
+  <path d="M200,152 C203,148 228,143 239,152 C250,160 244,172 229,175 C218,177 201,164 200,152Z"
+        fill="none" stroke="#00d0d8" stroke-width="0.8" opacity="0.95"/>
+
+  <!-- Brightest inner traces -->
+  <circle cx="200" cy="152" r="2.5" fill="#00e8e8" opacity="0.9"/>
+  <circle cx="148" cy="158" r="1.5" fill="#8040c0" opacity="0.7"/>
+  <circle cx="252" cy="158" r="1.5" fill="#8040c0" opacity="0.7"/>
+
+  <!-- Title text -->
+  <text x="200" y="278" fill="#6040a0" font-size="11" font-family="system-ui,sans-serif"
+        text-anchor="middle" letter-spacing="0.1em" opacity="0.8">LORENZ ATTRACTOR</text>
+  <text x="200" y="292" fill="#404080" font-size="9" font-family="system-ui,sans-serif"
+        text-anchor="middle" letter-spacing="0.08em" opacity="0.6">σ=10  ρ=28  β=8/3</text>
+</svg>
