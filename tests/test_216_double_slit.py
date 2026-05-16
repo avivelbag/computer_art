@@ -360,11 +360,11 @@ class TestIntensityPhysics:
             sin_theta = m / d  # d*sin(theta) = m*lambda
             if abs(sin_theta) >= 1.0:
                 continue  # unphysical angle, skip
-            I = intensity(sin_theta, d=d, a=a, N=2)
+            intens = intensity(sin_theta, d=d, a=a, N=2)
             # Should be at principal maximum: only envelope modulates
             I_envelope = sinc(math.pi * a * sin_theta) ** 2
-            assert abs(I - I_envelope) < 1e-9, \
-                f"N=2 fringe at m={m} not matching envelope: I={I}, env={I_envelope}"
+            assert abs(intens - I_envelope) < 1e-9, \
+                f"N=2 fringe at m={m} not matching envelope: I={intens}, env={I_envelope}"
 
     def test_double_slit_dark_fringes(self):
         """For N=2, midpoints d*sin(theta) = (m+0.5)*lambda should be dark."""
@@ -374,8 +374,8 @@ class TestIntensityPhysics:
             sin_theta = (m + 0.5) / d  # dark fringe
             if abs(sin_theta) >= 1.0:
                 continue
-            I = intensity(sin_theta, d=d, a=a, N=2)
-            assert I < 1e-18, f"Expected dark fringe at m={m}+0.5, got I={I}"
+            intens = intensity(sin_theta, d=d, a=a, N=2)
+            assert intens < 1e-18, f"Expected dark fringe at m={m}+0.5, got I={intens}"
 
     def test_single_slit_envelope_zeros(self):
         """Single-slit minima occur at sin(theta) = m/a (m != 0)."""
@@ -384,8 +384,8 @@ class TestIntensityPhysics:
             sin_theta = m / a  # a*sin(theta) = m*lambda, sinc=0
             if abs(sin_theta) >= 1.0:
                 continue
-            I = intensity(sin_theta, d=2.0, a=a, N=1)
-            assert I < 1e-18, f"Expected zero at m={m}, got I={I}"
+            intens = intensity(sin_theta, d=2.0, a=a, N=1)
+            assert intens < 1e-18, f"Expected zero at m={m}, got I={intens}"
 
     def test_five_slit_principal_maxima(self):
         """For N=5, principal maxima at d*sin(theta)=m should equal the envelope."""
@@ -395,24 +395,24 @@ class TestIntensityPhysics:
             sin_theta = m / d
             if abs(sin_theta) >= 1.0:
                 continue
-            I = intensity(sin_theta, d=d, a=a, N=5)
+            intens = intensity(sin_theta, d=d, a=a, N=5)
             env = sinc(math.pi * a * sin_theta) ** 2
-            assert abs(I - env) < 1e-9, \
-                f"N=5 principal max at m={m}: I={I}, env={env}"
+            assert abs(intens - env) < 1e-9, \
+                f"N=5 principal max at m={m}: I={intens}, env={env}"
 
     def test_intensity_non_negative_everywhere(self):
         """I(theta) must be >= 0 for all angles (no unphysical negative intensity)."""
         for sin_theta in [x / 100 for x in range(-95, 96)]:
             for N in (1, 2, 5):
-                I = intensity(sin_theta, d=2.0, a=0.5, N=N)
-                assert I >= -1e-12, f"Negative intensity I={I} at sin_theta={sin_theta}, N={N}"
+                intens = intensity(sin_theta, d=2.0, a=0.5, N=N)
+                assert intens >= -1e-12, f"Negative intensity I={intens} at sin_theta={sin_theta}, N={N}"
 
     def test_intensity_at_most_unity(self):
         """I(theta) must be <= 1 everywhere (normalized to central max)."""
         for sin_theta in [x / 100 for x in range(-95, 96)]:
             for N in (1, 2, 5):
-                I = intensity(sin_theta, d=2.0, a=0.5, N=N)
-                assert I <= 1.0 + 1e-9, f"I={I} > 1 at sin_theta={sin_theta}, N={N}"
+                intens = intensity(sin_theta, d=2.0, a=0.5, N=N)
+                assert intens <= 1.0 + 1e-9, f"I={intens} > 1 at sin_theta={sin_theta}, N={N}"
 
 
 class TestFailureModes:
