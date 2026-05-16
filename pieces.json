@@ -788,5 +788,15 @@
     "path": "pieces/200-lsystem-trees",
     "thumbnail": "pieces/200-lsystem-trees/thumbnail.svg",
     "description": "Two L-system grammars — a symmetric branching plant (F→F[+F]F[-F]F) and a baroque bush (F→FF-[-F+F+F]+[+F-F-F]) — grow stroke by stroke from axiom to fractal canopy with line width tapering by depth, ink-black on cream and copper on near-black, in alternating seamless cycles."
+  },
+  {
+    "id": "205-wave-harmonics",
+    "title": "Wave Harmonics Synthesizer",
+    "tagline": "Build any waveform from sine waves — 8 harmonics with amplitude and phase sliders assemble square, sawtooth, and triangle waves live; watch Gibbs ringing appear harmonic by harmonic",
+    "year": 2026,
+    "technique": "canvas / Fourier synthesis / harmonic series / waveform construction / interactive sliders / Gibbs phenomenon / requestAnimationFrame",
+    "path": "pieces/205-wave-harmonics",
+    "thumbnail": "pieces/205-wave-harmonics/thumbnail.svg",
+    "description": "An interactive Fourier synthesis workbench where eight sine-wave harmonics are displayed individually in the upper panel (each in a distinct hue) and their weighted sum appears live in the lower panel as a bright white waveform; amplitude and phase sliders let you construct square, sawtooth, and triangle waves from scratch, and the Convergence animation adds one harmonic per second so you can watch the Gibbs overshoot sharpen near every jump discontinuity."
   }
 ]

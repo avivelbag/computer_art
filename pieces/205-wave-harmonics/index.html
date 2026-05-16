@@ -1,0 +1,673 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Wave Harmonics Synthesizer — Piece 205</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: #0d0d14;
+      color: #aaa;
+      font: 11px/1.4 system-ui, sans-serif;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      overflow: hidden;
+      user-select: none;
+    }
+
+    /* Panel labels */
+    .panel-label {
+      position: absolute;
+      top: 4px;
+      left: 8px;
+      font-size: 9px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: #444;
+      pointer-events: none;
+    }
+
+    /* Canvas containers */
+    #upper-wrap {
+      flex: 2 1 0;
+      position: relative;
+      min-height: 0;
+      border-bottom: 1px solid #1a1a28;
+    }
+
+    #upper-wrap canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
+
+    /* Harmonic slider controls */
+    #controls {
+      flex: 0 0 auto;
+      display: grid;
+      grid-template-columns: repeat(8, 1fr);
+      gap: 0;
+      background: #10101a;
+      border-bottom: 1px solid #1a1a28;
+      padding: 5px 8px 4px;
+    }
+
+    .hcol {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1px;
+      padding: 0 2px;
+    }
+
+    .hlabel {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      line-height: 1.4;
+    }
+
+    .slabel {
+      font-size: 7px;
+      color: #555;
+      letter-spacing: 0.08em;
+      line-height: 1.2;
+    }
+
+    input[type="range"] {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 100%;
+      height: 3px;
+      border-radius: 2px;
+      background: #252535;
+      cursor: pointer;
+      outline: none;
+    }
+
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      background: var(--hue, #888);
+      cursor: pointer;
+    }
+
+    input[type="range"]::-moz-range-thumb {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      border: none;
+      background: var(--hue, #888);
+      cursor: pointer;
+    }
+
+    #lower-wrap {
+      flex: 1 1 0;
+      position: relative;
+      min-height: 0;
+      border-bottom: 1px solid #1a1a28;
+    }
+
+    #lower-wrap canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
+
+    /* Toolbar */
+    #toolbar {
+      flex: 0 0 auto;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      padding: 5px 8px;
+      background: #0a0a12;
+    }
+
+    .sep {
+      width: 1px;
+      height: 18px;
+      background: #222230;
+      flex-shrink: 0;
+    }
+
+    button {
+      background: #18182c;
+      color: #999;
+      border: 1px solid #25253a;
+      border-radius: 4px;
+      padding: 4px 9px;
+      font: 11px/1 system-ui, sans-serif;
+      cursor: pointer;
+      transition: background 0.12s, color 0.12s, border-color 0.12s;
+      white-space: nowrap;
+    }
+
+    button:hover {
+      background: #252540;
+      color: #ddd;
+      border-color: #3a3a55;
+    }
+
+    button.active {
+      background: #2e2e58;
+      color: #fff;
+      border-color: #5050a0;
+    }
+
+    #info-btn {
+      margin-left: auto;
+      font-size: 13px;
+      padding: 3px 8px;
+    }
+
+    /* Slide-out educational pane — reuses gallery pane mechanism */
+    #info-pane {
+      position: fixed;
+      top: 0;
+      right: 0;
+      width: 360px;
+      height: 100vh;
+      background: #13131f;
+      border-left: 1px solid #252538;
+      transform: translateX(100%);
+      transition: transform 0.28s ease;
+      overflow-y: auto;
+      padding: 20px 18px 24px;
+      z-index: 100;
+    }
+
+    #info-pane.open { transform: translateX(0); }
+
+    #pane-close {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background: none;
+      border: none;
+      color: #666;
+      font-size: 20px;
+      line-height: 1;
+      cursor: pointer;
+      padding: 4px 6px;
+      border-radius: 3px;
+    }
+
+    #pane-close:hover { color: #eee; background: #252535; }
+
+    .pane-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: #ddd;
+      line-height: 1.4;
+      margin-bottom: 14px;
+      padding-right: 28px;
+    }
+
+    .pane-section { margin-bottom: 16px; }
+
+    .pane-section h3 {
+      font-size: 9px;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: #666;
+      margin-bottom: 6px;
+    }
+
+    .pane-section p {
+      font-size: 12px;
+      color: #aaa;
+      line-height: 1.65;
+      margin-bottom: 5px;
+    }
+
+    .pane-section ul { padding-left: 14px; }
+
+    .pane-section li {
+      font-size: 12px;
+      color: #aaa;
+      line-height: 1.6;
+      margin-bottom: 4px;
+    }
+
+    .pane-section strong { color: #ccc; }
+
+    .pane-hint {
+      margin-top: 18px;
+      padding: 10px 12px;
+      background: #1a1a2e;
+      border-radius: 5px;
+      border-left: 2px solid #3a3a60;
+    }
+
+    .pane-hint p { font-size: 11px; color: #888; line-height: 1.6; }
+
+    @media (max-width: 520px) {
+      #info-pane { width: 100%; }
+    }
+  </style>
+</head>
+<body>
+
+<div id="upper-wrap">
+  <canvas id="upper"></canvas>
+  <span class="panel-label">harmonics</span>
+</div>
+
+<div id="controls"></div>
+
+<div id="lower-wrap">
+  <canvas id="lower"></canvas>
+  <span class="panel-label">sum</span>
+</div>
+
+<div id="toolbar">
+  <button id="btn-square">Square</button>
+  <button id="btn-sawtooth">Sawtooth</button>
+  <button id="btn-triangle">Triangle</button>
+  <button id="btn-reset">Reset</button>
+  <div class="sep"></div>
+  <button id="btn-converge">&#9654; Converge</button>
+  <button id="btn-ripple">&#8635; Ripple</button>
+  <button id="info-btn" aria-label="About this piece">&#8505;</button>
+</div>
+
+<!-- Slide-out educational pane (reuses gallery pane/bar mechanism) -->
+<aside id="info-pane" aria-label="About this piece">
+  <button id="pane-close" aria-label="Close">&#215;</button>
+  <div class="pane-title">Wave Harmonics Synthesizer</div>
+
+  <div class="pane-section">
+    <h3>Fourier's Theorem (1822)</h3>
+    <p>Any periodic function — no matter how complex its shape — can be expressed
+    as a sum of simple sine waves. This insight underlies virtually every area of
+    modern physics and engineering.</p>
+  </div>
+
+  <div class="pane-section">
+    <h3>What Are Harmonics?</h3>
+    <p>Harmonics are integer multiples of a <strong>fundamental</strong> frequency.
+    If the base is 1 Hz, harmonics occur at 2 Hz, 3 Hz, 4 Hz, and so on. Each
+    harmonic you activate refines the overall shape of the assembled wave — the
+    upper panel shows each one individually; the lower panel shows their sum.</p>
+  </div>
+
+  <div class="pane-section">
+    <h3>Gibbs Phenomenon</h3>
+    <p>A perfect square wave has infinitely sharp corners. To reproduce them exactly
+    you need infinitely many harmonics. With only 8 terms you can already see the
+    <strong>Gibbs overshoot</strong>: the wave rings by ~9 % near each jump, and that
+    overshoot never vanishes — it only becomes narrower as more harmonics are added.</p>
+    <p>Press <strong>Square</strong> then <strong>&#9654; Converge</strong> to watch
+    the ringing appear harmonic by harmonic.</p>
+  </div>
+
+  <div class="pane-section">
+    <h3>Real-World Uses</h3>
+    <ul>
+      <li><strong>Audio EQ:</strong> Equalizers boost or cut individual frequency
+      bands to shape timbre — each band is one set of harmonics.</li>
+      <li><strong>JPEG / MP3:</strong> Compression discards low-amplitude
+      high-frequency harmonics that the ear or eye barely notices.</li>
+      <li><strong>MRI:</strong> The scanner records Fourier coefficients in
+      k-space; an inverse transform reconstructs the image.</li>
+      <li><strong>Radio:</strong> Fourier analysis separates overlapping station
+      signals by their carrier frequencies.</li>
+    </ul>
+  </div>
+
+  <div class="pane-hint">
+    <p>&#128161; <strong>Try this:</strong> Load a preset, press &#9654; Converge
+    to step through harmonics 1→8, then toggle &#8635; Ripple to see the assembled
+    wave travel in space. Zero all but one slider to hear a pure sinusoid in your
+    imagination.</p>
+  </div>
+</aside>
+
+<script>
+const TWO_PI = 2 * Math.PI;
+const N_SAMPLES = 800;
+
+// Eight curated hues — one per harmonic
+const COLORS = [
+  '#00d4ff',  // H1 cyan
+  '#ff6b9d',  // H2 rose
+  '#ffb347',  // H3 amber
+  '#7fff6b',  // H4 lime
+  '#b47fff',  // H5 violet
+  '#6bb8ff',  // H6 sky-blue
+  '#ff8c6b',  // H7 coral
+  '#a0e67f',  // H8 sage
+];
+
+// Fourier preset coefficients (amplitude, phase) for each of the 8 harmonics.
+// Phase = π reverses sign, since sin(θ+π) = -sin(θ).
+const PRESETS = {
+  square: [
+    { amp: 1,     phase: 0 },       // H1  (odd)
+    { amp: 0,     phase: 0 },       // H2  (even → zero)
+    { amp: 1/3,   phase: 0 },       // H3
+    { amp: 0,     phase: 0 },       // H4
+    { amp: 1/5,   phase: 0 },       // H5
+    { amp: 0,     phase: 0 },       // H6
+    { amp: 1/7,   phase: 0 },       // H7
+    { amp: 0,     phase: 0 },       // H8
+  ],
+  sawtooth: [
+    { amp: 1,     phase: 0 },
+    { amp: 1/2,   phase: Math.PI },
+    { amp: 1/3,   phase: 0 },
+    { amp: 1/4,   phase: Math.PI },
+    { amp: 1/5,   phase: 0 },
+    { amp: 1/6,   phase: Math.PI },
+    { amp: 1/7,   phase: 0 },
+    { amp: 1/8,   phase: Math.PI },
+  ],
+  triangle: [
+    { amp: 1,      phase: 0 },      // H1  amplitude ∝ 1/n²
+    { amp: 0,      phase: 0 },      // H2
+    { amp: 1/9,    phase: Math.PI },// H3  (alternating sign)
+    { amp: 0,      phase: 0 },      // H4
+    { amp: 1/25,   phase: 0 },      // H5
+    { amp: 0,      phase: 0 },      // H6
+    { amp: 1/49,   phase: Math.PI },// H7
+    { amp: 0,      phase: 0 },      // H8
+  ],
+};
+
+// Runtime state
+const harmonics = Array.from({ length: 8 }, (_, i) => ({
+  n: i + 1,
+  amp: i === 0 ? 1.0 : 0.0,
+  phase: 0.0,
+}));
+
+let rippling = false;
+let rippleT = 0;
+let rippleAnimId = null;
+let convTimer = null;
+
+// DOM references
+const upperCanvas = document.getElementById('upper');
+const lowerCanvas = document.getElementById('lower');
+const uCtx = upperCanvas.getContext('2d');
+const lCtx = lowerCanvas.getContext('2d');
+const controlsDiv = document.getElementById('controls');
+
+// Build 8 harmonic columns with amplitude and phase sliders
+for (let i = 0; i < 8; i++) {
+  const col = document.createElement('div');
+  col.className = 'hcol';
+
+  const lbl = document.createElement('span');
+  lbl.className = 'hlabel';
+  lbl.textContent = `H${i + 1}`;
+  lbl.style.color = COLORS[i];
+
+  const ampLbl = document.createElement('div');
+  ampLbl.className = 'slabel';
+  ampLbl.textContent = 'AMP';
+
+  const ampSlider = document.createElement('input');
+  ampSlider.type = 'range';
+  ampSlider.min = '0';
+  ampSlider.max = '1';
+  ampSlider.step = '0.01';
+  ampSlider.value = String(harmonics[i].amp);
+  ampSlider.id = `amp-${i}`;
+  ampSlider.style.setProperty('--hue', COLORS[i]);
+
+  const phaseLbl = document.createElement('div');
+  phaseLbl.className = 'slabel';
+  phaseLbl.textContent = 'PHASE';
+
+  const phaseSlider = document.createElement('input');
+  phaseSlider.type = 'range';
+  phaseSlider.min = '0';
+  phaseSlider.max = TWO_PI.toFixed(4);
+  phaseSlider.step = '0.01';
+  phaseSlider.value = '0';
+  phaseSlider.id = `phase-${i}`;
+  phaseSlider.style.setProperty('--hue', COLORS[i]);
+
+  ampSlider.addEventListener('input', () => {
+    harmonics[i].amp = parseFloat(ampSlider.value);
+    if (!rippling) render();
+  });
+
+  phaseSlider.addEventListener('input', () => {
+    harmonics[i].phase = parseFloat(phaseSlider.value);
+    if (!rippling) render();
+  });
+
+  col.append(lbl, ampLbl, ampSlider, phaseLbl, phaseSlider);
+  controlsDiv.appendChild(col);
+}
+
+function syncSliders() {
+  for (let i = 0; i < 8; i++) {
+    document.getElementById(`amp-${i}`).value = String(harmonics[i].amp);
+    document.getElementById(`phase-${i}`).value = String(harmonics[i].phase);
+  }
+}
+
+// Compute samples for a single harmonic at time offset t
+function singleWave(h, t) {
+  const out = new Float32Array(N_SAMPLES);
+  if (h.amp === 0) return out;
+  for (let i = 0; i < N_SAMPLES; i++) {
+    out[i] = h.amp * Math.sin(TWO_PI * h.n * i / N_SAMPLES - TWO_PI * h.n * t + h.phase);
+  }
+  return out;
+}
+
+// Compute summed waveform at time offset t
+function sumWave(t) {
+  const out = new Float32Array(N_SAMPLES);
+  for (const h of harmonics) {
+    if (h.amp === 0) continue;
+    for (let i = 0; i < N_SAMPLES; i++) {
+      out[i] += h.amp * Math.sin(TWO_PI * h.n * i / N_SAMPLES - TWO_PI * h.n * t + h.phase);
+    }
+  }
+  return out;
+}
+
+// Resize a canvas to its CSS display size
+function fitCanvas(canvas) {
+  const w = canvas.offsetWidth;
+  const h = canvas.offsetHeight;
+  if (canvas.width !== w || canvas.height !== h) {
+    canvas.width = w;
+    canvas.height = h;
+  }
+  return { w, h };
+}
+
+// Draw a wave polyline. scaleY converts sample units → pixels from center.
+function drawPolyline(ctx, w, h, samples, color, lineW, alpha) {
+  const midY = h / 2;
+  ctx.globalAlpha = alpha;
+  ctx.strokeStyle = color;
+  ctx.lineWidth = lineW;
+  ctx.lineJoin = 'round';
+  ctx.beginPath();
+  for (let i = 0; i < N_SAMPLES; i++) {
+    const x = (i / (N_SAMPLES - 1)) * w;
+    const y = midY - samples[i];
+    if (i === 0) ctx.moveTo(x, y);
+    else ctx.lineTo(x, y);
+  }
+  ctx.stroke();
+  ctx.globalAlpha = 1;
+}
+
+function render() {
+  const t = rippleT;
+
+  // --- Upper canvas: individual harmonics ---
+  const { w: uw, h: uh } = fitCanvas(upperCanvas);
+  uCtx.clearRect(0, 0, uw, uh);
+  uCtx.fillStyle = '#0d0d14';
+  uCtx.fillRect(0, 0, uw, uh);
+
+  // Center axis guide
+  uCtx.globalAlpha = 0.2;
+  uCtx.strokeStyle = '#3a3a50';
+  uCtx.lineWidth = 0.5;
+  uCtx.beginPath();
+  uCtx.moveTo(0, uh / 2);
+  uCtx.lineTo(uw, uh / 2);
+  uCtx.stroke();
+  uCtx.globalAlpha = 1;
+
+  // Fixed scale: amplitude-1 wave uses 40% of the panel height
+  const upScale = uh * 0.40;
+
+  for (let i = 0; i < 8; i++) {
+    const h = harmonics[i];
+    if (h.amp === 0) continue;
+    const raw = singleWave(h, t);
+    const scaled = new Float32Array(N_SAMPLES);
+    for (let j = 0; j < N_SAMPLES; j++) scaled[j] = raw[j] * upScale;
+    drawPolyline(uCtx, uw, uh, scaled, COLORS[i], 1.5, 0.8);
+  }
+
+  // --- Lower canvas: summed waveform ---
+  const { w: lw, h: lh } = fitCanvas(lowerCanvas);
+  lCtx.clearRect(0, 0, lw, lh);
+  lCtx.fillStyle = '#0a0a11';
+  lCtx.fillRect(0, 0, lw, lh);
+
+  lCtx.globalAlpha = 0.2;
+  lCtx.strokeStyle = '#3a3a50';
+  lCtx.lineWidth = 0.5;
+  lCtx.beginPath();
+  lCtx.moveTo(0, lh / 2);
+  lCtx.lineTo(lw, lh / 2);
+  lCtx.stroke();
+  lCtx.globalAlpha = 1;
+
+  const rawSum = sumWave(t);
+  // Dynamic scale: clamp to the maximum possible amplitude (sum of all amps)
+  const maxPossible = harmonics.reduce((s, h) => s + h.amp, 0) || 1;
+  const loScale = (lh * 0.43) / maxPossible;
+  const scaledSum = new Float32Array(N_SAMPLES);
+  for (let j = 0; j < N_SAMPLES; j++) scaledSum[j] = rawSum[j] * loScale;
+  drawPolyline(lCtx, lw, lh, scaledSum, '#ffffff', 2.5, 1.0);
+}
+
+// --- Preset loading ---
+function applyPreset(name) {
+  stopConvergence();
+  const p = PRESETS[name];
+  for (let i = 0; i < 8; i++) {
+    harmonics[i].amp = p[i].amp;
+    harmonics[i].phase = p[i].phase;
+  }
+  syncSliders();
+  if (!rippling) render();
+}
+
+// --- Convergence animation ---
+function stopConvergence() {
+  if (convTimer !== null) {
+    clearInterval(convTimer);
+    convTimer = null;
+  }
+}
+
+function runConvergence() {
+  stopConvergence();
+
+  // Capture target amplitudes/phases from current harmonic state
+  const target = harmonics.map(h => ({ amp: h.amp, phase: h.phase }));
+
+  // If nothing is set, default to square wave
+  if (target.every(h => h.amp === 0)) {
+    applyPreset('square');
+    target.splice(0, 8, ...PRESETS.square);
+  }
+
+  // Start with only the first harmonic visible
+  for (let i = 0; i < 8; i++) {
+    harmonics[i].amp = i === 0 ? target[0].amp : 0;
+    harmonics[i].phase = target[i].phase;
+  }
+  syncSliders();
+  if (!rippling) render();
+
+  let step = 1;
+  convTimer = setInterval(() => {
+    if (step >= 8) { stopConvergence(); return; }
+    harmonics[step].amp = target[step].amp;
+    syncSliders();
+    if (!rippling) render();
+    step++;
+  }, 1000);
+}
+
+// --- Ripple animation ---
+function startRipple() {
+  rippling = true;
+  document.getElementById('btn-ripple').classList.add('active');
+  let prev = null;
+  function frame(ts) {
+    if (!rippling) return;
+    if (prev !== null) rippleT += (ts - prev) / 1000 * 0.25;
+    prev = ts;
+    render();
+    rippleAnimId = requestAnimationFrame(frame);
+  }
+  rippleAnimId = requestAnimationFrame(frame);
+}
+
+function stopRipple() {
+  rippling = false;
+  document.getElementById('btn-ripple').classList.remove('active');
+  if (rippleAnimId !== null) { cancelAnimationFrame(rippleAnimId); rippleAnimId = null; }
+}
+
+// --- Toolbar wiring ---
+document.getElementById('btn-square').addEventListener('click', () => applyPreset('square'));
+document.getElementById('btn-sawtooth').addEventListener('click', () => applyPreset('sawtooth'));
+document.getElementById('btn-triangle').addEventListener('click', () => applyPreset('triangle'));
+
+document.getElementById('btn-reset').addEventListener('click', () => {
+  stopConvergence();
+  for (let i = 0; i < 8; i++) { harmonics[i].amp = i === 0 ? 1.0 : 0; harmonics[i].phase = 0; }
+  syncSliders();
+  if (!rippling) render();
+});
+
+document.getElementById('btn-converge').addEventListener('click', runConvergence);
+
+document.getElementById('btn-ripple').addEventListener('click', () => {
+  if (rippling) stopRipple(); else startRipple();
+});
+
+document.getElementById('info-btn').addEventListener('click', () => {
+  document.getElementById('info-pane').classList.toggle('open');
+});
+
+document.getElementById('pane-close').addEventListener('click', () => {
+  document.getElementById('info-pane').classList.remove('open');
+});
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') document.getElementById('info-pane').classList.remove('open');
+});
+
+// Resize handler — re-render whenever the layout changes
+const ro = new ResizeObserver(() => render());
+ro.observe(document.body);
+
+render();
+</script>
+</body>
+</html>
