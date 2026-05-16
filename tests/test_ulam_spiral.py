@@ -154,15 +154,14 @@ def test_html_residue_mod4_palette():
 
 def _build_spiral_py(N):
     """Python port of the JS buildSpiral function for verification."""
-    RANGE = 500
-    HALF = 250
     grid = {}
     x, y = 0, 0
     dx, dy = 1, 0
     seg_len, seg_pos, turns = 1, 0, 0
     grid[(0, 0)] = 1
     for n in range(2, N + 1):
-        x += dx; y += dy
+        x += dx
+        y += dy
         seg_pos += 1
         grid[(x, y)] = n
         if seg_pos == seg_len:
