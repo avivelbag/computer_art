@@ -1,0 +1,680 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Mandelbrot + Julia — Interactive Explorer</title>
+  <link rel="stylesheet" href="../../lib/panel.css"/>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: #060610;
+      color: #aaa;
+      font: 11px/1.4 system-ui, sans-serif;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      overflow: hidden;
+      user-select: none;
+    }
+
+    #toolbar {
+      flex: 0 0 auto;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 7px 14px;
+      background: #0a0a1a;
+      border-bottom: 1px solid #141428;
+    }
+
+    #toolbar h1 {
+      font-size: 12px;
+      font-weight: 700;
+      color: #c8b8f0;
+      letter-spacing: 0.06em;
+      flex: 1;
+    }
+
+    label { font-size: 10px; color: #888; white-space: nowrap; }
+
+    input[type=range] {
+      width: 90px;
+      accent-color: #7060c8;
+      cursor: pointer;
+      vertical-align: middle;
+    }
+
+    #iter-val {
+      font-size: 10px;
+      color: #c8b8f0;
+      font-variant-numeric: tabular-nums;
+      min-width: 32px;
+    }
+
+    button {
+      background: #14142a;
+      border: 1px solid #28284a;
+      color: #aaa;
+      font: 10px system-ui, sans-serif;
+      padding: 4px 10px;
+      border-radius: 3px;
+      cursor: pointer;
+    }
+    button:hover { background: #1c1c38; }
+
+    #main {
+      flex: 1 1 0;
+      display: flex;
+      min-height: 0;
+    }
+
+    /* Left 2/3: Mandelbrot */
+    #mandel-wrap {
+      flex: 2 2 0;
+      position: relative;
+      overflow: hidden;
+      cursor: crosshair;
+    }
+
+    #mandel-gl {
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
+
+    /* Orbit overlay — transparent 2D canvas on top of WebGL */
+    #orbit-canvas {
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+    }
+
+    /* c-coordinate readout */
+    #c-readout {
+      position: absolute;
+      bottom: 8px;
+      left: 10px;
+      font-size: 10px;
+      color: #c8b8f0;
+      font-variant-numeric: tabular-nums;
+      background: rgba(6,6,16,0.75);
+      padding: 2px 6px;
+      border-radius: 3px;
+      pointer-events: none;
+    }
+
+    /* Right 1/3: Julia */
+    #julia-wrap {
+      flex: 1 1 0;
+      display: flex;
+      flex-direction: column;
+      border-left: 1px solid #14142a;
+      min-width: 180px;
+    }
+
+    #julia-label {
+      flex: 0 0 auto;
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: #7060c8;
+      padding: 5px 10px;
+      background: #0a0a1a;
+      border-bottom: 1px solid #14142a;
+    }
+
+    #julia-gl {
+      display: block;
+      flex: 1 1 0;
+      width: 100%;
+    }
+
+    .no-webgl {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+      color: #c06060;
+      font-size: 13px;
+      text-align: center;
+      padding: 20px;
+    }
+  </style>
+</head>
+<body>
+
+<div id="toolbar">
+  <h1>Mandelbrot + Julia — Interactive Explorer</h1>
+  <label>Max iterations
+    <input type="range" id="iter-slider" min="64" max="2048" step="64" value="256"/>
+    <span id="iter-val">256</span>
+  </label>
+  <button id="reset-btn">Reset</button>
+</div>
+
+<div id="main">
+  <div id="mandel-wrap">
+    <canvas id="mandel-gl"></canvas>
+    <canvas id="orbit-canvas"></canvas>
+    <div id="c-readout">c = 0 + 0i</div>
+  </div>
+
+  <div id="julia-wrap">
+    <div id="julia-label">Julia set for c</div>
+    <canvas id="julia-gl"></canvas>
+  </div>
+</div>
+
+<script>
+// ---------------------------------------------------------------------------
+// WebGL helpers
+// ---------------------------------------------------------------------------
+
+/**
+ * Compile a GLSL shader of the given type and return the WebGLShader.
+ * Throws a string error on compilation failure.
+ */
+function compileShader(gl, type, src) {
+  const s = gl.createShader(type);
+  gl.shaderSource(s, src);
+  gl.compileShader(s);
+  if (!gl.getShaderParameter(s, gl.COMPILE_STATUS))
+    throw gl.getShaderInfoLog(s);
+  return s;
+}
+
+/**
+ * Link vertex + fragment shaders into a WebGLProgram.
+ * Returns the linked program.
+ */
+function linkProgram(gl, vsSrc, fsSrc) {
+  const prog = gl.createProgram();
+  gl.attachShader(prog, compileShader(gl, gl.VERTEX_SHADER, vsSrc));
+  gl.attachShader(prog, compileShader(gl, gl.FRAGMENT_SHADER, fsSrc));
+  gl.linkProgram(prog);
+  if (!gl.getProgramParameter(prog, gl.LINK_STATUS))
+    throw gl.getProgramInfoLog(prog);
+  return prog;
+}
+
+/**
+ * Create a full-viewport quad (two triangles) in a VAO-like setup.
+ * Returns a draw function that issues the drawArrays call.
+ */
+function makeFullscreenQuad(gl, prog) {
+  const buf = gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+  gl.bufferData(gl.ARRAY_BUFFER,
+    new Float32Array([-1,-1, 1,-1, -1,1, -1,1, 1,-1, 1,1]),
+    gl.STATIC_DRAW);
+  const loc = gl.getAttribLocation(prog, 'a_pos');
+  gl.enableVertexAttribArray(loc);
+  gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
+  return () => gl.drawArrays(gl.TRIANGLES, 0, 6);
+}
+
+// ---------------------------------------------------------------------------
+// Shared shader source
+// ---------------------------------------------------------------------------
+
+const VS = `
+  attribute vec2 a_pos;
+  void main() { gl_Position = vec4(a_pos, 0.0, 1.0); }
+`;
+
+/**
+ * Fragment shader used for both Mandelbrot and Julia.
+ *
+ * Uniforms:
+ *   u_res      — canvas resolution (width, height) in pixels
+ *   u_center   — complex plane centre (cx, cy)
+ *   u_scale    — half-height in complex-plane units
+ *   u_maxIter  — maximum iteration count (int)
+ *   u_julia    — 1 if rendering Julia set, 0 for Mandelbrot
+ *   u_c        — Julia parameter c (used when u_julia == 1)
+ *
+ * Smooth colouring uses the continuous escape-count formula:
+ *   smooth_n = n - log2(log2(|z|²)/2)  as n → ∞ with |z| > 2
+ * This removes the discrete banding visible with integer iteration counts.
+ *
+ * Palette: HSL sweep — hue cycles with smooth_n, full saturation.
+ */
+const FS = `
+  precision highp float;
+
+  uniform vec2  u_res;
+  uniform vec2  u_center;
+  uniform float u_scale;
+  uniform int   u_maxIter;
+  uniform int   u_julia;
+  uniform vec2  u_c;
+
+  // Convert HSL (h in [0,360], s,l in [0,1]) to RGB
+  vec3 hsl2rgb(float h, float s, float l) {
+    float c = (1.0 - abs(2.0*l - 1.0)) * s;
+    float hp = mod(h / 60.0, 6.0);
+    float x = c * (1.0 - abs(mod(hp, 2.0) - 1.0));
+    vec3 rgb;
+    if      (hp < 1.0) rgb = vec3(c, x, 0.0);
+    else if (hp < 2.0) rgb = vec3(x, c, 0.0);
+    else if (hp < 3.0) rgb = vec3(0.0, c, x);
+    else if (hp < 4.0) rgb = vec3(0.0, x, c);
+    else if (hp < 5.0) rgb = vec3(x, 0.0, c);
+    else               rgb = vec3(c, 0.0, x);
+    float m = l - 0.5*c;
+    return rgb + m;
+  }
+
+  void main() {
+    // Map fragment coordinate to complex plane
+    float aspect = u_res.x / u_res.y;
+    vec2 uv = (gl_FragCoord.xy / u_res - 0.5) * vec2(aspect, 1.0) * (u_scale * 2.0) + u_center;
+
+    vec2 z, c;
+    if (u_julia == 1) {
+      z = uv;       // Julia: z starts at pixel position
+      c = u_c;      // c is the fixed Julia parameter
+    } else {
+      z = vec2(0.0); // Mandelbrot: z starts at 0
+      c = uv;        // c is the pixel coordinate
+    }
+
+    float escape = -1.0;
+    float BAIL = 256.0; // bailout radius (squared: 65536)
+    float BAIL2 = BAIL * BAIL;
+
+    for (int i = 0; i < 2048; i++) {
+      if (i >= u_maxIter) break;
+      // z = z² + c
+      float zx2 = z.x*z.x - z.y*z.y + c.x;
+      float zy2 = 2.0*z.x*z.y + c.y;
+      z = vec2(zx2, zy2);
+      if (dot(z,z) > BAIL2) {
+        // Smooth escape count: subtract log₂(log₂(|z|)) from iteration index
+        float log_zn = log(dot(z,z)) * 0.5; // = log(|z|)
+        float nu = log(log_zn / log(2.0)) / log(2.0);
+        escape = float(i) + 1.0 - nu;
+        break;
+      }
+    }
+
+    if (escape < 0.0) {
+      // Interior of the set — black
+      gl_FragColor = vec4(0.0, 0.0, 0.0, 1.0);
+    } else {
+      // Smooth HSL palette: hue sweeps through 360° every 40 iterations
+      float t = escape / 40.0;
+      float hue = fract(t) * 360.0;
+      vec3 col = hsl2rgb(hue, 1.0, 0.5);
+      gl_FragColor = vec4(col, 1.0);
+    }
+  }
+`;
+
+// ---------------------------------------------------------------------------
+// WebGL context setup
+// ---------------------------------------------------------------------------
+
+function initGL(canvas) {
+  const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+  return gl;
+}
+
+function showNoWebGL(container) {
+  container.innerHTML = '<div class="no-webgl">WebGL is not available in this browser.</div>';
+}
+
+const mandelCanvas = document.getElementById('mandel-gl');
+const juliaCanvas  = document.getElementById('julia-gl');
+const orbitCanvas  = document.getElementById('orbit-canvas');
+const cReadout     = document.getElementById('c-readout');
+
+const mgl = initGL(mandelCanvas);
+const jgl = initGL(juliaCanvas);
+
+if (!mgl || !jgl) {
+  showNoWebGL(document.getElementById('mandel-wrap'));
+  showNoWebGL(document.getElementById('julia-wrap'));
+  throw new Error('WebGL unavailable');
+}
+
+// Build programs for both contexts
+const mProg = linkProgram(mgl, VS, FS);
+const jProg = linkProgram(jgl, VS, FS);
+
+mgl.useProgram(mProg);
+jgl.useProgram(jProg);
+
+const mDraw = makeFullscreenQuad(mgl, mProg);
+const jDraw = makeFullscreenQuad(jgl, jProg);
+
+// ---------------------------------------------------------------------------
+// View state
+// ---------------------------------------------------------------------------
+
+const DEFAULT_CENTER = [-0.5, 0.0];
+const DEFAULT_SCALE  = 1.5; // half-height in complex units
+
+let mCenter   = [...DEFAULT_CENTER];
+let mScale    = DEFAULT_SCALE;
+let maxIter   = 256;
+let juliaC    = [0.0, 0.0]; // current c for Julia set
+let hoverPos  = null;       // current mouse position on Mandelbrot canvas (pixels)
+
+// ---------------------------------------------------------------------------
+// Uniform helpers
+// ---------------------------------------------------------------------------
+
+/** Set all uniforms for the Mandelbrot render pass. */
+function setMandelUniforms() {
+  const gl = mgl; const prog = mProg;
+  gl.uniform2f(gl.getUniformLocation(prog, 'u_res'),    mandelCanvas.width, mandelCanvas.height);
+  gl.uniform2f(gl.getUniformLocation(prog, 'u_center'), mCenter[0], mCenter[1]);
+  gl.uniform1f(gl.getUniformLocation(prog, 'u_scale'),  mScale);
+  gl.uniform1i(gl.getUniformLocation(prog, 'u_maxIter'),maxIter);
+  gl.uniform1i(gl.getUniformLocation(prog, 'u_julia'),  0);
+  gl.uniform2f(gl.getUniformLocation(prog, 'u_c'),      0, 0);
+}
+
+/** Set all uniforms for the Julia render pass. */
+function setJuliaUniforms() {
+  const gl = jgl; const prog = jProg;
+  gl.uniform2f(gl.getUniformLocation(prog, 'u_res'),    juliaCanvas.width, juliaCanvas.height);
+  gl.uniform2f(gl.getUniformLocation(prog, 'u_center'), 0, 0);
+  gl.uniform1f(gl.getUniformLocation(prog, 'u_scale'),  1.5);
+  gl.uniform1i(gl.getUniformLocation(prog, 'u_maxIter'),maxIter);
+  gl.uniform1i(gl.getUniformLocation(prog, 'u_julia'),  1);
+  gl.uniform2f(gl.getUniformLocation(prog, 'u_c'),      juliaC[0], juliaC[1]);
+}
+
+// ---------------------------------------------------------------------------
+// Render loop
+// ---------------------------------------------------------------------------
+
+let needsRedraw = true;
+let juliaRedraw = true;
+
+function renderMandel() {
+  mgl.viewport(0, 0, mandelCanvas.width, mandelCanvas.height);
+  setMandelUniforms();
+  mDraw();
+}
+
+function renderJulia() {
+  jgl.viewport(0, 0, juliaCanvas.width, juliaCanvas.height);
+  setJuliaUniforms();
+  jDraw();
+}
+
+function frame() {
+  if (needsRedraw) {
+    renderMandel();
+    needsRedraw = false;
+  }
+  if (juliaRedraw) {
+    renderJulia();
+    juliaRedraw = false;
+  }
+  if (hoverPos) drawOrbit(hoverPos);
+  requestAnimationFrame(frame);
+}
+
+// ---------------------------------------------------------------------------
+// Coordinate conversion: pixel → complex plane
+// ---------------------------------------------------------------------------
+
+/**
+ * Convert a pixel coordinate on the Mandelbrot canvas to complex-plane coords.
+ * @param {number} px - x pixel (0 = left)
+ * @param {number} py - y pixel (0 = top)
+ * @returns {[number, number]} [re, im]
+ */
+function pixelToComplex(px, py) {
+  const w = mandelCanvas.width;
+  const h = mandelCanvas.height;
+  const aspect = w / h;
+  const re = (px / w - 0.5) * aspect * mScale * 2.0 + mCenter[0];
+  const im = (0.5 - py / h) * mScale * 2.0 + mCenter[1];
+  return [re, im];
+}
+
+// ---------------------------------------------------------------------------
+// Orbit trace — runs in JS, drawn on the 2D overlay canvas
+// ---------------------------------------------------------------------------
+
+const octx = orbitCanvas.getContext('2d');
+
+/**
+ * Compute the iteration orbit of z² + c starting at z=0.
+ * Returns an array of [re, im] points (up to maxIter or escape).
+ * Capped at 128 steps to keep the overlay readable.
+ */
+function computeOrbit(cRe, cIm) {
+  const MAX_ORBIT = Math.min(maxIter, 128);
+  const BAIL2 = 4;
+  let zr = 0, zi = 0;
+  const pts = [[zr, zi]];
+  for (let i = 0; i < MAX_ORBIT; i++) {
+    const nzr = zr*zr - zi*zi + cRe;
+    const nzi = 2*zr*zi + cIm;
+    zr = nzr; zi = nzi;
+    pts.push([zr, zi]);
+    if (zr*zr + zi*zi > BAIL2*BAIL2) break;
+  }
+  return pts;
+}
+
+/**
+ * Convert a complex-plane point to pixel coords on the Mandelbrot canvas.
+ */
+function complexToPixel(re, im) {
+  const w = mandelCanvas.width;
+  const h = mandelCanvas.height;
+  const aspect = w / h;
+  const px = ((re - mCenter[0]) / (mScale * 2.0 * aspect) + 0.5) * w;
+  const py = (0.5 - (im - mCenter[1]) / (mScale * 2.0)) * h;
+  return [px, py];
+}
+
+/**
+ * Draw the orbit trace for the complex point under the mouse cursor.
+ * Clears the overlay canvas first, then draws step-coloured circles and lines.
+ */
+function drawOrbit(mousePixel) {
+  const [cRe, cIm] = pixelToComplex(mousePixel[0], mousePixel[1]);
+  const orbit = computeOrbit(cRe, cIm);
+
+  octx.clearRect(0, 0, orbitCanvas.width, orbitCanvas.height);
+
+  if (orbit.length < 2) return;
+
+  // Draw connecting lines
+  octx.beginPath();
+  for (let i = 0; i < orbit.length; i++) {
+    const [px, py] = complexToPixel(orbit[i][0], orbit[i][1]);
+    i === 0 ? octx.moveTo(px, py) : octx.lineTo(px, py);
+  }
+  octx.strokeStyle = 'rgba(200,184,240,0.4)';
+  octx.lineWidth = 1;
+  octx.stroke();
+
+  // Draw step-coloured dots
+  for (let i = 0; i < orbit.length; i++) {
+    const [px, py] = complexToPixel(orbit[i][0], orbit[i][1]);
+    const t = i / (orbit.length - 1);
+    // Colour: early steps purple → late steps gold
+    const r = Math.round(100 + 155 * t);
+    const g = Math.round(80  + 100 * t);
+    const b = Math.round(240 - 200 * t);
+    octx.beginPath();
+    octx.arc(px, py, i === 0 ? 4 : 3, 0, Math.PI * 2);
+    octx.fillStyle = `rgb(${r},${g},${b})`;
+    octx.fill();
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Resize handling
+// ---------------------------------------------------------------------------
+
+function resize() {
+  const mandelWrap = document.getElementById('mandel-wrap');
+  mandelCanvas.width  = mandelWrap.clientWidth;
+  mandelCanvas.height = mandelWrap.clientHeight;
+  orbitCanvas.width   = mandelWrap.clientWidth;
+  orbitCanvas.height  = mandelWrap.clientHeight;
+
+  const juliaWrap = document.getElementById('julia-wrap');
+  juliaCanvas.width  = juliaWrap.clientWidth;
+  juliaCanvas.height = juliaWrap.clientHeight - 24; // subtract label height
+
+  needsRedraw = true;
+  juliaRedraw = true;
+}
+
+window.addEventListener('resize', resize);
+
+// ---------------------------------------------------------------------------
+// Mouse interactions on Mandelbrot canvas
+// ---------------------------------------------------------------------------
+
+let dragging = false;
+let dragStart = null;
+let dragCenter = null;
+
+/**
+ * Format a real number for the c-readout display.
+ */
+function fmt(n) {
+  return (n >= 0 ? '+' : '') + n.toFixed(5);
+}
+
+document.getElementById('mandel-wrap').addEventListener('mousemove', e => {
+  const rect = mandelCanvas.getBoundingClientRect();
+  const px = (e.clientX - rect.left) * (mandelCanvas.width  / rect.width);
+  const py = (e.clientY - rect.top)  * (mandelCanvas.height / rect.height);
+
+  if (dragging && dragStart) {
+    // Pan: shift centre by the drag delta in complex units
+    const [startRe, startIm] = pixelToComplex(dragStart[0], dragStart[1]);
+    const [nowRe,   nowIm  ] = pixelToComplex(px, py);
+    mCenter = [
+      dragCenter[0] - (nowRe - startRe),
+      dragCenter[1] - (nowIm - startIm),
+    ];
+    needsRedraw = true;
+  }
+
+  hoverPos = [px, py];
+  const [re, im] = pixelToComplex(px, py);
+  juliaC = [re, im];
+  juliaRedraw = true;
+  cReadout.textContent = `c = ${fmt(re)} ${fmt(im)}i`;
+});
+
+document.getElementById('mandel-wrap').addEventListener('mouseleave', () => {
+  hoverPos = null;
+  octx.clearRect(0, 0, orbitCanvas.width, orbitCanvas.height);
+});
+
+document.getElementById('mandel-wrap').addEventListener('mousedown', e => {
+  dragging = true;
+  const rect = mandelCanvas.getBoundingClientRect();
+  dragStart = [
+    (e.clientX - rect.left) * (mandelCanvas.width  / rect.width),
+    (e.clientY - rect.top)  * (mandelCanvas.height / rect.height),
+  ];
+  dragCenter = [...mCenter];
+  mandelCanvas.style.cursor = 'grabbing';
+});
+
+document.getElementById('mandel-wrap').addEventListener('mouseup', () => {
+  dragging = false;
+  dragStart = null;
+  mandelCanvas.style.cursor = 'crosshair';
+  needsRedraw = true;
+});
+
+document.getElementById('mandel-wrap').addEventListener('wheel', e => {
+  e.preventDefault();
+  const rect = mandelCanvas.getBoundingClientRect();
+  const px = (e.clientX - rect.left) * (mandelCanvas.width  / rect.width);
+  const py = (e.clientY - rect.top)  * (mandelCanvas.height / rect.height);
+
+  // Zoom towards the cursor position
+  const [re, im] = pixelToComplex(px, py);
+  const factor = e.deltaY > 0 ? 1.15 : 1 / 1.15;
+  mScale *= factor;
+  // Adjust centre so the point under the cursor stays fixed
+  mCenter[0] = re - (re - mCenter[0]) * factor;
+  mCenter[1] = im - (im - mCenter[1]) * factor;
+
+  needsRedraw = true;
+}, { passive: false });
+
+document.getElementById('mandel-wrap').addEventListener('dblclick', e => {
+  const rect = mandelCanvas.getBoundingClientRect();
+  const px = (e.clientX - rect.left) * (mandelCanvas.width  / rect.width);
+  const py = (e.clientY - rect.top)  * (mandelCanvas.height / rect.height);
+  mCenter = [...pixelToComplex(px, py)];
+  needsRedraw = true;
+});
+
+// ---------------------------------------------------------------------------
+// Toolbar controls
+// ---------------------------------------------------------------------------
+
+const iterSlider = document.getElementById('iter-slider');
+const iterVal    = document.getElementById('iter-val');
+
+iterSlider.addEventListener('input', () => {
+  maxIter = parseInt(iterSlider.value, 10);
+  iterVal.textContent = maxIter;
+  needsRedraw = true;
+  juliaRedraw = true;
+});
+
+document.getElementById('reset-btn').addEventListener('click', () => {
+  mCenter = [...DEFAULT_CENTER];
+  mScale  = DEFAULT_SCALE;
+  needsRedraw = true;
+});
+
+// ---------------------------------------------------------------------------
+// Boot
+// ---------------------------------------------------------------------------
+
+resize();
+requestAnimationFrame(frame);
+</script>
+<script src="../../lib/panel.js"></script>
+<script>
+  GalleryPanel.init({
+    title: 'How it works',
+    sections: [
+      {
+        heading: 'What is the Mandelbrot set?',
+        body: 'For each complex number c, repeatedly apply the map z → z² + c starting from z = 0. If the orbit stays bounded forever, c is in the Mandelbrot set (coloured black). If |z| grows beyond 2 it will escape to infinity — c is outside the set, coloured by how quickly it escapes.',
+      },
+      {
+        heading: 'Smooth escape-time colouring',
+        body: 'Integer iteration counts produce visible bands. Smooth colouring removes them: when |z| first exceeds the bailout radius, compute the fractional remainder n − log₂(log₂(|z|)). This gives a continuous value that maps cleanly to a hue, blending bands into a smooth gradient.',
+      },
+      {
+        heading: 'Julia sets and the Mandelbrot connection',
+        body: 'For each fixed c there is a corresponding Julia set: the set of starting points z₀ whose orbits under z → z² + c remain bounded. Hover over any point in the Mandelbrot canvas to see its Julia set appear on the right. Points deep inside the Mandelbrot set produce connected, rich Julia sets; points far outside produce Cantor dust.',
+      },
+      {
+        heading: 'The boundary is infinitely complex',
+        body: 'Scroll to zoom into any edge of the Mandelbrot set — you will never find a smooth curve. The boundary has fractal dimension ≈ 2 and contains infinite structural variety: spirals, elephants, and seahorse valleys repeat at every scale. The orbit trace overlay shows why: near the boundary, orbits linger for many steps before deciding to escape.',
+      },
+    ],
+  });
+</script>
+</body>
+</html>

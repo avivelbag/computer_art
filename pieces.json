@@ -868,5 +868,15 @@
         "path": "pieces/219-ising-model",
         "thumbnail": "pieces/219-ising-model/thumbnail.svg",
         "description": "A 200×200 spin lattice of +1/−1 magnetic dipoles (warm linen and deep indigo) evolves under the Metropolis–Hastings Monte Carlo algorithm with N² flip attempts per frame. The temperature slider spans T = 0.5 (ordered ferromagnet) through Tc ≈ 2.269 (Onsager's exact 2D critical point, marked) to T = 4.0 (paramagnetic disorder). Only two Boltzmann lookup values are needed per frame (exp(−4/T) and exp(−8/T)). A live readout shows current temperature, net magnetisation M, and a rolling sparkline of |M| over time so the phase transition is graphable. Clicking any cell flips that spin as a defect injection. An info pane covers spins as magnetic dipoles, the Boltzmann factor, the Curie temperature, domain formation, and Onsager's 1944 exact solution."
+    },
+    {
+        "id": "220-mandelbrot-julia",
+        "title": "Mandelbrot + Julia — Interactive Explorer",
+        "tagline": "Hover over the Mandelbrot set to see the corresponding Julia set appear instantly — orbit traces show why each point escapes or stays",
+        "year": 2026,
+        "technique": "WebGL / Mandelbrot set / Julia set / complex iteration / GLSL fragment shader / escape-time coloring",
+        "path": "pieces/220-mandelbrot-julia",
+        "thumbnail": "pieces/220-mandelbrot-julia/thumbnail.svg",
+        "description": "A dual-panel WebGL fractal explorer that makes the Mandelbrot-to-Julia connection interactive. The left two-thirds renders the Mandelbrot set via a GLSL fragment shader with smooth escape-time colouring (continuous iteration count via n − log₂(log₂(|z|)), no banding). Hovering any point c in the Mandelbrot canvas immediately renders the corresponding Julia set J_c in a right panel using the same shader with c as a uniform. An orbit-trace overlay (2D canvas, pointer-events none) draws the iteration path for the hovered c as step-coloured circles connected by lines, showing whether the orbit escapes or converges. Controls: click-drag to pan, scroll-wheel to zoom toward the cursor, double-click to re-centre, max-iterations slider (64–2048), and a reset button. The GalleryPanel educational drawer covers what the Mandelbrot set is, how smooth colouring works, the M to Julia correspondence, and the infinite complexity of the boundary."
     }
 ]
