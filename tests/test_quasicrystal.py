@@ -27,18 +27,22 @@ def field(px: float, py: float, t: float = 0.0, rot: float = 0.0) -> float:
 
 
 def value_to_rgb(v: float) -> tuple[int, int, int]:
-    """Python mirror of the JS valueToRGB function."""
+    """Python mirror of the JS valueToRGB function.
+
+    Palette: dark navy (#020810) for destructive interference → dark teal
+    (#0a4a5f) at midpoint → bright cyan-white (#7ef8e8) for constructive.
+    """
     t = (v + 1) * 0.5
     if t < 0.5:
         s = t * 2
-        r = int(6  + s * 54)
-        g = int(4  + s * 16)
-        b = int(15 + s * 85)
+        r = int(2  + s * 8)
+        g = int(8  + s * 66)
+        b = int(16 + s * 79)
     else:
         s = (t - 0.5) * 2
-        r = int(60  + s * 195)
-        g = int(20  + s * 220)
-        b = int(100 - s * 20)
+        r = int(10  + s * 116)
+        g = int(74  + s * 174)
+        b = int(95  + s * 137)
     return r, g, b
 
 
@@ -130,7 +134,7 @@ def test_value_to_rgb_at_minus_one_is_dark():
 
 def test_value_to_rgb_at_plus_one_is_bright():
     r, g, b = value_to_rgb(1.0)
-    assert r > 200 and g > 200, f"Expected bright warm colour, got ({r},{g},{b})"
+    assert g > 200 and b > 200, f"Expected bright cyan colour, got ({r},{g},{b})"
 
 
 def test_value_to_rgb_stays_in_byte_range():
