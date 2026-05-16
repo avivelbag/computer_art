@@ -1,0 +1,606 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Fourier Series Builder — Piece 213</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: #07071a;
+      color: #aaa;
+      font: 11px/1.4 system-ui, sans-serif;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      overflow: hidden;
+      user-select: none;
+    }
+
+    #main-area {
+      flex: 1 1 0;
+      display: flex;
+      min-height: 0;
+    }
+
+    /* Left: rotating phasors (epicycles) */
+    #phasor-wrap {
+      flex: 1 1 0;
+      position: relative;
+      border-right: 1px solid #181830;
+    }
+
+    /* Right: time-domain wave */
+    #wave-wrap {
+      flex: 1 1 0;
+      position: relative;
+    }
+
+    #phasor-wrap canvas,
+    #wave-wrap canvas {
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+    }
+
+    .panel-label {
+      position: absolute;
+      top: 5px; left: 8px;
+      font-size: 8px;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: #333;
+      pointer-events: none;
+      z-index: 2;
+    }
+
+    /* Connector line overlay drawn atop both canvases */
+    #connector-canvas {
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      pointer-events: none;
+    }
+
+    /* Harmonic toggle buttons */
+    #harmonic-bar {
+      flex: 0 0 auto;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      padding: 5px 8px;
+      background: #0c0c1e;
+      border-top: 1px solid #181830;
+      border-bottom: 1px solid #181830;
+      flex-wrap: wrap;
+    }
+
+    .harmonic-btn {
+      width: 36px;
+      height: 26px;
+      border-radius: 4px;
+      border: 1px solid #252540;
+      background: #12122a;
+      color: #666;
+      font: 700 10px/1 system-ui, sans-serif;
+      cursor: pointer;
+      transition: background 0.1s, color 0.1s, border-color 0.1s;
+    }
+
+    .harmonic-btn.on {
+      color: #fff;
+    }
+
+    .harmonic-btn:hover {
+      background: #1e1e3a;
+    }
+
+    /* Toolbar */
+    #toolbar {
+      flex: 0 0 auto;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      padding: 5px 8px;
+      background: #09091a;
+      flex-wrap: wrap;
+    }
+
+    .sep {
+      width: 1px; height: 18px;
+      background: #1e1e32;
+      flex-shrink: 0;
+    }
+
+    button {
+      background: #14142c;
+      color: #999;
+      border: 1px solid #222240;
+      border-radius: 4px;
+      padding: 4px 9px;
+      font: 11px/1 system-ui, sans-serif;
+      cursor: pointer;
+      transition: background 0.12s, color 0.12s, border-color 0.12s;
+      white-space: nowrap;
+    }
+
+    button:hover { background: #1e1e3c; color: #ddd; border-color: #333360; }
+    button.active { background: #2a2a58; color: #fff; border-color: #4848a0; }
+
+    label {
+      font-size: 10px;
+      color: #666;
+    }
+
+    input[type="range"] {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 80px; height: 3px;
+      border-radius: 2px;
+      background: #222238;
+      cursor: pointer;
+      outline: none;
+      vertical-align: middle;
+    }
+
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 10px; height: 10px;
+      border-radius: 50%;
+      background: #6060c0;
+      cursor: pointer;
+    }
+
+    input[type="range"]::-moz-range-thumb {
+      width: 10px; height: 10px;
+      border-radius: 50%;
+      border: none;
+      background: #6060c0;
+      cursor: pointer;
+    }
+
+    #info-btn { margin-left: auto; font-size: 13px; padding: 3px 8px; }
+
+    /* Slide-out educational pane */
+    #info-pane {
+      position: fixed;
+      top: 0; right: 0;
+      width: 360px; height: 100vh;
+      background: #10101f;
+      border-left: 1px solid #22223a;
+      transform: translateX(100%);
+      transition: transform 0.28s ease;
+      overflow-y: auto;
+      padding: 20px 18px 28px;
+      z-index: 100;
+    }
+
+    #info-pane.open { transform: translateX(0); }
+
+    #pane-close {
+      position: absolute;
+      top: 10px; right: 10px;
+      background: none; border: none;
+      color: #555; font-size: 20px;
+      cursor: pointer; padding: 4px 6px;
+      border-radius: 3px;
+    }
+
+    #pane-close:hover { color: #eee; background: #202035; }
+
+    .pane-title {
+      font-size: 14px; font-weight: 700;
+      color: #ddd; line-height: 1.4;
+      margin-bottom: 14px; padding-right: 28px;
+    }
+
+    .pane-section { margin-bottom: 16px; }
+
+    .pane-section h3 {
+      font-size: 9px; text-transform: uppercase;
+      letter-spacing: 0.1em; color: #555;
+      margin-bottom: 6px;
+    }
+
+    .pane-section p {
+      font-size: 12px; color: #999;
+      line-height: 1.65; margin-bottom: 5px;
+    }
+
+    .formula {
+      font-family: 'Courier New', monospace;
+      font-size: 11px; color: #c8a96e;
+      background: #14141f;
+      border-left: 2px solid #c8a96e;
+      padding: 6px 10px; margin: 8px 0;
+      border-radius: 2px;
+      line-height: 1.6;
+    }
+
+    .pane-section ul { padding-left: 14px; }
+
+    .pane-section li {
+      font-size: 12px; color: #999;
+      line-height: 1.6; margin-bottom: 4px;
+    }
+
+    .pane-section strong { color: #ccc; }
+
+    .pane-hint {
+      margin-top: 18px; padding: 10px 12px;
+      background: #141428;
+      border-radius: 5px; border-left: 2px solid #333360;
+    }
+
+    .pane-hint p { font-size: 11px; color: #777; line-height: 1.6; }
+
+    @media (max-width: 520px) { #info-pane { width: 100%; } }
+  </style>
+</head>
+<body>
+
+<div id="main-area">
+  <div id="phasor-wrap">
+    <span class="panel-label">phasors</span>
+    <canvas id="phasor-canvas"></canvas>
+  </div>
+  <div id="wave-wrap">
+    <span class="panel-label">wave</span>
+    <canvas id="wave-canvas"></canvas>
+  </div>
+</div>
+
+<!-- H1–H10 toggle buttons -->
+<div id="harmonic-bar">
+  <span style="font-size:9px;color:#444;letter-spacing:.1em;text-transform:uppercase;margin-right:4px">Harmonics</span>
+</div>
+
+<div id="toolbar">
+  <button id="btn-square">Square  <span style="font-size:9px;color:#777">4/π·Σ sin((2k-1)x)/(2k-1)</span></button>
+  <button id="btn-sawtooth">Sawtooth  <span style="font-size:9px;color:#777">2/π·Σ (-1)^(k+1)·sin(kx)/k</span></button>
+  <button id="btn-triangle">Triangle  <span style="font-size:9px;color:#777">8/π²·Σ (-1)^k·sin((2k+1)x)/(2k+1)²</span></button>
+  <button id="btn-reset">Reset</button>
+  <div class="sep"></div>
+  <label>Speed <input type="range" id="speed-slider" min="0.1" max="3" step="0.05" value="1"/></label>
+  <button id="info-btn" aria-label="About">&#8505;</button>
+</div>
+
+<!-- Slide-out educational pane -->
+<aside id="info-pane" aria-label="About Fourier Series">
+  <button id="pane-close" aria-label="Close">&#215;</button>
+  <div class="pane-title">Fourier Series Builder</div>
+
+  <div class="pane-section">
+    <h3>What is a Fourier Series?</h3>
+    <p>Any periodic signal — no matter how complex — can be written as an infinite
+    sum of simple sine and cosine waves. This is Fourier's theorem (1822), one of the
+    most powerful ideas in mathematics and engineering.</p>
+    <p>Each term in the sum is called a <strong>harmonic</strong>. The first harmonic
+    (fundamental) oscillates once per period; the n-th harmonic oscillates n times per period.</p>
+  </div>
+
+  <div class="pane-section">
+    <h3>Square Wave</h3>
+    <p>A perfect square wave uses only <strong>odd harmonics</strong>, each with
+    amplitude 1/n:</p>
+    <div class="formula">f(x) = 4/π · Σ sin((2k−1)x) / (2k−1)<br>k = 1, 2, 3, …</div>
+    <p>Only odd harmonics appear because the square wave has half-wave symmetry:
+    f(x + π) = −f(x). Even harmonics would break that symmetry.</p>
+  </div>
+
+  <div class="pane-section">
+    <h3>Sawtooth Wave</h3>
+    <p>A sawtooth uses <strong>all harmonics</strong> with amplitudes 1/n and
+    alternating signs:</p>
+    <div class="formula">f(x) = 2/π · Σ (−1)^(k+1) · sin(kx) / k<br>k = 1, 2, 3, …</div>
+  </div>
+
+  <div class="pane-section">
+    <h3>Triangle Wave</h3>
+    <p>A triangle wave uses odd harmonics like the square wave, but amplitudes fall
+    off faster (1/n²), giving smoother corners:</p>
+    <div class="formula">f(x) = 8/π² · Σ (−1)^k · sin((2k+1)x) / (2k+1)²<br>k = 0, 1, 2, …</div>
+  </div>
+
+  <div class="pane-section">
+    <h3>Phasor View</h3>
+    <p>Each active harmonic is drawn as a <strong>rotating arrow</strong> (phasor) on the
+    left. The n-th harmonic rotates n times faster than the fundamental. The tip of the
+    final arrow traces the output signal, which is simultaneously drawn on the right panel.</p>
+    <p>Toggle individual harmonics with the H1–H10 buttons to see each contribution.
+    Load a preset to see how the classic waveforms are assembled from their harmonics.</p>
+  </div>
+
+  <div class="pane-hint">
+    <p>&#128161; <strong>Try this:</strong> Press Square, then turn off H1–H5 one by one
+    and watch the waveform lose its flat top. Odd harmonics are what create the sharp edges.</p>
+  </div>
+</aside>
+
+<script>
+const TWO_PI = 2 * Math.PI;
+const N_WAVE = 600;       // samples stored for the wave trail
+const TRAIL_FRAMES = 600; // how many tip positions to draw as the wave
+
+// Ten harmonics; amplitude and on/off state
+const NUM_H = 10;
+
+// Harmonic colors — warm ambers and indigos
+const COLORS = [
+  '#f5a623', '#f56e23', '#f52381', '#b523f5',
+  '#5b5bf5', '#23a8f5', '#23f5c8', '#a8f523',
+  '#f5e623', '#f5236e',
+];
+
+const harmonics = Array.from({ length: NUM_H }, (_, i) => ({
+  n: i + 1,
+  amp: i === 0 ? 1.0 : 0.0,
+  on: i === 0,
+  phase: 0,
+}));
+
+// Preset definitions: [amp, on, phase] per harmonic.
+// Negative coefficients are encoded as a π phase offset so the phasor
+// model can represent the sign alternation in the sawtooth/triangle formulas.
+const PRESETS = {
+  square: Array.from({ length: NUM_H }, (_, i) => {
+    const n = i + 1;
+    const isOdd = n % 2 === 1;
+    return { amp: isOdd ? 1 / n : 0, on: isOdd, phase: 0 };
+  }),
+  sawtooth: Array.from({ length: NUM_H }, (_, i) => {
+    // f(x) = 2/π · Σ (-1)^(k+1) · sin(kx)/k, k=1..N
+    // (-1)^(k+1) is positive for odd k, negative for even k → even n gets π phase
+    const n = i + 1;
+    return { amp: 1 / n, on: true, phase: n % 2 === 0 ? Math.PI : 0 };
+  }),
+  triangle: Array.from({ length: NUM_H }, (_, i) => {
+    // f(x) = 8/π² · Σ (-1)^k · sin((2k+1)x)/(2k+1)², k=0..N
+    // For odd n only; n = 2k+1 → k = (n-1)/2; negative when k is odd (n ≡ 3 mod 4)
+    const n = i + 1;
+    const isOdd = n % 2 === 1;
+    const k = (n - 1) / 2;
+    return { amp: isOdd ? 1 / (n * n) : 0, on: isOdd, phase: isOdd && k % 2 === 1 ? Math.PI : 0 };
+  }),
+};
+
+// Wave trail: ring buffer of {x, y} tip positions mapped to the right panel
+let waveTrail = [];
+
+// Animation state
+let theta = 0;
+let lastTs = null;
+let animId = null;
+
+const phasorCanvas = document.getElementById('phasor-canvas');
+const waveCanvas   = document.getElementById('wave-canvas');
+const pCtx = phasorCanvas.getContext('2d');
+const wCtx = waveCanvas.getContext('2d');
+
+// ---- Build harmonic toggle buttons ----
+const bar = document.getElementById('harmonic-bar');
+for (let i = 0; i < NUM_H; i++) {
+  const btn = document.createElement('button');
+  btn.className = 'harmonic-btn' + (harmonics[i].on ? ' on' : '');
+  btn.textContent = `H${i + 1}`;
+  btn.style.borderColor = harmonics[i].on ? COLORS[i] + '80' : '#252540';
+  btn.style.color = harmonics[i].on ? COLORS[i] : '#555';
+  btn.dataset.idx = i;
+  btn.addEventListener('click', () => {
+    const h = harmonics[i];
+    h.on = !h.on;
+    if (h.on && h.amp === 0) h.amp = 1 / h.n;
+    btn.classList.toggle('on', h.on);
+    btn.style.borderColor = h.on ? COLORS[i] + '80' : '#252540';
+    btn.style.color = h.on ? COLORS[i] : '#555';
+    waveTrail = [];
+  });
+  bar.appendChild(btn);
+}
+
+function syncButtons() {
+  const btns = bar.querySelectorAll('.harmonic-btn');
+  btns.forEach((btn, i) => {
+    const h = harmonics[i];
+    btn.classList.toggle('on', h.on);
+    btn.style.borderColor = h.on ? COLORS[i] + '80' : '#252540';
+    btn.style.color = h.on ? COLORS[i] : '#555';
+  });
+}
+
+// ---- Preset loading ----
+function applyPreset(name) {
+  const p = PRESETS[name];
+  for (let i = 0; i < NUM_H; i++) {
+    harmonics[i].amp   = p[i].amp;
+    harmonics[i].on    = p[i].on;
+    harmonics[i].phase = p[i].phase;
+  }
+  waveTrail = [];
+  syncButtons();
+}
+
+// ---- Canvas sizing ----
+function resize() {
+  phasorCanvas.width  = phasorCanvas.offsetWidth;
+  phasorCanvas.height = phasorCanvas.offsetHeight;
+  waveCanvas.width    = waveCanvas.offsetWidth;
+  waveCanvas.height   = waveCanvas.offsetHeight;
+  waveTrail = [];
+}
+
+const ro = new ResizeObserver(resize);
+ro.observe(document.body);
+resize();
+
+// ---- Draw frame ----
+function frame(ts) {
+  const speed = parseFloat(document.getElementById('speed-slider').value);
+
+  if (lastTs !== null) {
+    const dt = (ts - lastTs) / 1000;
+    theta += TWO_PI * speed * dt * 0.25; // fundamental period ~4 s at speed=1
+  }
+  lastTs = ts;
+
+  drawPhasors();
+  drawWave();
+
+  animId = requestAnimationFrame(frame);
+}
+
+/**
+ * Draw rotating phasor chains on the left canvas.
+ * Each active harmonic is an arrow rotating at n * theta.
+ * The tip of the last arrow is recorded into waveTrail for the right panel.
+ */
+function drawPhasors() {
+  const W = phasorCanvas.width;
+  const H = phasorCanvas.height;
+  pCtx.clearRect(0, 0, W, H);
+  pCtx.fillStyle = '#07071a';
+  pCtx.fillRect(0, 0, W, H);
+
+  // Scale: total max radius fits in 80% of the smaller half-dimension
+  const active = harmonics.filter(h => h.on && h.amp > 0);
+  const totalAmp = active.reduce((s, h) => s + h.amp, 0) || 1;
+  const maxR = Math.min(W, H) * 0.40;
+  const scale = maxR / totalAmp;
+
+  const cx = W / 2;
+  const cy = H / 2;
+  let x = cx, y = cy;
+
+  for (const h of active) {
+    const r = h.amp * scale;
+    const angle = h.n * theta + h.phase;
+    const nx = x + r * Math.cos(angle);
+    const ny = y + r * Math.sin(angle);
+
+    // orbit circle
+    pCtx.beginPath();
+    pCtx.arc(x, y, r, 0, TWO_PI);
+    pCtx.strokeStyle = COLORS[h.n - 1] + '28';
+    pCtx.lineWidth = 0.8;
+    pCtx.stroke();
+
+    // phasor arrow
+    pCtx.beginPath();
+    pCtx.moveTo(x, y);
+    pCtx.lineTo(nx, ny);
+    pCtx.strokeStyle = COLORS[h.n - 1];
+    pCtx.lineWidth = 1.5;
+    pCtx.stroke();
+
+    // tip dot
+    pCtx.beginPath();
+    pCtx.arc(nx, ny, 2.5, 0, TWO_PI);
+    pCtx.fillStyle = COLORS[h.n - 1];
+    pCtx.fill();
+
+    x = nx; y = ny;
+  }
+
+  // Record tip in normalized coords [-1, 1] for the wave canvas
+  const normY = active.length > 0 ? (y - cy) / (totalAmp * scale) : 0;
+  waveTrail.push({ t: theta, v: normY });
+  if (waveTrail.length > N_WAVE) waveTrail.shift();
+
+  // Horizontal line connecting phasor tip to wave canvas right panel
+  pCtx.beginPath();
+  pCtx.moveTo(x, y);
+  pCtx.lineTo(W, y);
+  pCtx.setLineDash([3, 4]);
+  pCtx.strokeStyle = 'rgba(255,255,255,0.15)';
+  pCtx.lineWidth = 0.8;
+  pCtx.stroke();
+  pCtx.setLineDash([]);
+
+  // Center dot
+  pCtx.beginPath();
+  pCtx.arc(cx, cy, 3, 0, TWO_PI);
+  pCtx.fillStyle = '#333350';
+  pCtx.fill();
+}
+
+/**
+ * Draw the accumulated wave trail on the right canvas.
+ * The x-axis represents past time (right = present), y = amplitude.
+ */
+function drawWave() {
+  const W = waveCanvas.width;
+  const H = waveCanvas.height;
+  wCtx.clearRect(0, 0, W, H);
+  wCtx.fillStyle = '#07071a';
+  wCtx.fillRect(0, 0, W, H);
+
+  const midY = H / 2;
+  const scaleY = H * 0.40;
+
+  // Zero axis
+  wCtx.beginPath();
+  wCtx.moveTo(0, midY);
+  wCtx.lineTo(W, midY);
+  wCtx.strokeStyle = 'rgba(255,255,255,0.07)';
+  wCtx.lineWidth = 0.5;
+  wCtx.stroke();
+
+  if (waveTrail.length < 2) return;
+
+  // Draw the trail as a polyline, most recent point on the left edge
+  wCtx.beginPath();
+  const n = waveTrail.length;
+  for (let i = 0; i < n; i++) {
+    const px = W * (1 - i / (N_WAVE - 1));
+    const py = midY + waveTrail[n - 1 - i].v * scaleY;
+    if (i === 0) wCtx.moveTo(px, py);
+    else wCtx.lineTo(px, py);
+  }
+  wCtx.strokeStyle = '#f5a623';
+  wCtx.lineWidth = 2;
+  wCtx.lineJoin = 'round';
+  wCtx.stroke();
+
+  // Bright dot at the current tip (left edge = present)
+  const tip = waveTrail[n - 1];
+  const dotX = W * (1 - 0 / (N_WAVE - 1));
+  const dotY = midY + tip.v * scaleY;
+  wCtx.beginPath();
+  wCtx.arc(dotX, dotY, 4, 0, TWO_PI);
+  wCtx.fillStyle = '#fff';
+  wCtx.fill();
+}
+
+// ---- Toolbar wiring ----
+document.getElementById('btn-square').addEventListener('click', () => applyPreset('square'));
+document.getElementById('btn-sawtooth').addEventListener('click', () => applyPreset('sawtooth'));
+document.getElementById('btn-triangle').addEventListener('click', () => applyPreset('triangle'));
+
+document.getElementById('btn-reset').addEventListener('click', () => {
+  for (let i = 0; i < NUM_H; i++) {
+    harmonics[i].amp   = i === 0 ? 1.0 : 0;
+    harmonics[i].on    = i === 0;
+    harmonics[i].phase = 0;
+  }
+  waveTrail = [];
+  syncButtons();
+});
+
+document.getElementById('info-btn').addEventListener('click', () => {
+  document.getElementById('info-pane').classList.toggle('open');
+});
+
+document.getElementById('pane-close').addEventListener('click', () => {
+  document.getElementById('info-pane').classList.remove('open');
+});
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') document.getElementById('info-pane').classList.remove('open');
+});
+
+// Start animation loop
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>
