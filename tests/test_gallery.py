@@ -3,6 +3,7 @@ import pathlib
 REPO = pathlib.Path(__file__).parent.parent
 INDEX = REPO / "index.html"
 CSS = REPO / "styles.css"
+PIECES_JSON = REPO / "pieces.json"
 
 THEME_KEY = "theme"
 
@@ -84,6 +85,111 @@ class TestEdgeCases:
         content = INDEX.read_text()
         assert "localStorage.setItem" in content
         assert "localStorage.getItem" in content
+
+
+class TestDescriptionPane:
+    def test_aside_description_pane_present(self):
+        """index.html must contain an <aside class="description-pane"> element."""
+        content = INDEX.read_text()
+        assert 'aside' in content
+        assert 'description-pane' in content
+
+    def test_pane_close_button_present(self):
+        """index.html must contain a .pane-close button for closing the pane."""
+        content = INDEX.read_text()
+        assert 'pane-close' in content
+
+    def test_info_btn_class_in_js(self):
+        """index.html JS must create .info-btn elements on cards."""
+        content = INDEX.read_text()
+        assert 'info-btn' in content
+
+    def test_css_description_pane_fixed_position(self):
+        """styles.css must set .description-pane to position: fixed."""
+        content = CSS.read_text()
+        assert '.description-pane' in content
+        pane_start = content.index('.description-pane')
+        pane_end = content.index('}', pane_start)
+        pane_block = content[pane_start:pane_end]
+        assert 'fixed' in pane_block
+
+    def test_css_description_pane_transform_slide(self):
+        """styles.css must use transform: translateX for the slide animation."""
+        content = CSS.read_text()
+        assert 'translateX' in content
+
+    def test_css_description_pane_open_class(self):
+        """styles.css must define a .description-pane.open rule."""
+        content = CSS.read_text()
+        assert '.description-pane.open' in content or ('.description-pane' in content and '.open' in content)
+
+    def test_css_transition_no_js_animation(self):
+        """styles.css must use CSS transition, not JS-driven animation loops."""
+        content = CSS.read_text()
+        assert 'transition' in content
+
+    def test_css_mobile_full_width(self):
+        """styles.css must have a media query making the pane full-width on mobile."""
+        content = CSS.read_text()
+        assert '@media' in content
+        assert '600px' in content
+
+    def test_escape_key_closes_pane(self):
+        """index.html JS must handle Escape key to close the pane."""
+        content = INDEX.read_text()
+        assert 'Escape' in content
+        assert 'closePane' in content
+
+    def test_open_pane_function_present(self):
+        """index.html JS must define openPane and closePane functions."""
+        content = INDEX.read_text()
+        assert 'openPane' in content
+        assert 'closePane' in content
+
+    def test_pane_shows_piece_fields(self):
+        """openPane must populate title, meta (technique/year), and description."""
+        content = INDEX.read_text()
+        assert 'pane-title' in content
+        assert 'pane-meta' in content
+        assert 'pane-description' in content
+
+    def test_i_key_opens_pane_on_focused_card(self):
+        """Pressing 'i' while a card is focused should trigger openPane."""
+        content = INDEX.read_text()
+        assert "'i'" in content or '"i"' in content
+
+    def test_pane_close_wired_to_close_function(self):
+        """The pane-close button must be wired to closePane."""
+        content = INDEX.read_text()
+        assert 'pane-close' in content
+        assert 'closePane' in content
+
+    def test_description_pane_aside_has_id(self):
+        """The aside element must have id='description-pane' for JS targeting."""
+        content = INDEX.read_text()
+        assert 'id="description-pane"' in content or "id='description-pane'" in content
+
+
+class TestEdgeCases:
+    def test_description_field_in_pieces_json(self):
+        """Every entry in pieces.json must have a non-empty description field."""
+        import json
+        pieces = json.loads(PIECES_JSON.read_text())
+        for piece in pieces:
+            assert 'description' in piece, f"Missing description in {piece.get('id')}"
+            assert piece['description'], f"Empty description in {piece.get('id')}"
+
+    def test_description_pane_not_open_by_default(self):
+        """The description pane must not have 'open' class in static HTML."""
+        content = INDEX.read_text()
+        assert 'class="description-pane"' in content or "class='description-pane'" in content
+        assert 'class="description-pane open"' not in content
+
+    def test_info_btn_aria_label(self):
+        """The info button must have an aria-label for accessibility."""
+        content = INDEX.read_text()
+        assert 'aria-label' in content
+        assert 'About this piece' in content
 
 
 class TestFailureModes:

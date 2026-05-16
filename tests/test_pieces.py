@@ -6,7 +6,7 @@ import pytest
 REPO = pathlib.Path(__file__).parent.parent
 PIECES_JSON = REPO / "pieces.json"
 
-REQUIRED_FIELDS = {"id", "title", "tagline", "year", "technique", "path", "thumbnail"}
+REQUIRED_FIELDS = {"id", "title", "tagline", "year", "technique", "path", "thumbnail", "description"}
 
 
 def load():
@@ -51,7 +51,7 @@ class TestInvalidEntries:
     """Verify correct error behavior for malformed pieces.json content."""
 
     def test_missing_required_field_detected(self, tmp_path):
-        """An entry without 'title' should fail the required-field check."""
+        """An entry without 'title' or 'description' should fail the required-field check."""
         entry = {
             "id": "test-piece",
             "tagline": "A test",
