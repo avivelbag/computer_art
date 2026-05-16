@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Orbital Memory: N-Body Gravity in Slow Time</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { background: #0a0a14; display: flex; align-items: center; justify-content: center; min-height: 100vh; overflow: hidden; }
+    canvas { display: block; width: min(100vw, calc(100vh * 8/5)); height: min(calc(100vw * 5/8), 100vh); }
+    #controls { position: absolute; bottom: 20px; display: flex; gap: 10px; }
+    button {
+      background: rgba(255,255,255,0.07);
+      border: 1px solid rgba(255,255,255,0.22);
+      color: rgba(255,255,255,0.75);
+      padding: 5px 14px; cursor: pointer;
+      font-size: 12px; letter-spacing: 0.05em;
+      border-radius: 2px;
+    }
+    button:hover { background: rgba(255,255,255,0.15); }
+  </style>
+</head>
+<body>
+  <canvas id="c" width="800" height="500"></canvas>
+  <div id="controls">
+    <button id="btnSolar">Solar</button>
+    <button id="btnFig8">Figure-8</button>
+    <button id="btnRandom">Randomize</button>
+  </div>
+  <script>
+    // Palette: index 0 = warmest, assigned to the heaviest body.
+    const COLORS = ['#f4a261', '#e76f51', '#e9c46a', '#52b3c8', '#a8dadc', '#9b5de5'];
+
+    const W = 800, H = 500;
+    const CX = W / 2, CY = H / 2;
+    const SCALE = 160;       // simulation units → pixels
+    const G     = 1.0;
+    const EPS   = 0.01;      // softening radius in sim units (= 1.6 px ≥ 1 px)
+    const TRAIL = 300;       // ring-buffer length per body
+    const DT    = 0.05;      // simulation time per animation frame
+    const SUBS  = 4;         // leapfrog sub-steps per frame
+    const ESCAPE_R   = 4.0;  // sim-unit distance from origin that triggers reset
+    const MAX_FRAMES = 1800; // ~30 s at 60 fps — cycle restart ceiling
+
+    const canvas = document.getElementById('c');
+    const ctx    = canvas.getContext('2d');
+
+    let bodies, frameN, raf;
+
+    function toScreen(x, y) {
+      return [CX + x * SCALE, CY - y * SCALE];
+    }
+
+    // O(n²) pairwise softened Newtonian gravity.
+    // Softening: F ∝ 1/(r² + ε²)^(3/2) — prevents singularities at close approach.
+    function computeAccel(bs) {
+      const n  = bs.length;
+      const ax = new Float64Array(n);
+      const ay = new Float64Array(n);
+      for (let i = 0; i < n; i++) {
+        for (let j = i + 1; j < n; j++) {
+          const dx    = bs[j].x - bs[i].x;
+          const dy    = bs[j].y - bs[i].y;
+          const denom = Math.pow(dx * dx + dy * dy + EPS * EPS, 1.5);
+          const f     = G / denom;
+          ax[i] += f * bs[j].m * dx;
+          ay[i] += f * bs[j].m * dy;
+          ax[j] -= f * bs[i].m * dx;
+          ay[j] -= f * bs[i].m * dy;
+        }
+      }
+      return { ax, ay };
+    }
+
+    // Kick-drift-kick leapfrog (symplectic, time-reversible, 2nd-order).
+    // Conserves a shadow Hamiltonian — much better energy fidelity than Euler.
+    function leapfrog(bs, dt) {
+      let acc = computeAccel(bs);
+      for (let i = 0; i < bs.length; i++) {
+        bs[i].vx += 0.5 * dt * acc.ax[i];
+        bs[i].vy += 0.5 * dt * acc.ay[i];
+      }
+      for (let i = 0; i < bs.length; i++) {
+        bs[i].x += dt * bs[i].vx;
+        bs[i].y += dt * bs[i].vy;
+      }
+      acc = computeAccel(bs);
+      for (let i = 0; i < bs.length; i++) {
+        bs[i].vx += 0.5 * dt * acc.ax[i];
+        bs[i].vy += 0.5 * dt * acc.ay[i];
+      }
+    }
+
+    // Hierarchical solar system: one dominant central body + 4 planets.
+    // The central body is 15× heavier than all planets combined — dominates
+    // gravitationally so planetary orbits stay Keplerian-stable for 30+ s.
+    // Planet speed: v = sqrt(G·M_sun/r) (Keplerian circular velocity).
+    // The sun's velocity is adjusted to zero total momentum so the center
+    // of mass stays fixed throughout the simulation.
+    function makeSolar() {
+      // Planet masses ≤0.2% of M_sun: planet-planet perturbations stay orders of
+      // magnitude below solar gravity, keeping all orbits stable for 30+ s.
+      // M_sun=3, r_inner=0.6 → ω·dt_sub≈0.047 rad, well within leapfrog's stable zone.
+      const Msun = 3.0;
+      const bs   = [{ x: 0, y: 0, vx: 0, vy: 0, m: Msun, trail: [] }];
+      const planets = [
+        { r: 0.60, m: 0.005, phase: 0.5 },
+        { r: 0.90, m: 0.004, phase: 2.1 },
+        { r: 1.20, m: 0.003, phase: 4.3 },
+        { r: 1.50, m: 0.002, phase: 1.0 },
+      ];
+      for (const p of planets) {
+        const v = Math.sqrt(G * Msun / p.r);
+        bs.push({
+          x: p.r * Math.cos(p.phase), y: p.r * Math.sin(p.phase),
+          vx: -v * Math.sin(p.phase), vy: v * Math.cos(p.phase),
+          m: p.m, trail: [],
+        });
+      }
+      // Cancel net momentum so the center of mass stays fixed.
+      // Cancel net momentum so center of mass stays fixed throughout the simulation.
+      const totPx = bs.reduce((s, b) => s + b.m * b.vx, 0);
+      const totPy = bs.reduce((s, b) => s + b.m * b.vy, 0);
+      bs[0].vx = -totPx / Msun;
+      bs[0].vy = -totPy / Msun;
+      return bs;
+    }
+
+    // Chenciner-Montgomery figure-8 choreography (2000).
+    // Three equal masses (G=1, m=1) in a choreographic figure-8 orbit.
+    // The orbit is only marginally stable — discrete integration introduces
+    // exponentially-growing errors that break the choreography after ~5–10 s.
+    // The system then resets with a random configuration.
+    function makeFigure8() {
+      const m  = 1.0;
+      const IC = [
+        { x: -0.97000436, y:  0.24308753, vx:  0.46620369, vy:  0.43236573 },
+        { x:  0.0,        y:  0.0,        vx:  0.46620369, vy:  0.43236573 },
+        { x:  0.97000436, y: -0.24308753, vx: -0.93240737, vy: -0.86473146 },
+      ];
+      return IC.map(ic => ({ ...ic, m, trail: [] }));
+    }
+
+    // Random near-stable N-body (N = 4–6).
+    // Bodies placed on a jittered ring; tangential orbital velocities set to
+    // 75% of Keplerian circular speed around total enclosed mass; net momentum zeroed.
+    function makeRandom() {
+      const n  = 4 + Math.floor(Math.random() * 3);
+      const bs = [];
+      for (let i = 0; i < n; i++) {
+        const ang = (i / n) * 2 * Math.PI + (Math.random() - 0.5) * 0.7;
+        const r   = 0.5 + Math.random() * 0.8;
+        bs.push({
+          x: r * Math.cos(ang), y: r * Math.sin(ang),
+          vx: 0, vy: 0,
+          m: 0.4 + Math.random() * 1.6,
+          trail: [],
+        });
+      }
+      const M   = bs.reduce((s, b) => s + b.m, 0);
+      const cmx = bs.reduce((s, b) => s + b.m * b.x, 0) / M;
+      const cmy = bs.reduce((s, b) => s + b.m * b.y, 0) / M;
+      bs.forEach(b => { b.x -= cmx; b.y -= cmy; });
+      bs.forEach(b => {
+        const r  = Math.hypot(b.x, b.y) + 1e-9;
+        const vc = Math.sqrt(G * M / r) * 0.75;
+        b.vx = -(b.y / r) * vc;
+        b.vy =  (b.x / r) * vc;
+      });
+      const pvx = bs.reduce((s, b) => s + b.m * b.vx, 0) / M;
+      const pvy = bs.reduce((s, b) => s + b.m * b.vy, 0) / M;
+      bs.forEach(b => { b.vx -= pvx; b.vy -= pvy; });
+      return bs;
+    }
+
+    // Rank bodies by mass descending; assign warm → cool palette colors.
+    function assignColors(bs) {
+      const ranked = [...bs].sort((a, b) => b.m - a.m);
+      ranked.forEach((b, i) => { b.color = COLORS[i % COLORS.length]; });
+    }
+
+    function hexToRgba(hex, a) {
+      const n = parseInt(hex.slice(1), 16);
+      return `rgba(${n >> 16},${(n >> 8) & 255},${n & 255},${a.toFixed(3)})`;
+    }
+
+    function reset(bs) {
+      if (raf) cancelAnimationFrame(raf);
+      assignColors(bs);
+      bodies = bs;
+      frameN = 0;
+      ctx.fillStyle = '#0a0a14';
+      ctx.fillRect(0, 0, W, H);
+      raf = requestAnimationFrame(tick);
+    }
+
+    function escaped() {
+      return bodies.some(b => Math.hypot(b.x, b.y) > ESCAPE_R)
+          || frameN >= MAX_FRAMES;
+    }
+
+    function tick() {
+      if (escaped()) { reset(makeRandom()); return; }
+
+      const dtSub = DT / SUBS;
+      for (let s = 0; s < SUBS; s++) leapfrog(bodies, dtSub);
+
+      for (const b of bodies) {
+        const [sx, sy] = toScreen(b.x, b.y);
+        b.trail.push([sx, sy]);
+        if (b.trail.length > TRAIL) b.trail.shift();
+      }
+
+      ctx.fillStyle = 'rgba(10,10,20,0.06)';
+      ctx.fillRect(0, 0, W, H);
+
+      // Fading trail: alpha grows linearly from 0 (oldest) to 0.8 (newest).
+      for (const b of bodies) {
+        const t = b.trail;
+        ctx.lineWidth = 1.2;
+        for (let i = 1; i < t.length; i++) {
+          ctx.beginPath();
+          ctx.strokeStyle = hexToRgba(b.color, (i / t.length) * 0.8);
+          ctx.moveTo(t[i - 1][0], t[i - 1][1]);
+          ctx.lineTo(t[i][0], t[i][1]);
+          ctx.stroke();
+        }
+      }
+
+      for (const b of bodies) {
+        const [sx, sy] = toScreen(b.x, b.y);
+        ctx.beginPath();
+        ctx.arc(sx, sy, 2.5 + Math.sqrt(b.m) * 2, 0, 2 * Math.PI);
+        ctx.fillStyle = b.color;
+        ctx.fill();
+      }
+
+      frameN++;
+      raf = requestAnimationFrame(tick);
+    }
+
+    reset(makeSolar());
+
+    document.getElementById('btnSolar').addEventListener('click', () => reset(makeSolar()));
+    document.getElementById('btnFig8').addEventListener('click', () => reset(makeFigure8()));
+    document.getElementById('btnRandom').addEventListener('click', () => reset(makeRandom()));
+  </script>
+</body>
+</html>
