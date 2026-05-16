@@ -63,6 +63,12 @@ Two stops map V concentration to colour via linear interpolation through the LUT
 Low-V background appears as deep indigo space; high-V spot cores glow electric cyan with a
 smooth gradient halo in between.
 
+## What to notice
+
+- Watch a spot elongate then pinch in two: this is the mitosis instability — once a spot exceeds a critical radius, curvature-driven diffusion splits it
+- Spots strongly repel each other; after saturation the canvas holds a nearly uniform lattice of slowly drifting spots
+- The system reaches a dynamic steady state where spontaneous splits and occasional mergers balance — the total spot count fluctuates but does not grow indefinitely
+
 ## Files
 
 - `index.html` — self-contained canvas animation, no external dependencies

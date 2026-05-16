@@ -17,10 +17,58 @@
     <button class="pane-close" id="pane-close" aria-label="Close">×</button>
     <h2 class="pane-title" id="pane-title"></h2>
     <p class="pane-meta" id="pane-meta"></p>
-    <p class="pane-description" id="pane-description"></p>
+    <div class="pane-description" id="pane-description"></div>
   </aside>
 
   <script>
+    function renderMarkdown(text) {
+      const esc = s => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+      const fmt = s => esc(s)
+        .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+        .replace(/`([^`]+)`/g, '<code>$1</code>');
+      const out = [];
+      let list = [], code = [], inCode = false;
+      const flushList = () => {
+        if (list.length) {
+          out.push('<ul>' + list.map(l => `<li>${l}</li>`).join('') + '</ul>');
+          list = [];
+        }
+      };
+      const flushCode = () => {
+        if (code.length) {
+          out.push(`<pre><code>${esc(code.join('\n'))}</code></pre>`);
+          code = [];
+        }
+      };
+      for (const line of text.split('\n')) {
+        if (line.startsWith('```')) {
+          if (inCode) { flushCode(); inCode = false; }
+          else { flushList(); inCode = true; }
+        } else if (inCode) {
+          code.push(line);
+        } else if (line.trim() === '') {
+          flushList();
+        } else if (/^#+\s/.test(line)) {
+          flushList();
+          out.push(`<h3>${fmt(line.replace(/^#+\s+/, ''))}</h3>`);
+        } else if (line.startsWith('- ')) {
+          list.push(fmt(line.slice(2)));
+        } else if (/^\|[\s:|-]+\|/.test(line)) {
+          // table separator row — skip
+        } else if (line.startsWith('|')) {
+          flushList();
+          const cells = line.split('|').slice(1, -1).map(c => fmt(c.trim())).filter(Boolean);
+          if (cells.length) out.push(`<p>${cells.join(' · ')}</p>`);
+        } else {
+          flushList();
+          out.push(`<p>${fmt(line)}</p>`);
+        }
+      }
+      flushList();
+      if (inCode) flushCode();
+      return out.join('\n');
+    }
+
     // localStorage key for theme preference: "theme"
     (function () {
       const saved = localStorage.getItem('theme');
@@ -40,14 +88,18 @@
       return Array.from(document.querySelectorAll('.card'));
     }
 
-    function openPane(piece) {
+    async function openPane(piece) {
       const pane = document.getElementById('description-pane');
       document.getElementById('pane-title').textContent = piece.title;
       document.getElementById('pane-meta').textContent =
         [piece.technique, piece.year].filter(Boolean).join(' · ');
-      document.getElementById('pane-description').textContent =
-        piece.description || piece.tagline || '';
+      const descEl = document.getElementById('pane-description');
+      descEl.innerHTML = renderMarkdown(piece.description || piece.tagline || '');
       pane.classList.add('open');
+      try {
+        const res = await fetch(piece.path + '/README.md');
+        if (res.ok) descEl.innerHTML = renderMarkdown(await res.text());
+      } catch (_) {}
     }
 
     function closePane() {
