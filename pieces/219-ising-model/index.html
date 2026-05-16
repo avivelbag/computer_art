@@ -4,6 +4,7 @@
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Ising Model — The Temperature of Order</title>
+  <link rel="stylesheet" href="../../lib/panel.css"/>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -492,6 +493,26 @@
   initSpins();
   document.getElementById('t-val').textContent = T.toFixed(3);
   requestAnimationFrame(frame);
+</script>
+<script src="../../lib/panel.js"></script>
+<script>
+  GalleryPanel.init({
+    title: 'Ising Model — Phase Transition',
+    sections: [
+      {
+        heading: 'How it works',
+        body: 'Each pixel is a spin (+1 warm linen, −1 deep indigo) on a 2D lattice. The Metropolis algorithm attempts N² random flips per frame: energy-lowering flips are always accepted; energy-raising flips are accepted with probability exp(−ΔE/kT), the Boltzmann factor.',
+      },
+      {
+        heading: 'Key concepts',
+        body: 'The critical temperature Tc ≈ 2.269 J/k (Onsager 1944) separates the ordered ferromagnetic phase (|M|→1, large aligned domains) from the disordered paramagnetic phase (|M|→0, random noise). Right at Tc the system is scale-free — domains of every size coexist in fractal critical opalescence.',
+      },
+      {
+        heading: 'Try this',
+        body: 'Drag the temperature slider slowly through Tc ≈ 2.27 and watch the magnetisation sparkline collapse from ~1 to ~0. Click any cell on the canvas to inject a defect spin — below Tc it heals into the surrounding domain; above Tc it spreads freely. Reset at low T and watch ordered domains nucleate from a random initial state.',
+      },
+    ],
+  });
 </script>
 </body>
 </html>
