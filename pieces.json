@@ -898,5 +898,15 @@
         "path": "pieces/224-lorenz-attractor",
         "thumbnail": "pieces/224-lorenz-attractor/thumbnail.svg",
         "description": "A WebGL 2 line-strip renderer integrates the Lorenz strange attractor via fourth-order Runge-Kutta at dt=0.005, maintaining a 50 001-point ring buffer coloured deep-violet (oldest) to electric-cyan (newest) through additive blending. The camera auto-rotates around the Z axis while mouse-drag controls full yaw and pitch. A Nudge button spawns a second trajectory starting 0.001 units away in warm coral, demonstrating sensitive dependence on initial conditions as the two paths diverge exponentially. Three sliders tune σ (Prandtl, 1–20), ρ (Rayleigh, 1–50), and β (geometric, 0.1–8) live, reshaping the attractor instantly. A slide-out panel covers Lorenz's 1963 atmospheric-convection model, the physical meaning of each variable, what chaos means mathematically (Lyapunov exponent λ₁ ≈ 0.9), and the butterfly-effect origin story, with an inline SVG diagram of the two-lobed wing structure."
+    },
+    {
+        "id": "227-electric-field-lines",
+        "title": "Charge Canvas — Electric Fields and Equipotentials",
+        "tagline": "Drag point charges around a canvas and watch Coulomb field lines (gold) and equipotential contours (teal) reform live — a hands-on superposition simulator",
+        "year": 2026,
+        "technique": "canvas / Coulomb's law / electric field lines / equipotential contours / superposition / interactive drag / marching squares",
+        "path": "pieces/227-electric-field-lines",
+        "thumbnail": "pieces/227-electric-field-lines/thumbnail.svg",
+        "description": "An interactive 2D canvas that simulates the electric field and equipotential landscape of up to eight user-placed point charges. Field lines (warm gold) are traced by Euler streamline integration from each positive charge — stepping 2 px along the normalised E vector until a negative charge is reached or the canvas edge is hit. Equipotential contours (cool teal dashes) are computed by evaluating V = Σ kq/r on an 80×80 grid and contouring at ten evenly-spaced iso-levels via marching squares with saddle-point disambiguation. Dragging any charge re-draws everything within one animation frame, capped at 60 fps via a dirty-flag pattern. Clicking empty canvas adds a charge (sign alternates +/−); clicking an existing charge removes it. A slide-out panel explains Coulomb's law, the superposition principle, what field-line density encodes, and why equipotentials are always perpendicular to field lines."
     }
 ]
