@@ -673,5 +673,14 @@
     "technique": "canvas 2D / halftone dot grid / multi-wave interference / traveling sine waves / radius clamping",
     "path": "pieces/190-halftone-tides",
     "thumbnail": "pieces/190-halftone-tides/thumbnail.svg"
+  },
+  {
+    "id": "191-quasicrystal",
+    "title": "Quasicrystal — Five-Wave Interference",
+    "tagline": "Five cosine plane waves at 72° intervals superimpose into a 5-fold quasicrystal field rendered pixel-by-pixel via ImageData; the pattern slowly rotates at 0.15 rad/s, cycling warm-gold constructive peaks through a deep-indigo background in a seamless 60 fps loop",
+    "year": 2026,
+    "technique": "canvas 2D / ImageData / quasicrystal / 5-wave plane-wave interference / cosine LUT / pixel shader",
+    "path": "pieces/191-quasicrystal",
+    "thumbnail": "pieces/191-quasicrystal/thumbnail.svg"
   }
 ]
