@@ -7,9 +7,6 @@ and require no network or file I/O outside tmp_path.
 import importlib.util
 import math
 import pathlib
-import sys
-
-import pytest
 
 PIECE_DIR = pathlib.Path(__file__).parent.parent / 'pieces' / '240-n-body-gravity'
 

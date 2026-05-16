@@ -117,8 +117,7 @@
           m: p.m, trail: [],
         });
       }
-      // Cancel net momentum so the center of mass stays fixed.
-      // Cancel net momentum so center of mass stays fixed throughout the simulation.
+      // Cancel net momentum so center of mass stays fixed.
       const totPx = bs.reduce((s, b) => s + b.m * b.vx, 0);
       const totPy = bs.reduce((s, b) => s + b.m * b.vy, 0);
       bs[0].vx = -totPx / Msun;

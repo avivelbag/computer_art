@@ -123,8 +123,6 @@ def make_solar():
 
 
 
-
-
 def make_figure8():
     """Return the Chenciner-Montgomery figure-8 initial conditions.
 
