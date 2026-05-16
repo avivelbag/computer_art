@@ -1,0 +1,702 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Ulam Spiral — The Hidden Order of Primes</title>
+  <link rel="stylesheet" href="../../lib/panel.css"/>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: #060610;
+      color: #aaa;
+      font: 11px/1.4 system-ui, sans-serif;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      overflow: hidden;
+      user-select: none;
+    }
+
+    #toolbar {
+      flex: 0 0 auto;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 7px 14px;
+      background: #0a0a1a;
+      border-bottom: 1px solid #141428;
+      flex-wrap: wrap;
+    }
+
+    #toolbar h1 {
+      font-size: 12px;
+      font-weight: 700;
+      color: #c8b8f0;
+      letter-spacing: 0.06em;
+      flex: 1;
+      min-width: 160px;
+    }
+
+    label { font-size: 10px; color: #888; white-space: nowrap; }
+
+    select {
+      background: #14142a;
+      border: 1px solid #28284a;
+      color: #aaa;
+      font: 10px system-ui, sans-serif;
+      padding: 3px 6px;
+      border-radius: 3px;
+      cursor: pointer;
+    }
+
+    button {
+      background: #14142a;
+      border: 1px solid #28284a;
+      color: #aaa;
+      font: 10px system-ui, sans-serif;
+      padding: 4px 10px;
+      border-radius: 3px;
+      cursor: pointer;
+    }
+    button:hover { background: #1c1c38; }
+
+    #legend {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 3px;
+      font-size: 9px;
+      color: #888;
+    }
+
+    .legend-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    #hover-info {
+      font-size: 10px;
+      color: #c8b8f0;
+      font-variant-numeric: tabular-nums;
+      min-width: 200px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    #canvas-wrap {
+      flex: 1 1 0;
+      position: relative;
+      overflow: hidden;
+      cursor: crosshair;
+      min-height: 0;
+    }
+
+    #canvas {
+      display: block;
+      image-rendering: pixelated;
+    }
+
+    #tooltip {
+      position: absolute;
+      background: rgba(10, 10, 26, 0.92);
+      border: 1px solid #28284a;
+      border-radius: 4px;
+      padding: 5px 9px;
+      font-size: 10px;
+      color: #c8b8f0;
+      pointer-events: none;
+      display: none;
+      max-width: 240px;
+      line-height: 1.7;
+      z-index: 10;
+    }
+
+    #tooltip b { color: #f0e0a0; font-size: 12px; }
+  </style>
+</head>
+<body>
+
+<div id="toolbar">
+  <h1>Ulam Spiral — The Hidden Order of Primes</h1>
+  <label>Color&nbsp;
+    <select id="color-mode">
+      <option value="mono">Monochrome</option>
+      <option value="mod4">Residue mod 4</option>
+      <option value="spf">Smallest factor</option>
+    </select>
+  </label>
+  <div id="legend"></div>
+  <span id="hover-info">Scroll to zoom · Drag to pan · Hover to inspect</span>
+  <button id="reset-btn">Reset</button>
+</div>
+
+<div id="canvas-wrap">
+  <canvas id="canvas"></canvas>
+  <div id="tooltip"></div>
+</div>
+
+<script>
+// ---------------------------------------------------------------------------
+// Constants
+// ---------------------------------------------------------------------------
+
+const N          = 200000;
+const RANGE      = 500;   // grid array side length (covers coords ±250)
+const HALF_RANGE = 250;   // index offset: grid coord gx maps to gx+HALF_RANGE
+
+const BG_R = 10, BG_G = 10, BG_B = 18; // background colour
+
+// ---------------------------------------------------------------------------
+// Sieve of Eratosthenes — smallest prime factor for every n ≤ N
+// ---------------------------------------------------------------------------
+
+/**
+ * Build the smallest-prime-factor (SPF) array using a linear sieve.
+ *
+ * spf[n] = smallest prime factor of n for n ≥ 2.
+ * spf[0] = spf[1] = 0 (unused sentinels).
+ * A number n ≥ 2 is prime iff spf[n] === n.
+ */
+function buildSieve(limit) {
+  const spf = new Uint32Array(limit + 1);
+  for (let i = 2; i <= limit; i++) spf[i] = i;
+  for (let i = 2; i * i <= limit; i++) {
+    if (spf[i] === i) { // i is prime
+      for (let j = i * i; j <= limit; j += i) {
+        if (spf[j] === j) spf[j] = i;
+      }
+    }
+  }
+  return spf;
+}
+
+const spf = buildSieve(N);
+
+function isPrime(n) { return n >= 2 && spf[n] === n; }
+
+// Superscript digits for factorization display
+const SUP = '⁰¹²³⁴⁵⁶⁷⁸⁹';
+
+/**
+ * Return a human-readable prime factorization string.
+ * E.g. factorString(12) → "2² × 3"
+ *      factorString(7)  → "7 (prime)"
+ *      factorString(1)  → "1 (unit)"
+ */
+function factorString(n) {
+  if (n === 1) return '1 (unit)';
+  if (isPrime(n)) return `${n} (prime)`;
+  const parts = [];
+  let m = n;
+  while (m > 1) {
+    const p = spf[m];
+    let e = 0;
+    while (m % p === 0) { m = (m / p) | 0; e++; }
+    parts.push(e > 1 ? `${p}${String(e).split('').map(d => SUP[+d]).join('')}` : `${p}`);
+  }
+  return `${n} = ${parts.join(' × ')}`;
+}
+
+// ---------------------------------------------------------------------------
+// Ulam spiral construction
+// ---------------------------------------------------------------------------
+
+/**
+ * Build the Ulam spiral for integers 1..N.
+ *
+ * Starting at grid centre (0, 0) for n=1, walk:
+ *   right 1 → up 1 → left 2 → down 2 → right 3 → up 3 → left 4 → …
+ * (each run length repeated twice before incrementing).
+ *
+ * Turning rule in screen coordinates (y increases downward):
+ *   (dx, dy) → (dy, −dx)  which cycles right→up→left→down→right…
+ *
+ * Returns a Uint32Array of size RANGE×RANGE where
+ *   spiralGrid[(gy + HALF_RANGE) * RANGE + (gx + HALF_RANGE)] = n
+ * Zero means no integer was placed at that grid cell.
+ */
+function buildSpiral() {
+  const grid = new Uint32Array(RANGE * RANGE);
+  let x = 0, y = 0;
+  let dx = 1, dy = 0; // initial direction: right
+  let segLen = 1, segPos = 0, turns = 0;
+
+  // Place n = 1 at the origin
+  grid[HALF_RANGE * RANGE + HALF_RANGE] = 1;
+
+  for (let n = 2; n <= N; n++) {
+    x += dx;
+    y += dy;
+    segPos++;
+
+    const xi = x + HALF_RANGE;
+    const yi = y + HALF_RANGE;
+    if (xi >= 0 && xi < RANGE && yi >= 0 && yi < RANGE) {
+      grid[yi * RANGE + xi] = n;
+    }
+
+    if (segPos === segLen) {
+      segPos = 0;
+      const ndx = dy;
+      dy = -dx;
+      dx = ndx;
+      turns++;
+      if ((turns & 1) === 0) segLen++;
+    }
+  }
+
+  return grid;
+}
+
+const spiralGrid = buildSpiral();
+
+// ---------------------------------------------------------------------------
+// Colour palettes
+// ---------------------------------------------------------------------------
+
+const PALETTES = {
+  mono: {
+    prime:     [245, 158,  11],
+    composite: [ 26,  26,  46],
+    unit:      [ 20,  20,  36],
+  },
+  mod4: {
+    prime1:    [ 20, 184, 166], // p ≡ 1 (mod 4) — teal
+    prime3:    [244,  63,  94], // p ≡ 3 (mod 4) — rose
+    prime2:    [168,  85, 247], // p = 2 — purple
+    composite: [ 26,  26,  46],
+    unit:      [ 20,  20,  36],
+  },
+  spf: {
+    prime:     [252, 211,  77], // n itself prime — gold
+    p2:        [ 59, 130, 246], // smallest factor 2 — blue
+    p3:        [ 34, 197,  94], // smallest factor 3 — green
+    p5:        [245, 158,  11], // smallest factor 5 — amber
+    p7:        [168,  85, 247], // smallest factor 7 — purple
+    pLarge:    [249, 115,  22], // smallest factor ≥ 11 — orange
+    unit:      [ 20,  20,  36],
+  },
+};
+
+const LEGEND_DATA = {
+  mono: [
+    { color: [245, 158,  11], label: 'Prime' },
+    { color: [ 26,  26,  46], label: 'Composite' },
+  ],
+  mod4: [
+    { color: [ 20, 184, 166], label: 'p ≡ 1 (mod 4)' },
+    { color: [244,  63,  94], label: 'p ≡ 3 (mod 4)' },
+    { color: [168,  85, 247], label: 'p = 2' },
+    { color: [ 26,  26,  46], label: 'Composite' },
+  ],
+  spf: [
+    { color: [252, 211,  77], label: 'Prime' },
+    { color: [ 59, 130, 246], label: '÷2' },
+    { color: [ 34, 197,  94], label: '÷3' },
+    { color: [245, 158,  11], label: '÷5' },
+    { color: [168,  85, 247], label: '÷7' },
+    { color: [249, 115,  22], label: '÷11+' },
+  ],
+};
+
+// Per-integer colour channels (recomputed when colour mode changes)
+const colorR = new Uint8Array(N + 1);
+const colorG = new Uint8Array(N + 1);
+const colorB = new Uint8Array(N + 1);
+
+/**
+ * Populate colorR/G/B for every integer 1..N under the given colour mode.
+ * Called once at start and again whenever the select changes.
+ */
+function precomputeColors(mode) {
+  const P = PALETTES[mode];
+  for (let n = 1; n <= N; n++) {
+    let c;
+    if (n === 1) {
+      c = P.unit;
+    } else if (mode === 'mono') {
+      c = isPrime(n) ? P.prime : P.composite;
+    } else if (mode === 'mod4') {
+      if (!isPrime(n))   c = P.composite;
+      else if (n === 2)  c = P.prime2;
+      else if (n % 4 === 1) c = P.prime1;
+      else               c = P.prime3;
+    } else { // spf
+      if (isPrime(n)) {
+        c = P.prime;
+      } else {
+        const f = spf[n];
+        if      (f === 2) c = P.p2;
+        else if (f === 3) c = P.p3;
+        else if (f === 5) c = P.p5;
+        else if (f === 7) c = P.p7;
+        else              c = P.pLarge;
+      }
+    }
+    colorR[n] = c[0];
+    colorG[n] = c[1];
+    colorB[n] = c[2];
+  }
+}
+
+function updateLegend(mode) {
+  const el = document.getElementById('legend');
+  el.innerHTML = '';
+  for (const item of LEGEND_DATA[mode]) {
+    const div  = document.createElement('div');
+    div.className = 'legend-item';
+    const dot  = document.createElement('span');
+    dot.className = 'legend-dot';
+    dot.style.background = `rgb(${item.color.join(',')})`;
+    div.appendChild(dot);
+    div.appendChild(document.createTextNode(item.label));
+    el.appendChild(div);
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Canvas and viewport state
+// ---------------------------------------------------------------------------
+
+const canvasWrap = document.getElementById('canvas-wrap');
+const canvas     = document.getElementById('canvas');
+const ctx        = canvas.getContext('2d');
+const tooltipEl  = document.getElementById('tooltip');
+const hoverInfo  = document.getElementById('hover-info');
+
+let viewCx    = 0;    // view centre in grid coordinates
+let viewCy    = 0;
+let scale     = 3;    // pixels per grid cell (≥0.3)
+let colorMode = 'mono';
+
+// Fit the full spiral on screen at startup
+function fitToCanvas() {
+  const shorter = Math.min(canvas.width, canvas.height);
+  scale = Math.max(0.5, shorter / 460);
+  viewCx = 0;
+  viewCy = 0;
+}
+
+let rafPending = false;
+
+function scheduleRender() {
+  if (!rafPending) {
+    rafPending = true;
+    requestAnimationFrame(() => { rafPending = false; render(); });
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Rendering — ImageData pixel loop
+// ---------------------------------------------------------------------------
+
+/**
+ * Render the spiral into the canvas via a raw ImageData buffer.
+ *
+ * For each screen pixel (px, py) we compute the nearest grid cell (gx, gy),
+ * look up the integer stored there in spiralGrid, and write the precomputed
+ * colour into the buffer. A horizontal cache (lastGx) avoids redundant lookups
+ * when scale > 1 and many consecutive pixels share the same grid column.
+ *
+ * When scale ≥ 5, a 1-pixel gap is drawn between cells so the grid is legible
+ * at high zoom levels.
+ */
+function render() {
+  const W = canvas.width;
+  const H = canvas.height;
+  if (W === 0 || H === 0) return;
+
+  const imageData = ctx.createImageData(W, H);
+  const data      = imageData.data;
+
+  const halfW    = W * 0.5;
+  const halfH    = H * 0.5;
+  const invScale = 1.0 / scale;
+
+  // Gap between cells when sufficiently zoomed in
+  const showGap   = scale >= 5;
+  const gapThresh = showGap ? 0.5 - 0.5 / scale : 0;
+
+  for (let py = 0; py < H; py++) {
+    const rawCy = (py - halfH) * invScale + viewCy;
+    const gy    = Math.round(rawCy);
+    const isGapY = showGap && Math.abs(rawCy - gy) >= gapThresh;
+
+    const gyIdx   = gy + HALF_RANGE;
+    const rowValid = gyIdx >= 0 && gyIdx < RANGE;
+    const rowBase  = rowValid ? gyIdx * RANGE : -1;
+
+    // Horizontal-repeat cache: when gx matches the previous pixel we skip the lookup
+    let lastGx = 0x7fffffff;
+    let lastR  = BG_R, lastG = BG_G, lastB = BG_B;
+
+    for (let px = 0; px < W; px++) {
+      const rawCx = (px - halfW) * invScale + viewCx;
+      const gx    = Math.round(rawCx);
+      const isGapX = showGap && Math.abs(rawCx - gx) >= gapThresh;
+
+      let r, g, b;
+
+      if (isGapY || isGapX) {
+        r = BG_R; g = BG_G; b = BG_B;
+      } else if (gx === lastGx) {
+        r = lastR; g = lastG; b = lastB;
+      } else {
+        lastGx = gx;
+        const gxIdx = gx + HALF_RANGE;
+        if (!rowValid || gxIdx < 0 || gxIdx >= RANGE) {
+          r = BG_R; g = BG_G; b = BG_B;
+        } else {
+          const n = spiralGrid[rowBase + gxIdx];
+          if (n === 0) {
+            r = BG_R; g = BG_G; b = BG_B;
+          } else {
+            r = colorR[n]; g = colorG[n]; b = colorB[n];
+          }
+        }
+        lastR = r; lastG = g; lastB = b;
+      }
+
+      const i = (py * W + px) << 2;
+      data[i] = r; data[i + 1] = g; data[i + 2] = b; data[i + 3] = 255;
+    }
+  }
+
+  ctx.putImageData(imageData, 0, 0);
+}
+
+// ---------------------------------------------------------------------------
+// Resize
+// ---------------------------------------------------------------------------
+
+function resize() {
+  const first = canvas.width === 0;
+  canvas.width  = canvasWrap.clientWidth;
+  canvas.height = canvasWrap.clientHeight;
+  if (first) fitToCanvas();
+  render();
+}
+
+window.addEventListener('resize', resize);
+
+// ---------------------------------------------------------------------------
+// Coordinate helpers
+// ---------------------------------------------------------------------------
+
+/**
+ * Convert a screen pixel position (relative to canvas top-left) to a
+ * floating-point grid coordinate.
+ */
+function screenToGrid(px, py) {
+  return [
+    (px - canvas.width  * 0.5) / scale + viewCx,
+    (py - canvas.height * 0.5) / scale + viewCy,
+  ];
+}
+
+/**
+ * Return the integer stored at screen pixel (px, py), or 0 if none.
+ */
+function intAtScreen(px, py) {
+  const gx = Math.round((px - canvas.width  * 0.5) / scale + viewCx);
+  const gy = Math.round((py - canvas.height * 0.5) / scale + viewCy);
+  const xi = gx + HALF_RANGE;
+  const yi = gy + HALF_RANGE;
+  if (xi < 0 || xi >= RANGE || yi < 0 || yi >= RANGE) return 0;
+  return spiralGrid[yi * RANGE + xi];
+}
+
+// ---------------------------------------------------------------------------
+// Pan and zoom
+// ---------------------------------------------------------------------------
+
+let dragging     = false;
+let dragStartPx  = null;
+let dragStartView = null;
+
+canvasWrap.addEventListener('mousedown', e => {
+  dragging      = true;
+  dragStartPx   = [e.clientX, e.clientY];
+  dragStartView = [viewCx, viewCy];
+  canvasWrap.style.cursor = 'grabbing';
+});
+
+window.addEventListener('mouseup', () => {
+  if (dragging) {
+    dragging = false;
+    canvasWrap.style.cursor = 'crosshair';
+  }
+});
+
+canvasWrap.addEventListener('mousemove', e => {
+  const rect = canvasWrap.getBoundingClientRect();
+  const px   = e.clientX - rect.left;
+  const py   = e.clientY - rect.top;
+
+  if (dragging && dragStartPx) {
+    viewCx = dragStartView[0] - (e.clientX - dragStartPx[0]) / scale;
+    viewCy = dragStartView[1] - (e.clientY - dragStartPx[1]) / scale;
+    scheduleRender();
+  }
+
+  updateTooltip(px, py, e.clientX, e.clientY, rect);
+});
+
+canvasWrap.addEventListener('mouseleave', () => {
+  tooltipEl.style.display = 'none';
+  hoverInfo.textContent   = 'Scroll to zoom · Drag to pan · Hover to inspect';
+});
+
+canvasWrap.addEventListener('wheel', e => {
+  e.preventDefault();
+  const rect  = canvasWrap.getBoundingClientRect();
+  const px    = e.clientX - rect.left;
+  const py    = e.clientY - rect.top;
+
+  // Keep the grid point under the cursor fixed through the zoom
+  const [gx, gy] = screenToGrid(px, py);
+  const factor   = e.deltaY > 0 ? 1 / 1.12 : 1.12;
+  const newScale = Math.max(0.25, Math.min(80, scale * factor));
+
+  viewCx = gx - (px - canvas.width  * 0.5) / newScale;
+  viewCy = gy - (py - canvas.height * 0.5) / newScale;
+  scale  = newScale;
+
+  scheduleRender();
+}, { passive: false });
+
+// Pinch-zoom on touch
+let lastTouchDist    = null;
+let lastTouchMidGrid = null;
+
+canvasWrap.addEventListener('touchstart', e => {
+  if (e.touches.length === 2) {
+    const t0 = e.touches[0], t1 = e.touches[1];
+    lastTouchDist = Math.hypot(t1.clientX - t0.clientX, t1.clientY - t0.clientY);
+    const rect = canvasWrap.getBoundingClientRect();
+    const midX = (t0.clientX + t1.clientX) * 0.5 - rect.left;
+    const midY = (t0.clientY + t1.clientY) * 0.5 - rect.top;
+    lastTouchMidGrid = screenToGrid(midX, midY);
+  }
+}, { passive: true });
+
+canvasWrap.addEventListener('touchmove', e => {
+  if (e.touches.length !== 2 || lastTouchDist === null) return;
+  e.preventDefault();
+  const t0   = e.touches[0], t1 = e.touches[1];
+  const dist = Math.hypot(t1.clientX - t0.clientX, t1.clientY - t0.clientY);
+  const rect = canvasWrap.getBoundingClientRect();
+  const midX = (t0.clientX + t1.clientX) * 0.5 - rect.left;
+  const midY = (t0.clientY + t1.clientY) * 0.5 - rect.top;
+
+  const newScale = Math.max(0.25, Math.min(80, scale * dist / lastTouchDist));
+  const [gx, gy] = lastTouchMidGrid;
+  viewCx = gx - (midX - canvas.width  * 0.5) / newScale;
+  viewCy = gy - (midY - canvas.height * 0.5) / newScale;
+  scale  = newScale;
+
+  lastTouchDist = dist;
+  scheduleRender();
+}, { passive: false });
+
+canvasWrap.addEventListener('touchend', () => {
+  lastTouchDist = null; lastTouchMidGrid = null;
+}, { passive: true });
+
+// ---------------------------------------------------------------------------
+// Tooltip
+// ---------------------------------------------------------------------------
+
+/**
+ * Show an integer's value and factorization in both the fixed hover-info bar
+ * and a floating tooltip near the cursor.
+ */
+function updateTooltip(px, py, clientX, clientY, rect) {
+  const n = intAtScreen(px, py);
+
+  if (n === 0) {
+    tooltipEl.style.display = 'none';
+    hoverInfo.textContent   = '—';
+    return;
+  }
+
+  const factStr = factorString(n);
+  hoverInfo.textContent = factStr;
+
+  // Position tooltip so it stays inside the canvas
+  let tx = clientX - rect.left + 14;
+  let ty = clientY - rect.top  + 14;
+  if (tx + 250 > canvas.width)  tx = clientX - rect.left - 250;
+  if (ty + 56  > canvas.height) ty = clientY - rect.top  - 56;
+
+  tooltipEl.style.left    = `${tx}px`;
+  tooltipEl.style.top     = `${ty}px`;
+  tooltipEl.style.display = 'block';
+  tooltipEl.innerHTML     = `<b>${n}</b><br>${isPrime(n) ? 'prime' : factStr.split(' = ')[1] || factStr}`;
+}
+
+// ---------------------------------------------------------------------------
+// Toolbar
+// ---------------------------------------------------------------------------
+
+document.getElementById('color-mode').addEventListener('change', e => {
+  colorMode = e.target.value;
+  precomputeColors(colorMode);
+  updateLegend(colorMode);
+  render();
+});
+
+document.getElementById('reset-btn').addEventListener('click', () => {
+  fitToCanvas();
+  render();
+});
+
+// ---------------------------------------------------------------------------
+// Boot
+// ---------------------------------------------------------------------------
+
+precomputeColors(colorMode);
+updateLegend(colorMode);
+resize();
+</script>
+<script src="../../lib/panel.js"></script>
+<script>
+GalleryPanel.init({
+  title: 'How it works',
+  sections: [
+    {
+      heading: 'What is the Ulam spiral?',
+      body: 'In 1963 Stanisław Ulam, bored in a meeting, wrote integers in a square spiral and circled the primes. A stunning pattern appeared: primes cluster along diagonal lines instead of scattering uniformly. Write 1 at the centre, spiral outward — right one step, up one, left two, down two, right three… — mark every prime, and the diagonals leap out instantly.',
+    },
+    {
+      heading: 'Why do diagonals appear?',
+      body: 'Many prime-rich diagonals correspond to quadratic polynomials that avoid small prime factors for long stretches. For example, the polynomial n²+n+41 (Euler\'s lucky polynomial) is prime for n = 0…39 — forty consecutive values — and traces one of the densest diagonals visible here. A polynomial that cannot be divisible by 2, 3, or 5 for any integer n will produce a prime-dense arithmetic progression along a diagonal of the spiral.',
+    },
+    {
+      heading: "Dirichlet's theorem — switch to Residue mod 4",
+      body: "Dirichlet's theorem (1837) guarantees that every arithmetic progression a, a+d, a+2d,… with gcd(a,d)=1 contains infinitely many primes. In the Residue mod 4 colour mode, teal marks p ≡ 1 (mod 4) and rose marks p ≡ 3 (mod 4). Both classes contain infinitely many primes — roughly equally — but Chebyshev observed the rose class tends to lead: this is the prime race, and it's still not fully understood.",
+    },
+    {
+      heading: 'Smallest factor — see the sieve',
+      body: "Switch to Smallest factor mode: every multiple of 2 (blue) forms a regular diagonal lattice, multiples of 3 (green) another, and so on — you are literally watching the Sieve of Eratosthenes laid over the spiral. After removing all those coloured composites, the gold cells remain: the primes, impossible to rule out by any single small factor.",
+    },
+    {
+      heading: 'Open questions',
+      body: "Nobody knows why certain specific diagonals are far denser than others. It's conjectured but unproven that n²+1 takes infinitely many prime values, or that there are infinitely many twin primes (pairs p, p+2). The Riemann Hypothesis, if proved, would tightly constrain how far prime counts in arithmetic progressions can deviate from their average — making the density of diagonal streaks more predictable, but not explaining why particular ones are special.",
+    },
+  ],
+});
+</script>
+</body>
+</html>

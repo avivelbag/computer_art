@@ -878,5 +878,15 @@
         "path": "pieces/220-mandelbrot-julia",
         "thumbnail": "pieces/220-mandelbrot-julia/thumbnail.svg",
         "description": "A dual-panel WebGL fractal explorer that makes the Mandelbrot-to-Julia connection interactive. The left two-thirds renders the Mandelbrot set via a GLSL fragment shader with smooth escape-time colouring (continuous iteration count via n − log₂(log₂(|z|)), no banding). Hovering any point c in the Mandelbrot canvas immediately renders the corresponding Julia set J_c in a right panel using the same shader with c as a uniform. An orbit-trace overlay (2D canvas, pointer-events none) draws the iteration path for the hovered c as step-coloured circles connected by lines, showing whether the orbit escapes or converges. Controls: click-drag to pan, scroll-wheel to zoom toward the cursor, double-click to re-centre, max-iterations slider (64–2048), and a reset button. The GalleryPanel educational drawer covers what the Mandelbrot set is, how smooth colouring works, the M to Julia correspondence, and the infinite complexity of the boundary."
+    },
+    {
+        "id": "221-ulam-spiral",
+        "title": "Ulam Spiral — The Hidden Order of Primes",
+        "tagline": "200 000 integers arranged in a square spiral — primes glow in amber, revealing mysterious diagonal streaks that no one has fully explained",
+        "year": 2026,
+        "technique": "canvas / Ulam spiral / sieve of Eratosthenes / ImageData / zoom-pan / number theory",
+        "path": "pieces/221-ulam-spiral",
+        "thumbnail": "pieces/221-ulam-spiral/thumbnail.svg",
+        "description": "An interactive canvas that renders the Ulam prime spiral for all integers 1 to 200 000. A Sieve of Eratosthenes pre-computes smallest prime factors in O(N log log N); the spiral coordinates are stored in a 500×500 Uint32Array for O(1) cell lookup. Three colour modes expose different mathematical structure: monochrome (prime amber vs composite near-black) makes the diagonal streaks visible at a glance; residue mod 4 (teal for p≡1, rose for p≡3, Dirichlet's theorem) shows the prime race between the two residue classes; smallest-prime-factor colouring reveals the sieve of Eratosthenes itself laid over the grid. Zoom via scroll wheel (cursor stays fixed), pan via click-drag, and pinch-to-zoom on touch. Hovering any cell shows the integer and its full prime factorisation. A slide-out educational drawer explains the spiral layout, why diagonals form via prime-dense quadratic polynomials (Euler's lucky polynomial n²+n+41), Dirichlet's theorem on primes in arithmetic progressions, and the open questions that remain unsolved."
     }
 ]
