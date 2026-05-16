@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300" width="400" height="300">
+  <rect width="400" height="300" fill="#06061a"/>
+
+  <!-- Tangled chaotic trail — pendulum 1 (gold/amber) -->
+  <path d="M200,80 C240,130 280,170 260,210 C240,250 190,260 160,230 C130,200 140,150 170,120 C195,95 230,100 250,130 C270,160 265,200 240,220 C215,240 175,240 155,215 C135,190 145,155 168,135 C192,115 225,120 245,145 C262,168 258,205 238,222 C218,238 182,238 163,218 C143,197 152,161 175,143" fill="none" stroke="#c8a96e" stroke-width="1.4" opacity="0.9"/>
+  <path d="M175,143 C198,125 230,130 248,152 C265,175 260,210 240,225 C220,240 185,240 166,222 C146,203 154,165 176,148 C199,131 230,136 247,158" fill="none" stroke="#c8a96e" stroke-width="1.0" opacity="0.7"/>
+  <path d="M247,158 C263,180 258,213 239,227 C219,242 186,242 167,224 C148,206 156,170 178,152" fill="none" stroke="#c8a96e" stroke-width="0.7" opacity="0.5"/>
+  <path d="M200,80 C155,125 115,170 130,215 C145,255 195,262 225,235 C255,208 248,160 220,135 C198,115 168,118 150,142 C132,166 140,205 162,222 C184,238 220,235 238,212 C256,188 250,152 228,134" fill="none" stroke="#c8a96e" stroke-width="0.8" opacity="0.5"/>
+  <path d="M228,134 C206,117 175,120 158,143 C141,167 149,205 171,222 C193,238 228,235 245,212" fill="none" stroke="#c8a96e" stroke-width="0.5" opacity="0.35"/>
+
+  <!-- Tangled chaotic trail — twin pendulum (teal), diverging from gold -->
+  <path d="M200,80 C243,132 284,174 264,214 C244,254 193,263 163,233 C133,203 143,153 174,123 C199,97 234,103 254,133" fill="none" stroke="#4ecdc4" stroke-width="1.2" opacity="0.8"/>
+  <path d="M254,133 C274,163 268,202 244,221 C219,241 178,241 158,217 C138,193 148,157 171,138 C195,118 228,123 246,147 C264,172 259,207 237,224" fill="none" stroke="#4ecdc4" stroke-width="0.9" opacity="0.65"/>
+  <path d="M237,224 C215,241 179,241 160,220 C140,199 150,163 173,146" fill="none" stroke="#4ecdc4" stroke-width="0.6" opacity="0.45"/>
+  <path d="M200,80 C152,127 111,173 127,217 C143,257 194,265 228,237 C260,210 252,161 224,136" fill="none" stroke="#4ecdc4" stroke-width="0.65" opacity="0.4"/>
+
+  <!-- Pendulum structure at a snapshot position -->
+  <!-- Pivot -->
+  <circle cx="200" cy="80" r="4" fill="#333355"/>
+  <!-- Arm 1: ~135 degrees -->
+  <line x1="200" y1="80" x2="259" y2="151" stroke="#c8a96e" stroke-width="1.8" opacity="0.9"/>
+  <circle cx="259" cy="151" r="5" fill="#c8a96e" opacity="0.9"/>
+  <!-- Arm 2: ~-80 degrees from arm1 tip -->
+  <line x1="259" y1="151" x2="224" y2="226" stroke="#c8a96e" stroke-width="1.8" opacity="0.9"/>
+  <circle cx="224" cy="226" r="5" fill="#c8a96e" opacity="0.9"/>
+
+  <!-- Labels -->
+  <text x="270" y="148" font-family="system-ui,sans-serif" font-size="9" fill="#c8a96e" opacity="0.75">arm 1</text>
+  <text x="235" y="215" font-family="system-ui,sans-serif" font-size="9" fill="#4ecdc4" opacity="0.75">arm 2</text>
+
+  <!-- Legend -->
+  <line x1="14" y1="284" x2="28" y2="284" stroke="#c8a96e" stroke-width="1.5" opacity="0.8"/>
+  <text x="32" y="288" font-family="system-ui,sans-serif" font-size="9" fill="#c8a96e" opacity="0.8">pendulum 1</text>
+  <line x1="110" y1="284" x2="124" y2="284" stroke="#4ecdc4" stroke-width="1.5" opacity="0.8"/>
+  <text x="128" y="288" font-family="system-ui,sans-serif" font-size="9" fill="#4ecdc4" opacity="0.8">twin (Δθ₁ = 0.001°)</text>
+
+  <text x="200" y="16" font-family="system-ui,sans-serif" font-size="10" fill="#555" text-anchor="middle" letter-spacing="2">DOUBLE PENDULUM — CHAOS MADE VISIBLE</text>
+</svg>
