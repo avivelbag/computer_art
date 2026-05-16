@@ -83,7 +83,7 @@ lines.append(
 
 # Labels
 lines.append(
-    f'<text x="6" y="12" font-family="system-ui,sans-serif" font-size="9" fill="#555">harmonics</text>'
+    '<text x="6" y="12" font-family="system-ui,sans-serif" font-size="9" fill="#555">harmonics</text>'
 )
 lines.append(
     f'<text x="6" y="{UPPER_H + 12}" font-family="system-ui,sans-serif" font-size="9" fill="#555">sum</text>'
@@ -91,7 +91,7 @@ lines.append(
 
 svg = (
     f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {W} {H}" width="{W}" height="{H}">\n'
-    + "\n".join(f"  {l}" for l in lines)
+    + "\n".join(f"  {line}" for line in lines)
     + "\n</svg>\n"
 )
 
