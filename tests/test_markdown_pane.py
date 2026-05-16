@@ -27,8 +27,6 @@ def _render(text: str) -> str:
     Mirrors the exact same algorithm so tests can verify correctness of the
     logic without needing a headless browser.
     """
-    import html as html_mod
-
     def esc(s: str) -> str:
         return s.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;')
 
@@ -45,7 +43,7 @@ def _render(text: str) -> str:
 
     def flush_list() -> None:
         if lst:
-            out.append('<ul>' + ''.join(f'<li>{l}</li>' for l in lst) + '</ul>')
+            out.append('<ul>' + ''.join(f'<li>{item}</li>' for item in lst) + '</ul>')
             lst.clear()
 
     def flush_code() -> None:
