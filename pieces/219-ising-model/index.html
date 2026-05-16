@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Ising Model — The Temperature of Order</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: #0a0a14;
+      color: #aaa;
+      font: 11px/1.4 system-ui, sans-serif;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      overflow: hidden;
+      user-select: none;
+    }
+
+    #toolbar {
+      flex: 0 0 auto;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 7px 14px;
+      background: #0c0c1a;
+      border-bottom: 1px solid #151528;
+    }
+
+    #toolbar h1 {
+      font-size: 12px;
+      font-weight: 700;
+      color: #d4b896;
+      letter-spacing: 0.06em;
+      flex: 1;
+    }
+
+    button {
+      background: #1a1a2e;
+      border: 1px solid #2a2a44;
+      color: #aaa;
+      font: 10px system-ui, sans-serif;
+      padding: 4px 10px;
+      border-radius: 3px;
+      cursor: pointer;
+    }
+    button:hover { background: #222240; }
+
+    #main {
+      flex: 1 1 0;
+      display: flex;
+      min-height: 0;
+    }
+
+    #canvas-wrap {
+      flex: 1 1 0;
+      position: relative;
+      overflow: hidden;
+      cursor: crosshair;
+    }
+
+    #c {
+      display: block;
+      width: 100%;
+      height: 100%;
+      image-rendering: pixelated;
+    }
+
+    #sidebar {
+      flex: 0 0 216px;
+      background: #0c0c1c;
+      border-left: 1px solid #151528;
+      display: flex;
+      flex-direction: column;
+      padding: 14px 12px;
+      gap: 14px;
+      overflow-y: auto;
+    }
+
+    .section-label {
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: #d4b896;
+      margin-bottom: 6px;
+    }
+
+    .stat-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 10px;
+      color: #888;
+      padding: 2px 0;
+    }
+
+    .stat-val {
+      color: #e8d0a4;
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+    }
+
+    #temp-slider {
+      width: 100%;
+      margin: 6px 0 2px;
+      accent-color: #c8a060;
+      cursor: pointer;
+    }
+
+    .slider-labels {
+      display: flex;
+      justify-content: space-between;
+      font-size: 8px;
+      color: #555;
+    }
+
+    #tc-marker-wrap {
+      position: relative;
+      height: 16px;
+      margin: 2px 0 2px;
+    }
+
+    #tc-label {
+      position: absolute;
+      font-size: 8px;
+      color: #c8a060;
+      white-space: nowrap;
+      transform: translateX(-50%);
+      top: 0;
+    }
+
+    #sparkline {
+      display: block;
+      width: 100%;
+      height: 52px;
+      border: 1px solid #1a1a36;
+      border-radius: 2px;
+      margin-top: 6px;
+    }
+
+    #spark-label {
+      display: flex;
+      justify-content: space-between;
+      font-size: 8px;
+      color: #555;
+      margin-top: 3px;
+    }
+
+    .divider { border: none; border-top: 1px solid #1a1a30; }
+
+    .hint { font-size: 9px; color: #444; margin-top: 4px; }
+
+    #info-pane {
+      position: fixed;
+      top: 0; right: 0;
+      width: min(440px, 100vw);
+      height: 100vh;
+      background: #0d0d1e;
+      border-left: 1px solid #1e2040;
+      padding: 20px 18px 20px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      transform: translateX(100%);
+      transition: transform 0.2s ease;
+      z-index: 100;
+    }
+
+    #info-pane.open { transform: translateX(0); }
+
+    #info-pane h2 {
+      font-size: 13px;
+      color: #d4b896;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      padding-right: 30px;
+    }
+
+    .pane-section h3 {
+      font-size: 10px;
+      font-weight: 700;
+      color: #c8a060;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      margin-bottom: 5px;
+    }
+
+    .pane-section p {
+      font-size: 10.5px;
+      color: #bbb;
+      line-height: 1.75;
+      margin-bottom: 5px;
+    }
+
+    .pane-section code {
+      background: #12122a;
+      padding: 1px 5px;
+      border-radius: 2px;
+      font-size: 10px;
+      color: #e8d0a4;
+    }
+
+    #pane-close {
+      position: absolute;
+      top: 14px; right: 14px;
+    }
+  </style>
+</head>
+<body>
+
+<div id="toolbar">
+  <h1>Ising Model — The Temperature of Order</h1>
+  <button id="reset-btn">Reset</button>
+  <button id="info-btn">Info</button>
+</div>
+
+<div id="main">
+  <div id="canvas-wrap">
+    <canvas id="c"></canvas>
+  </div>
+
+  <div id="sidebar">
+    <div>
+      <div class="section-label">Temperature</div>
+      <div class="stat-row">
+        <span>T (units J/k)</span>
+        <span class="stat-val" id="t-val">2.27</span>
+      </div>
+      <input type="range" id="temp-slider" min="0.5" max="4.0" step="0.01" value="2.27"/>
+      <div class="slider-labels">
+        <span>0.5 ordered</span>
+        <span>4.0 disordered</span>
+      </div>
+      <div id="tc-marker-wrap">
+        <span id="tc-label">↑ Tc</span>
+      </div>
+    </div>
+
+    <hr class="divider"/>
+
+    <div>
+      <div class="section-label">Magnetisation</div>
+      <div class="stat-row">
+        <span>M = ⟨s⟩</span>
+        <span class="stat-val" id="m-val">—</span>
+      </div>
+      <div class="stat-row">
+        <span>|M|</span>
+        <span class="stat-val" id="mabs-val">—</span>
+      </div>
+      <canvas id="sparkline"></canvas>
+      <div id="spark-label">
+        <span>|M| over time</span>
+        <span>1.0 max</span>
+      </div>
+    </div>
+
+    <hr class="divider"/>
+
+    <div class="hint">Click any cell to flip that spin (defect injection).</div>
+  </div>
+</div>
+
+<!-- Info pane overlay -->
+<div id="info-pane">
+  <button id="pane-close">✕</button>
+  <h2>Ising Model — The Temperature of Order</h2>
+
+  <div class="pane-section">
+    <h3>Spins as Magnetic Dipoles</h3>
+    <p>Each cell represents an atom whose electrons give it a tiny magnetic moment called a <em>spin</em>, pointing either up (+1, warm linen) or down (−1, deep indigo). In a ferromagnet neighbouring spins prefer to align: parallel pairs lower the total energy by exchange coupling J. The Hamiltonian is H = −J Σ sᵢsⱼ over all nearest-neighbour pairs.</p>
+  </div>
+
+  <div class="pane-section">
+    <h3>The Boltzmann Factor</h3>
+    <p>The Metropolis–Hastings algorithm governs thermal fluctuations. Each animation frame N² candidate flips are attempted at randomly chosen sites. A flip that lowers energy (ΔE ≤ 0) is always accepted. A flip that raises energy by ΔE is accepted with probability <code>exp(−ΔE / kT)</code> — the Boltzmann factor.</p>
+    <p>High temperature makes unfavourable flips likely, dissolving order. Low temperature makes them vanishingly rare, locking spins into aligned domains. In a 2D square lattice the neighbour sum can only be −4, −2, 0, 2, or 4, so only two positive ΔE values arise (4J and 8J) — only two lookup values are needed per frame.</p>
+  </div>
+
+  <div class="pane-section">
+    <h3>The Curie Temperature & Phase Transition</h3>
+    <p>Below Tc spontaneous magnetisation appears: large aligned domains of one colour dominate and |M| → 1. Above Tc thermal noise overwhelms the coupling and the lattice becomes disordered (paramagnetic), |M| → 0.</p>
+    <p>Right at Tc the system is <em>scale-free</em>: domains of every size coexist in fractal "critical opalescence." Drag the slider through Tc and watch the magnetisation sparkline collapse or recover. A defect injected below Tc into a large domain quickly heals; above Tc it spreads freely.</p>
+  </div>
+
+  <div class="pane-section">
+    <h3>Onsager's Exact Solution (1944)</h3>
+    <p>Lars Onsager derived the exact free energy of the 2D square-lattice Ising model — a landmark of mathematical physics. The critical temperature in units J/k is:</p>
+    <p style="text-align:center; margin: 6px 0">
+      <code>Tc = 2 / ln(1 + √2) ≈ 2.2692</code>
+    </p>
+    <p>The spontaneous magnetisation below Tc obeys <code>M ~ (1 − sinh⁻⁴(2J/kT))^(1/8)</code>. The heat capacity diverges logarithmically at Tc — a genuine phase transition with critical exponent α = 0. No closed-form exact solution exists in 3D; the 3D critical temperature must be found numerically.</p>
+  </div>
+
+  <div class="pane-section">
+    <h3>Domain Formation</h3>
+    <p>Below Tc domains nucleate and coarsen over time: spins form large same-sign islands because each domain-wall bond costs energy 2J. The system slowly minimises wall area. Above Tc domain walls proliferate freely — the cost is overwhelmed by the entropy gained from disorder. The crossover is sharp: the correlation length diverges as ξ ~ |T − Tc|^(−ν) with ν = 1 in 2D, meaning fluctuations of every scale appear exactly at Tc.</p>
+  </div>
+</div>
+
+<script>
+  const N = 200;
+  const Tc = 2 / Math.log(1 + Math.SQRT2); // 2D square lattice exact Curie point
+
+  // Pixel colours for the two spin states
+  const C_UP   = [0xf5, 0xea, 0xd8]; // warm linen  (#f5ead8) for spin +1
+  const C_DOWN = [0x1a, 0x10, 0x40]; // deep indigo (#1a1040) for spin -1
+
+  const canvas  = document.getElementById('c');
+  const ctx     = canvas.getContext('2d');
+  // Off-screen N×N canvas holds raw pixel data before scaling to display
+  const offCanvas = new OffscreenCanvas(N, N);
+  const offCtx    = offCanvas.getContext('2d');
+
+  const sparkCanvas = document.getElementById('sparkline');
+  const sCtx        = sparkCanvas.getContext('2d');
+
+  const SPARK_LEN = 400;
+  const sparkBuf  = new Float32Array(SPARK_LEN);
+  let   sparkHead = 0;
+  let   sparkCount = 0;
+
+  const spins = new Int8Array(N * N); // values: +1 or -1
+  let T  = parseFloat(document.getElementById('temp-slider').value);
+  let e4 = 0, e8 = 0; // Boltzmann lookup for ΔE = 4 and 8
+
+  // ---- Initialisation ----------------------------------------------------------------
+
+  function updateBoltzmann() {
+    e4 = Math.exp(-4 / T);
+    e8 = Math.exp(-8 / T);
+  }
+
+  function initSpins() {
+    for (let i = 0; i < N * N; i++) spins[i] = Math.random() < 0.5 ? 1 : -1;
+    sparkHead = 0;
+    sparkCount = 0;
+    sparkBuf.fill(0);
+  }
+
+  // ---- Metropolis–Hastings step ------------------------------------------------------
+
+  function metropolisStep() {
+    const NN = N * N;
+    for (let k = 0; k < NN; k++) {
+      const i   = (Math.random() * N) | 0;
+      const j   = (Math.random() * N) | 0;
+      const idx = i * N + j;
+      const s   = spins[idx];
+      // Neighbour sum on periodic (toroidal) boundary
+      const nSum = spins[((i - 1 + N) % N) * N + j]
+                 + spins[((i + 1)     % N) * N + j]
+                 + spins[i * N + (j - 1 + N) % N]
+                 + spins[i * N + (j + 1)     % N];
+      const dE = 2 * s * nSum; // energy change from flipping spin at (i,j)
+      if (dE <= 0 || Math.random() < (dE === 4 ? e4 : e8)) {
+        spins[idx] = -s;
+      }
+    }
+  }
+
+  // ---- Observables ------------------------------------------------------------------
+
+  function computeM() {
+    let sum = 0;
+    for (let i = 0; i < N * N; i++) sum += spins[i];
+    return sum / (N * N);
+  }
+
+  // ---- Rendering --------------------------------------------------------------------
+
+  function render() {
+    const img = offCtx.createImageData(N, N);
+    const d   = img.data;
+    for (let i = 0; i < N * N; i++) {
+      const c = spins[i] > 0 ? C_UP : C_DOWN;
+      const p = i << 2;
+      d[p]     = c[0];
+      d[p + 1] = c[1];
+      d[p + 2] = c[2];
+      d[p + 3] = 255;
+    }
+    offCtx.putImageData(img, 0, 0);
+    ctx.drawImage(offCanvas, 0, 0, canvas.width, canvas.height);
+  }
+
+  function renderSparkline() {
+    const W = sparkCanvas.width;
+    const H = sparkCanvas.height;
+    sCtx.fillStyle = '#08081c';
+    sCtx.fillRect(0, 0, W, H);
+    if (sparkCount < 2) return;
+
+    // Draw |M| = 1 reference line
+    sCtx.strokeStyle = '#2a2a44';
+    sCtx.lineWidth = 1;
+    sCtx.beginPath();
+    sCtx.moveTo(0, 1); sCtx.lineTo(W, 1);
+    sCtx.stroke();
+
+    sCtx.strokeStyle = '#c8a060';
+    sCtx.lineWidth = 1.5;
+    sCtx.beginPath();
+    for (let k = 0; k < sparkCount; k++) {
+      const idx = (sparkHead - sparkCount + k + SPARK_LEN) % SPARK_LEN;
+      const val = sparkBuf[idx];
+      const x   = (k / (SPARK_LEN - 1)) * W;
+      const y   = H - val * (H - 2) - 1;
+      k === 0 ? sCtx.moveTo(x, y) : sCtx.lineTo(x, y);
+    }
+    sCtx.stroke();
+  }
+
+  // ---- Resize -----------------------------------------------------------------------
+
+  function resize() {
+    const wrap = document.getElementById('canvas-wrap');
+    canvas.width  = wrap.clientWidth;
+    canvas.height = wrap.clientHeight;
+    sparkCanvas.width  = sparkCanvas.clientWidth  || 190;
+    sparkCanvas.height = sparkCanvas.clientHeight || 52;
+  }
+
+  // ---- UI interactions --------------------------------------------------------------
+
+  // Position the Tc marker on the slider track
+  function positionTcMarker() {
+    const pct = ((Tc - 0.5) / (4.0 - 0.5)) * 100;
+    document.getElementById('tc-label').style.left = pct.toFixed(1) + '%';
+  }
+
+  document.getElementById('temp-slider').addEventListener('input', e => {
+    T = parseFloat(e.target.value);
+    document.getElementById('t-val').textContent = T.toFixed(3);
+    updateBoltzmann();
+  });
+
+  document.getElementById('reset-btn').addEventListener('click', () => {
+    initSpins();
+  });
+
+  const infoPane = document.getElementById('info-pane');
+  document.getElementById('info-btn').addEventListener('click', () => {
+    infoPane.classList.add('open');
+  });
+  document.getElementById('pane-close').addEventListener('click', () => {
+    infoPane.classList.remove('open');
+  });
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') infoPane.classList.remove('open');
+  });
+
+  // Click on canvas to flip the spin at the clicked cell (defect injection)
+  canvas.addEventListener('click', e => {
+    const rect = canvas.getBoundingClientRect();
+    const px = (e.clientX - rect.left) / rect.width;
+    const py = (e.clientY - rect.top)  / rect.height;
+    const i  = Math.min(N - 1, (py * N) | 0);
+    const j  = Math.min(N - 1, (px * N) | 0);
+    spins[i * N + j] *= -1;
+  });
+
+  window.addEventListener('resize', resize);
+
+  // ---- Animation loop ---------------------------------------------------------------
+
+  function frame() {
+    metropolisStep();
+
+    const M    = computeM();
+    const absM = Math.abs(M);
+
+    sparkBuf[sparkHead] = absM;
+    sparkHead = (sparkHead + 1) % SPARK_LEN;
+    if (sparkCount < SPARK_LEN) sparkCount++;
+
+    document.getElementById('m-val').textContent    = M.toFixed(3);
+    document.getElementById('mabs-val').textContent = absM.toFixed(3);
+
+    render();
+    renderSparkline();
+    requestAnimationFrame(frame);
+  }
+
+  // ---- Boot -------------------------------------------------------------------------
+
+  resize();
+  positionTcMarker();
+  updateBoltzmann();
+  initSpins();
+  document.getElementById('t-val').textContent = T.toFixed(3);
+  requestAnimationFrame(frame);
+</script>
+</body>
+</html>

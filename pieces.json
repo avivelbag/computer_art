@@ -858,5 +858,15 @@
         "path": "pieces/218-sir-epidemic",
         "thumbnail": "pieces/218-sir-epidemic/thumbnail.svg",
         "description": "A dual-panel epidemic simulation: on the left 300 colour-coded particles (blue=susceptible, red=infected, green=recovered) bounce around a box, infecting neighbours on contact; on the right a live S/I/R line chart records the population counts over time, revealing the characteristic bell-shaped infected curve. Four sliders tune transmission rate β (0.1–1.0), recovery rate γ (0.05–0.5), initial infected count, and vaccination fraction; the reproduction number R₀ = β/γ updates in real time with a colour cue (green when R₀ < 1, red otherwise). A slide-out panel explains the dS/dt, dI/dt, dR/dt differential equations and the flatten-the-curve insight in plain prose."
+    },
+    {
+        "id": "219-ising-model",
+        "title": "Ising Model — The Temperature of Order",
+        "tagline": "A 200×200 spin lattice driven by Metropolis–Hastings Monte Carlo — drag temperature through the Curie point and watch ferromagnetic domains melt into paramagnetic chaos",
+        "year": 2026,
+        "technique": "canvas / Ising model / Metropolis–Hastings Monte Carlo / ImageData / statistical mechanics",
+        "path": "pieces/219-ising-model",
+        "thumbnail": "pieces/219-ising-model/thumbnail.svg",
+        "description": "A 200×200 spin lattice of +1/−1 magnetic dipoles (warm linen and deep indigo) evolves under the Metropolis–Hastings Monte Carlo algorithm with N² flip attempts per frame. The temperature slider spans T = 0.5 (ordered ferromagnet) through Tc ≈ 2.269 (Onsager's exact 2D critical point, marked) to T = 4.0 (paramagnetic disorder). Only two Boltzmann lookup values are needed per frame (exp(−4/T) and exp(−8/T)). A live readout shows current temperature, net magnetisation M, and a rolling sparkline of |M| over time so the phase transition is graphable. Clicking any cell flips that spin as a defect injection. An info pane covers spins as magnetic dipoles, the Boltzmann factor, the Curie temperature, domain formation, and Onsager's 1944 exact solution."
     }
 ]
