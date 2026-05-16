@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Piece 232 — Rössler Attractor Ensemble</title>
+<link rel="stylesheet" href="../../lib/panel.css"/>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{
+  background:#050510;
+  color:#888;
+  font:12px/1.5 system-ui,sans-serif;
+  display:flex;
+  flex-direction:column;
+  height:100vh;
+  overflow:hidden;
+  user-select:none;
+}
+#canvas-wrap{
+  flex:1 1 0;
+  position:relative;
+  min-height:0;
+}
+canvas{display:block;width:100%;height:100%}
+#chaos-meter{
+  position:absolute;
+  top:12px;left:12px;
+  background:rgba(5,5,22,0.85);
+  border:1px solid #1a1a32;
+  border-radius:4px;
+  padding:8px 12px 9px;
+  min-width:160px;
+}
+.cm-title{
+  font-size:9px;
+  color:#7ec8e3;
+  letter-spacing:0.10em;
+  text-transform:uppercase;
+  margin-bottom:6px;
+}
+#chaos-bar-wrap{
+  background:#0a0a20;
+  border-radius:2px;
+  height:5px;
+  overflow:hidden;
+  margin-bottom:5px;
+}
+#chaos-bar{
+  height:100%;
+  width:0%;
+  background:linear-gradient(90deg,#22cc88,#ffaa22,#ff3366);
+  border-radius:2px;
+}
+#chaos-val{font-size:9px;color:#aaa}
+#controls{
+  flex:0 0 auto;
+  background:#060618;
+  border-top:1px solid #14143a;
+  padding:7px 14px 9px;
+  display:flex;
+  align-items:center;
+  gap:14px;
+  flex-wrap:wrap;
+}
+.ctrl{display:flex;align-items:center;gap:6px;flex:1;min-width:100px}
+.ctrl label{
+  font-size:10px;
+  color:#7ec8e3;
+  letter-spacing:0.06em;
+  text-transform:uppercase;
+  white-space:nowrap;
+  min-width:20px;
+}
+.ctrl input[type=range]{flex:1;accent-color:#7ec8e3;cursor:pointer}
+.ctrl .val{font-size:10px;color:#aaa;min-width:38px;text-align:right}
+button{
+  background:#0a0a22;
+  border:1px solid #22224a;
+  color:#777;
+  font:10px system-ui,sans-serif;
+  padding:4px 10px;
+  border-radius:3px;
+  cursor:pointer;
+  letter-spacing:0.04em;
+  transition:background 0.12s,color 0.12s;
+}
+button:hover{background:#14143a;color:#bbb}
+</style>
+</head>
+<body>
+<div id="canvas-wrap">
+  <canvas id="c"></canvas>
+  <div id="chaos-meter">
+    <div class="cm-title">Chaos Meter</div>
+    <div id="chaos-bar-wrap"><div id="chaos-bar"></div></div>
+    <div id="chaos-val">&#916;r = 0.000</div>
+  </div>
+</div>
+<div id="controls">
+  <div class="ctrl">
+    <label>a</label>
+    <input type="range" id="sl-a" min="0.10" max="0.40" value="0.20" step="0.01"/>
+    <span class="val" id="v-a">0.20</span>
+  </div>
+  <div class="ctrl">
+    <label>b</label>
+    <input type="range" id="sl-b" min="0.10" max="0.40" value="0.20" step="0.01"/>
+    <span class="val" id="v-b">0.20</span>
+  </div>
+  <div class="ctrl">
+    <label>c</label>
+    <input type="range" id="sl-c" min="4.0" max="8.0" value="5.7" step="0.1"/>
+    <span class="val" id="v-c">5.7</span>
+  </div>
+  <div class="ctrl">
+    <label>x&#8320;</label>
+    <input type="range" id="sl-x0" min="-4.0" max="4.0" value="0.0" step="0.1"/>
+    <span class="val" id="v-x0">0.0</span>
+  </div>
+  <button id="btn-reset">Reset</button>
+</div>
+
+<script>
+// ---------------------------------------------------------------------------
+// Constants
+// ---------------------------------------------------------------------------
+const N_TRAJ = 7;
+const TRAIL_MAX = 500;
+const TRAIL_BUCKETS = 16;
+const STEPS_PER_FRAME = 3;
+const DT = 0.025;
+
+// Spectral hues for 7 trajectories: red → orange → yellow → green → cyan → blue → violet
+const HUES = [0, 40, 75, 130, 185, 230, 280];
+
+// Initial x offsets: k * 0.01 for k in {-3,-2,-1,0,1,2,3}
+const OFFSETS = [-3, -2, -1, 0, 1, 2, 3].map(k => k * 0.01);
+
+// Index of the unperturbed reference trajectory (k=0)
+const REF_IDX = 3;
+
+// Saturation distance (x-y plane) at which the chaos bar fills completely
+const CHAOS_SAT = 25.0;
+
+// ---------------------------------------------------------------------------
+// Simulation state
+// ---------------------------------------------------------------------------
+let paramA = 0.20, paramB = 0.20, paramC = 5.7, x0 = 0.0;
+
+/** State vectors [x, y, z] for each trajectory. */
+let states = [];
+
+/** Trail arrays of canvas {x, y} points, one per trajectory. */
+let trails = [];
+
+/**
+ * Reset all trajectories to their initial states and clear trail data.
+ * Each trajectory gets x₀ offset by OFFSETS[i] from the slider-controlled x0.
+ */
+function init() {
+  states = OFFSETS.map(off => [x0 + off, 0.0, 0.0]);
+  trails = Array.from({length: N_TRAJ}, () => []);
+  updateChaos(0);
+}
+
+// ---------------------------------------------------------------------------
+// Physics — Rössler attractor equations of motion
+// ---------------------------------------------------------------------------
+
+/**
+ * Compute time derivatives of [x, y, z] for the Rössler system.
+ *   dx/dt = -(y + z)
+ *   dy/dt = x + a·y
+ *   dz/dt = b + z·(x - c)
+ * Uses slider-controlled paramA, paramB, paramC.
+ *
+ * @param {[number,number,number]} s - Current state [x, y, z]
+ * @returns {[number,number,number]}
+ */
+function deriv(s) {
+  const [x, y, z] = s;
+  return [
+    -(y + z),
+    x + paramA * y,
+    paramB + z * (x - paramC),
+  ];
+}
+
+/**
+ * Advance state by one 4th-order Runge-Kutta step of size DT.
+ *
+ * @param {[number,number,number]} s
+ * @returns {[number,number,number]}
+ */
+function rk4(s) {
+  const k1 = deriv(s);
+  const s2 = s.map((v, i) => v + 0.5 * DT * k1[i]);
+  const k2 = deriv(s2);
+  const s3 = s.map((v, i) => v + 0.5 * DT * k2[i]);
+  const k3 = deriv(s3);
+  const s4 = s.map((v, i) => v + DT * k3[i]);
+  const k4 = deriv(s4);
+  return s.map((v, i) => v + (DT / 6) * (k1[i] + 2 * k2[i] + 2 * k3[i] + k4[i]));
+}
+
+// ---------------------------------------------------------------------------
+// Projection & coordinate mapping
+// ---------------------------------------------------------------------------
+
+/**
+ * Map Rössler x-y coordinates to canvas pixels.
+ * The attractor extends roughly ±15 units in x and y.
+ *
+ * @param {number} rx - Rössler x coordinate
+ * @param {number} ry - Rössler y coordinate
+ * @param {number} cx - Canvas centre x
+ * @param {number} cy - Canvas centre y
+ * @param {number} sc - Pixels per unit
+ * @returns {{px:number,py:number}}
+ */
+function toCanvas(rx, ry, cx, cy, sc) {
+  return {px: cx + sc * rx, py: cy - sc * ry};
+}
+
+// ---------------------------------------------------------------------------
+// Rendering
+// ---------------------------------------------------------------------------
+
+/**
+ * Draw a fading trail for one trajectory using TRAIL_BUCKETS segments.
+ * Recent segments are drawn brighter; older segments are dim.
+ *
+ * @param {Array<{x:number,y:number}>} trail
+ * @param {number} hue - HSL hue in degrees
+ */
+function drawTrail(trail, hue) {
+  if (trail.length < 2) return;
+  const n = trail.length;
+  for (let b = 0; b < TRAIL_BUCKETS; b++) {
+    const i0 = Math.floor(b * n / TRAIL_BUCKETS);
+    const i1 = Math.floor((b + 1) * n / TRAIL_BUCKETS);
+    if (i1 <= i0) continue;
+    const t = (b + 1) / TRAIL_BUCKETS;
+    const alpha = t * t * 0.88;
+    const lightness = Math.round(28 + 32 * t);
+    ctx.beginPath();
+    ctx.moveTo(trail[i0].x, trail[i0].y);
+    for (let i = i0 + 1; i <= i1; i++) ctx.lineTo(trail[i].x, trail[i].y);
+    ctx.strokeStyle = `hsla(${hue},80%,${lightness}%,${alpha.toFixed(3)})`;
+    ctx.lineWidth = 0.5 + 1.2 * t;
+    ctx.stroke();
+  }
+}
+
+/**
+ * Draw a small dot at the current position of a trajectory.
+ *
+ * @param {number} px - Canvas x
+ * @param {number} py - Canvas y
+ * @param {number} hue
+ * @param {number} alpha
+ */
+function drawDot(px, py, hue, alpha) {
+  ctx.globalAlpha = alpha;
+  ctx.beginPath();
+  ctx.arc(px, py, 3.2, 0, Math.PI * 2);
+  ctx.fillStyle = `hsl(${hue},80%,70%)`;
+  ctx.fill();
+  ctx.globalAlpha = 1.0;
+}
+
+// ---------------------------------------------------------------------------
+// Chaos meter
+// ---------------------------------------------------------------------------
+
+/**
+ * Update the Chaos Meter UI with the current max divergence value.
+ * Normalizes to [0,1] using CHAOS_SAT as the saturation distance.
+ *
+ * @param {number} maxDist - Max Euclidean distance in x-y from reference trajectory
+ */
+function updateChaos(maxDist) {
+  const pct = Math.min(100, (maxDist / CHAOS_SAT) * 100);
+  document.getElementById('chaos-bar').style.width = pct.toFixed(1) + '%';
+  document.getElementById('chaos-val').textContent =
+    'Δr = ' + maxDist.toFixed(3);
+}
+
+// ---------------------------------------------------------------------------
+// Canvas & animation
+// ---------------------------------------------------------------------------
+
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+let W = 0, H = 0;
+
+function resize() {
+  const wrap = document.getElementById('canvas-wrap');
+  W = wrap.clientWidth;
+  H = wrap.clientHeight;
+  canvas.width = W;
+  canvas.height = H;
+}
+
+let hidden = false;
+document.addEventListener('visibilitychange', () => {
+  hidden = document.hidden;
+  if (!hidden) requestAnimationFrame(loop);
+});
+
+function loop() {
+  if (hidden) return;
+
+  for (let step = 0; step < STEPS_PER_FRAME; step++) {
+    states = states.map(rk4);
+  }
+
+  const cx = W / 2;
+  const cy = H / 2;
+  const sc = Math.min(W, H) / 44;
+
+  // Append current x-y canvas position to each trail
+  states.forEach((s, i) => {
+    const {px, py} = toCanvas(s[0], s[1], cx, cy, sc);
+    trails[i].push({x: px, y: py});
+    if (trails[i].length > TRAIL_MAX) trails[i].shift();
+  });
+
+  // Chaos divergence: max Euclidean distance in x-y from the reference trajectory
+  const [rx, ry] = states[REF_IDX];
+  let maxDist = 0;
+  states.forEach((s, i) => {
+    if (i !== REF_IDX) {
+      const d = Math.sqrt((s[0] - rx) ** 2 + (s[1] - ry) ** 2);
+      if (d > maxDist) maxDist = d;
+    }
+  });
+  updateChaos(maxDist);
+
+  // Clear canvas
+  ctx.fillStyle = '#050510';
+  ctx.fillRect(0, 0, W, H);
+
+  // Draw trails (non-reference first so reference sits on top)
+  HUES.forEach((hue, i) => { if (i !== REF_IDX) drawTrail(trails[i], hue); });
+  drawTrail(trails[REF_IDX], HUES[REF_IDX]);
+
+  // Draw current-position dots
+  states.forEach((s, i) => {
+    const {px, py} = toCanvas(s[0], s[1], cx, cy, sc);
+    const alpha = i === REF_IDX ? 0.92 : 0.55;
+    drawDot(px, py, HUES[i], alpha);
+  });
+
+  requestAnimationFrame(loop);
+}
+
+// ---------------------------------------------------------------------------
+// Slider wiring
+// ---------------------------------------------------------------------------
+
+document.getElementById('sl-a').addEventListener('input', function () {
+  paramA = parseFloat(this.value);
+  document.getElementById('v-a').textContent = paramA.toFixed(2);
+  init();
+});
+document.getElementById('sl-b').addEventListener('input', function () {
+  paramB = parseFloat(this.value);
+  document.getElementById('v-b').textContent = paramB.toFixed(2);
+  init();
+});
+document.getElementById('sl-c').addEventListener('input', function () {
+  paramC = parseFloat(this.value);
+  document.getElementById('v-c').textContent = paramC.toFixed(1);
+  init();
+});
+document.getElementById('sl-x0').addEventListener('input', function () {
+  x0 = parseFloat(this.value);
+  document.getElementById('v-x0').textContent = x0.toFixed(1);
+  init();
+});
+document.getElementById('btn-reset').addEventListener('click', init);
+
+window.addEventListener('resize', () => { resize(); init(); });
+
+// ---------------------------------------------------------------------------
+// Boot
+// ---------------------------------------------------------------------------
+resize();
+init();
+requestAnimationFrame(loop);
+</script>
+
+<script src="../../lib/panel.js"></script>
+<script>
+GalleryPanel.init({
+  title: 'Rössler Attractor — Ensemble Divergence',
+  sections: [
+    {
+      heading: 'The Rössler system',
+      body: 'In 1976 Otto Rössler wrote down the simplest autonomous 3D flow he could find that produces a strange attractor: dx/dt = −y − z, dy/dt = x + a·y, dz/dt = b + z·(x − c). With a = b = 0.2, c = 5.7 the orbit spirals outward on an x-y plane, folds over through z, and returns to spiral again — never repeating, never escaping. The attractor is topologically a Möbius band in phase space: each loop is slightly different from the last.',
+    },
+    {
+      heading: 'Why it is chaotic',
+      body: 'The z-term z·(x − c) is the single nonlinearity. When x < c the factor (x − c) is negative, damping z back toward zero; when x > c it is positive, causing z to grow exponentially and "kick" the trajectory back to small x. This intermittent stretching and folding is the geometric essence of chaos. Liénard\'s theorem shows that no closed orbit can exist in three dimensions with this topology — the system is non-integrable, and no third conserved quantity exists to confine trajectories to a 2D surface.',
+    },
+    {
+      heading: 'Ensemble and sensitive dependence',
+      body: 'Seven identical Rössler systems start with x₀ values differing by only 0.01 between neighbors (about 10⁻² of the attractor diameter). Each trajectory is a different color from red through violet. For the first few spirals the trails overlap; then, exponentially amplified by the stretch-fold mechanism, they diverge until they are uncorrelated. The Chaos Meter tracks the maximum Euclidean distance in the x-y projection between the center trajectory and any other — watch it climb from 0 to saturation.',
+    },
+    {
+      heading: 'Lyapunov exponents',
+      body: 'The maximal Lyapunov exponent λ ≈ 0.07 s⁻¹ for the classic parameters (a=b=0.2, c=5.7) — much smaller than the double pendulum\'s λ ≈ 3–7 s⁻¹, so divergence is gentler and the spiral geometry survives longer. The parameter c is the main chaos dial: near c = 4.0 the system has a stable limit cycle; as c increases past ≈ 5 period-doubling cascades lead to chaos. Slide c downward to watch the seven trails collapse back to a single periodic orbit.',
+    },
+    {
+      heading: 'Try it',
+      body: 'Lower c toward 4.0 to watch the chaotic ensemble collapse to a single periodic limit cycle — all seven trails lock to the same closed curve. Raise c toward 8.0 for wilder, more irregular spirals. Change a to widen or narrow the spiral arms. Drag x₀ to a large value to start all trajectories in an unusual region and observe transient behavior before the attractor takes over. Hit Reset anytime to restart cleanly.',
+    },
+  ],
+});
+</script>
+</body>
+</html>

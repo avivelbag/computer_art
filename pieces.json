@@ -918,5 +918,15 @@
         "path": "pieces/228-fourier-epicycles",
         "thumbnail": "pieces/228-fourier-epicycles/thumbnail.svg",
         "description": "An interactive canvas that decomposes any closed 2D path into rotating circles (epicycles) via the Discrete Fourier Transform. Both x and y coordinates are packed into a single complex signal z[n] = x[n] + i·y[n]; the DFT X[k] = (1/N) Σ z[n]·e^(−i2πkn/N) extracts N frequency components, each with a radius |X[k]| and starting angle arg(X[k]). Components are sorted by amplitude so the +/− buttons add harmonics in order of visual impact. Default paths are a parametric heart (16 sin³t, −(13 cos t − 5 cos 2t − 2 cos 3t − cos 4t)) and a lemniscate of Bernoulli. Clicking ✏ Draw Path enters draw mode: drag any closed shape, release, and the piece resamples the stroke to 512 arc-length-uniform points, runs the O(N²) DFT (< 30 ms), and immediately starts the epicycle replay. The white trace fades in 16 alpha buckets; after one 5-second revolution it perfectly retraces the approximation. A slide-out educational panel covers the DFT formula, what each circle's radius and speed represent, how JPEG compression uses the same idea, and the Gibbs phenomenon at sharp corners."
+    },
+    {
+        "id": "232-rossler-ensemble",
+        "title": "Rössler Attractor — Ensemble Divergence",
+        "tagline": "Seven Rössler orbits started 0.01 apart spiral and diverge exponentially — deterministic chaos on a strange attractor with Möbius-band topology",
+        "year": 2026,
+        "technique": "canvas / Rössler attractor / chaos theory / RK4 integration / multi-trajectory / Lyapunov exponent / x-y projection",
+        "path": "pieces/232-rossler-ensemble",
+        "thumbnail": "pieces/232-rossler-ensemble/thumbnail.svg",
+        "description": "Seven Rössler systems (dx/dt = -(y+z), dy/dt = x+a·y, dz/dt = b+z·(x-c)) start with x₀ offsets of 0.01 between neighbors, integrated simultaneously via 4th-order Runge-Kutta and projected onto the x-y plane. Each orbit traces a colored trail (spectral palette: red through violet) that persists and fades over 500 frames on a near-black canvas, showing the characteristic spiral-and-fold topology of the Rössler strange attractor. A live Chaos Meter tracks max Euclidean distance in x-y from the center trajectory, revealing how the Lyapunov exponent (λ ≈ 0.07 s⁻¹) slowly amplifies the 0.01-unit offset. Sliders control parameters a, b, c, and initial x₀; dragging c below 5 collapses all seven trails to a single periodic orbit."
     }
 ]
