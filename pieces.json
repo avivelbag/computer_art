@@ -848,5 +848,15 @@
         "path": "pieces/216-double-slit",
         "thumbnail": "pieces/216-double-slit/thumbnail.svg",
         "description": "A split-canvas simulation of Fraunhofer diffraction. The left 60% renders a top-down wave-propagation view: a plane wave hits a barrier with N slit openings; cylindrical waves radiate outward from each slit and their superposition creates a live animated interference pattern. The right 40% is the detector screen, computing the analytical intensity I(θ) = sinc²(πa·sinθ/λ) × [sin(Nδ)/(N·sinδ)]² for the current controls and displaying it as a bright vertical intensity bar with a profile curve. Sliders control slit separation d (0.5λ – 5λ), slit width a (0.1λ – 2λ), and wavelength (380 – 700 nm with live color preview); buttons toggle between single slit, double slit, and 5-slit diffraction grating. A slide-out panel covers the Huygens-Fresnel principle, fringe position equations, Young’s 1801 experiment, and the quantum-mechanical connection via the de Broglie wavelength."
+    },
+    {
+        "id": "218-sir-epidemic",
+        "title": "SIR Epidemic: The Curve We Tried to Flatten",
+        "tagline": "300 particles bounce and infect in real time as the live S/I/R chart traces the bell-shaped epidemic curve — tune β, γ, and vaccination to flatten it",
+        "year": 2026,
+        "technique": "canvas / SIR epidemic model / particle simulation / requestAnimationFrame",
+        "path": "pieces/218-sir-epidemic",
+        "thumbnail": "pieces/218-sir-epidemic/thumbnail.svg",
+        "description": "A dual-panel epidemic simulation: on the left 300 colour-coded particles (blue=susceptible, red=infected, green=recovered) bounce around a box, infecting neighbours on contact; on the right a live S/I/R line chart records the population counts over time, revealing the characteristic bell-shaped infected curve. Four sliders tune transmission rate β (0.1–1.0), recovery rate γ (0.05–0.5), initial infected count, and vaccination fraction; the reproduction number R₀ = β/γ updates in real time with a colour cue (green when R₀ < 1, red otherwise). A slide-out panel explains the dS/dt, dI/dt, dR/dt differential equations and the flatten-the-curve insight in plain prose."
     }
 ]
