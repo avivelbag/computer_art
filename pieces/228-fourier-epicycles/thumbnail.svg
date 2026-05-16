@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300" width="400" height="300">
+  <rect width="400" height="300" fill="#060612"/>
+
+  <!-- Outer epicycle ring -->
+  <circle cx="200" cy="148" r="85" fill="none" stroke="rgba(192,160,60,0.32)" stroke-width="1.2"/>
+  <!-- Mid epicycle ring -->
+  <circle cx="285" cy="148" r="38" fill="none" stroke="rgba(192,160,60,0.32)" stroke-width="1.2"/>
+  <!-- Inner epicycle ring -->
+  <circle cx="323" cy="148" r="16" fill="none" stroke="rgba(192,160,60,0.32)" stroke-width="1.2"/>
+  <!-- Tiny ring -->
+  <circle cx="339" cy="148" r="6" fill="none" stroke="rgba(192,160,60,0.32)" stroke-width="1.2"/>
+
+  <!-- Spokes -->
+  <line x1="200" y1="148" x2="285" y2="148" stroke="rgba(192,160,60,0.6)" stroke-width="1.2"/>
+  <line x1="285" y1="148" x2="323" y2="148" stroke="rgba(192,160,60,0.6)" stroke-width="1.2"/>
+  <line x1="323" y1="148" x2="339" y2="148" stroke="rgba(192,160,60,0.6)" stroke-width="1.2"/>
+  <line x1="339" y1="148" x2="345" y2="142" stroke="rgba(192,160,60,0.6)" stroke-width="1.2"/>
+
+  <!-- Traced heart path (approximate) -->
+  <path d="M 200 192
+           C 168 170 130 158 130 132
+           C 130 112 148 104 162 112
+           C 172 118 178 128 182 138
+           C 186 128 192 118 202 112
+           C 216 104 234 112 234 132
+           C 234 158 200 178 200 192 Z"
+        fill="none"
+        stroke="rgba(255,255,255,0.75)"
+        stroke-width="1.5"
+        stroke-linejoin="round"/>
+
+  <!-- Fading tail segments (older, fainter) -->
+  <path d="M 200 192 C 195 186 190 180 186 174"
+        fill="none" stroke="rgba(255,255,255,0.25)" stroke-width="1.5"/>
+
+  <!-- Tip dot -->
+  <circle cx="345" cy="142" r="4" fill="#ff5555"/>
+
+  <!-- Centre dot -->
+  <circle cx="200" cy="148" r="2.5" fill="rgba(192,160,60,0.5)"/>
+
+  <!-- Label -->
+  <text x="200" y="278" text-anchor="middle"
+        font-family="system-ui,sans-serif" font-size="11" fill="rgba(192,160,60,0.6)"
+        letter-spacing="0.08em">FOURIER EPICYCLES</text>
+</svg>

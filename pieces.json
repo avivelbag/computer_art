@@ -908,5 +908,15 @@
         "path": "pieces/227-electric-field-lines",
         "thumbnail": "pieces/227-electric-field-lines/thumbnail.svg",
         "description": "An interactive 2D canvas that simulates the electric field and equipotential landscape of up to eight user-placed point charges. Field lines (warm gold) are traced by Euler streamline integration from each positive charge — stepping 2 px along the normalised E vector until a negative charge is reached or the canvas edge is hit. Equipotential contours (cool teal dashes) are computed by evaluating V = Σ kq/r on an 80×80 grid and contouring at ten evenly-spaced iso-levels via marching squares with saddle-point disambiguation. Dragging any charge re-draws everything within one animation frame, capped at 60 fps via a dirty-flag pattern. Clicking empty canvas adds a charge (sign alternates +/−); clicking an existing charge removes it. A slide-out panel explains Coulomb's law, the superposition principle, what field-line density encodes, and why equipotentials are always perpendicular to field lines."
+    },
+    {
+        "id": "228-fourier-epicycles",
+        "title": "Fourier Epicycles — Draw Anything with Rotating Circles",
+        "tagline": "Sketch any closed shape and watch an army of orbiting circles reconstruct it — a live Discrete Fourier Transform visualiser in gold and navy",
+        "year": 2026,
+        "technique": "canvas / Discrete Fourier Transform / epicycles / complex phasors / arc-length resampling / interactive drawing / harmonic decomposition",
+        "path": "pieces/228-fourier-epicycles",
+        "thumbnail": "pieces/228-fourier-epicycles/thumbnail.svg",
+        "description": "An interactive canvas that decomposes any closed 2D path into rotating circles (epicycles) via the Discrete Fourier Transform. Both x and y coordinates are packed into a single complex signal z[n] = x[n] + i·y[n]; the DFT X[k] = (1/N) Σ z[n]·e^(−i2πkn/N) extracts N frequency components, each with a radius |X[k]| and starting angle arg(X[k]). Components are sorted by amplitude so the +/− buttons add harmonics in order of visual impact. Default paths are a parametric heart (16 sin³t, −(13 cos t − 5 cos 2t − 2 cos 3t − cos 4t)) and a lemniscate of Bernoulli. Clicking ✏ Draw Path enters draw mode: drag any closed shape, release, and the piece resamples the stroke to 512 arc-length-uniform points, runs the O(N²) DFT (< 30 ms), and immediately starts the epicycle replay. The white trace fades in 16 alpha buckets; after one 5-second revolution it perfectly retraces the approximation. A slide-out educational panel covers the DFT formula, what each circle's radius and speed represent, how JPEG compression uses the same idea, and the Gibbs phenomenon at sharp corners."
     }
 ]
