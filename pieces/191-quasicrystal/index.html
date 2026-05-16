@@ -6,7 +6,7 @@
   <title>Quasicrystal — Five-Wave Interference</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { background: #06040f; display: flex; align-items: center; justify-content: center; min-height: 100vh; }
+    body { background: #020810; display: flex; align-items: center; justify-content: center; min-height: 100vh; }
     canvas { display: block; box-shadow: 0 4px 40px rgba(0,0,0,0.7); }
   </style>
 </head>
@@ -37,21 +37,21 @@
 
   /**
    * Map quasicrystal field value v ∈ [-1, 1] to an RGB triplet.
-   * Palette: near-black indigo (destructive) → deep purple (zero) → warm gold (constructive).
+   * Palette: dark navy (destructive) → dark teal (zero) → bright cyan-white (constructive).
    */
   function valueToRGB(v) {
     const t = (v + 1) * 0.5; // [0, 1]
     let r, g, b;
     if (t < 0.5) {
       const s = t * 2;
-      r = 6  + s * 54  | 0;
-      g = 4  + s * 16  | 0;
-      b = 15 + s * 85  | 0;
+      r = 2  + s * 8   | 0;   // #02 → #0a
+      g = 8  + s * 66  | 0;   // #08 → #4a
+      b = 16 + s * 79  | 0;   // #10 → #5f
     } else {
       const s = (t - 0.5) * 2;
-      r = 60  + s * 195 | 0;
-      g = 20  + s * 220 | 0;
-      b = 100 - s * 20  | 0;
+      r = 10  + s * 116 | 0;  // #0a → #7e
+      g = 74  + s * 174 | 0;  // #4a → #f8
+      b = 95  + s * 137 | 0;  // #5f → #e8
     }
     return [r, g, b];
   }

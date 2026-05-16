@@ -1,0 +1,3 @@
+# Chladni Figures — Nodal Lines of a Vibrating Plate
+
+When a rigid square plate vibrates at one of its resonant frequencies, its surface displacement forms a standing wave described by f(x, y) = sin(m·πx)·sin(n·πy) — sand sprinkled on the plate migrates to the nodal lines where f = 0, tracing a Chladni figure for mode (m, n). This visualization computes |f| for every pixel: points where |f| ≈ 0 (the nodal lines) are rendered as bright sand-gold lines on a near-black background, with a white highlight at the narrowest nodal crossings, while the vibrating anti-nodal regions remain dark. Ten mode shapes cycle with smooth 1.5-second cross-fades, holding each figure for 2 seconds before transitioning to the next.

@@ -3,8 +3,6 @@ import json
 import math
 import pathlib
 
-import pytest
-
 REPO      = pathlib.Path(__file__).parent.parent
 PIECE_DIR = REPO / "pieces" / "191-quasicrystal"
 JSON_PATH = REPO / "pieces.json"

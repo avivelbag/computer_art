@@ -20,18 +20,18 @@ def field(px: float, py: float) -> float:
 
 
 def value_to_rgb(v: float) -> tuple[int, int, int]:
-    """Map field value v ∈ [-1, 1] to RGB; mirrors the JS palette."""
+    """Map field value v ∈ [-1, 1] to RGB; mirrors the JS palette (cold teal/cyan)."""
     t = (v + 1) * 0.5
     if t < 0.5:
         s = t * 2
-        r = int(6  + s * 54)
-        g = int(4  + s * 16)
-        b = int(15 + s * 85)
+        r = int(2  + s * 8)
+        g = int(8  + s * 66)
+        b = int(16 + s * 79)
     else:
         s = (t - 0.5) * 2
-        r = int(60  + s * 195)
-        g = int(20  + s * 220)
-        b = int(100 - s * 20)
+        r = int(10  + s * 116)
+        g = int(74  + s * 174)
+        b = int(95  + s * 137)
     return r, g, b
 
 
@@ -56,7 +56,7 @@ for row in range(GRID):
 svg = (
     f'<svg xmlns="http://www.w3.org/2000/svg" width="{W}" height="{H}" '
     f'viewBox="0 0 {W} {H}">\n'
-    f'<rect width="{W}" height="{H}" fill="#06040f"/>\n'
+    f'<rect width="{W}" height="{H}" fill="#020810"/>\n'
     + '\n'.join(rects)
     + '\n</svg>\n'
 )
