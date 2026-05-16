@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 120" width="200" height="120">
+  <!-- Background -->
+  <rect width="200" height="120" fill="#0a0a12"/>
+
+  <!-- Faint baseline -->
+  <line x1="10" y1="108" x2="190" y2="108" stroke="#1a1a28" stroke-width="0.5"/>
+
+  <!-- S curve: blue, declines from top-left to bottom-right (sigmoid fall) -->
+  <polyline
+    points="10,8 28,9 46,11 64,17 82,28 100,46 118,66 136,85 154,99 172,106 190,109"
+    fill="none" stroke="#4488ff" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+
+  <!-- R curve: green, rises from bottom-left to top-right (complement of S) -->
+  <polyline
+    points="10,112 28,112 46,111 64,108 82,100 100,85 118,65 136,44 154,27 172,17 190,13"
+    fill="none" stroke="#33cc55" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+
+  <!-- I curve: red bell shape, drawn last so it renders on top -->
+  <polyline
+    points="10,112 28,111 46,106 64,95 82,79 100,70 118,79 136,95 154,106 172,111 190,112"
+    fill="none" stroke="#ff3333" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>
+
+  <!-- Legend dots and labels -->
+  <circle cx="20" cy="18" r="3" fill="#4488ff"/>
+  <text x="27" y="22" fill="#4488ff" font-size="9" font-family="system-ui, sans-serif">S</text>
+
+  <circle cx="52" cy="18" r="3" fill="#ff3333"/>
+  <text x="59" y="22" fill="#ff3333" font-size="9" font-family="system-ui, sans-serif">I</text>
+
+  <circle cx="82" cy="18" r="3" fill="#33cc55"/>
+  <text x="89" y="22" fill="#33cc55" font-size="9" font-family="system-ui, sans-serif">R</text>
+
+  <!-- Title -->
+  <text x="100" y="117" fill="#333" font-size="7" font-family="system-ui, sans-serif" text-anchor="middle">SIR Epidemic Model</text>
+</svg>

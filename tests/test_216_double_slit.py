@@ -74,12 +74,6 @@ def test_pieces_json_technique_contains_required_keywords():
     assert "requestAnimationFrame" in technique or "raf" in technique.lower()
 
 
-def test_pieces_json_is_last_entry():
-    """Piece 216 should be the final entry in pieces.json."""
-    data = json.loads(PIECES_JSON.read_text())
-    assert data[-1]["id"] == "216-double-slit"
-
-
 def test_pieces_json_no_duplicate_ids():
     data = json.loads(PIECES_JSON.read_text())
     ids = [e["id"] for e in data]

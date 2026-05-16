@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>SIR Epidemic — Piece 218</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: #0a0a12;
+      color: #aaa;
+      font: 11px/1.4 system-ui, sans-serif;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      overflow: hidden;
+      user-select: none;
+    }
+
+    #main-area {
+      flex: 1 1 0;
+      display: flex;
+      min-height: 0;
+    }
+
+    #sim-wrap {
+      flex: 0 0 58%;
+      position: relative;
+      border-right: 1px solid #111128;
+    }
+
+    #chart-wrap {
+      flex: 1 1 0;
+      position: relative;
+    }
+
+    #sim-canvas, #chart-canvas {
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+    }
+
+    .panel-label {
+      position: absolute;
+      top: 6px; left: 8px;
+      font-size: 8px;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: #2a2a44;
+      pointer-events: none;
+      z-index: 2;
+    }
+
+    #toolbar {
+      flex: 0 0 auto;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 7px 12px;
+      background: #09091a;
+      border-top: 1px solid #111128;
+      flex-wrap: wrap;
+    }
+
+    .sep { width: 1px; height: 18px; background: #1e1e32; flex-shrink: 0; }
+
+    label {
+      font-size: 10px;
+      color: #666;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    input[type="range"] {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 80px; height: 3px;
+      border-radius: 2px;
+      background: #222238;
+      outline: none;
+      cursor: pointer;
+    }
+
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 11px; height: 11px;
+      border-radius: 50%;
+      background: #7070cc;
+      cursor: pointer;
+    }
+
+    .val {
+      color: #9090dd;
+      min-width: 32px;
+      display: inline-block;
+    }
+
+    button {
+      background: #141428;
+      border: 1px solid #252548;
+      color: #aaa;
+      font: 10px system-ui, sans-serif;
+      padding: 4px 9px;
+      border-radius: 3px;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    button:hover { background: #1e1e3a; color: #ddd; }
+
+    #r0-display {
+      font-size: 11px;
+      color: #666;
+      white-space: nowrap;
+    }
+
+    #r0-val {
+      font-weight: bold;
+      font-size: 15px;
+    }
+
+    /* Info pane */
+    #info-pane {
+      position: fixed;
+      top: 0; right: -340px;
+      width: 340px; height: 100%;
+      background: #0d0d1e;
+      border-left: 1px solid #1e1e38;
+      padding: 18px 16px;
+      transition: right 0.25s ease;
+      z-index: 10;
+      overflow-y: auto;
+      font-size: 12px;
+      line-height: 1.6;
+    }
+
+    #info-pane.open { right: 0; }
+
+    #pane-close {
+      float: right;
+      background: none;
+      border: none;
+      color: #555;
+      font-size: 18px;
+      cursor: pointer;
+      padding: 0;
+      line-height: 1;
+    }
+    #pane-close:hover { color: #aaa; }
+
+    .pane-section { margin-bottom: 22px; }
+    .pane-section h3 {
+      color: #ccc;
+      margin-bottom: 7px;
+      font-size: 12px;
+      letter-spacing: 0.05em;
+    }
+    .pane-section p { color: #777; margin-bottom: 6px; }
+
+    .eq {
+      font-family: monospace;
+      color: #99aacc;
+      font-size: 11px;
+      background: rgba(255,255,255,0.04);
+      padding: 5px 8px;
+      border-radius: 3px;
+      margin: 3px 0;
+    }
+
+    #r0-big {
+      font-size: 40px;
+      font-weight: bold;
+      text-align: center;
+      margin: 10px 0 4px;
+    }
+
+    @media (max-width: 600px) {
+      #main-area { flex-direction: column; }
+      #sim-wrap { flex: 0 0 50%; border-right: none; border-bottom: 1px solid #111128; }
+      #info-pane { width: 100%; right: -100%; }
+    }
+  </style>
+</head>
+<body>
+  <div id="main-area">
+    <div id="sim-wrap">
+      <span class="panel-label">Particle Simulation</span>
+      <canvas id="sim-canvas"></canvas>
+    </div>
+    <div id="chart-wrap">
+      <span class="panel-label">S / I / R over time</span>
+      <canvas id="chart-canvas"></canvas>
+    </div>
+  </div>
+
+  <div id="toolbar">
+    <label>β (transmission)
+      <input type="range" id="beta-slider" min="0.1" max="1.0" step="0.01" value="0.4"/>
+      <span class="val" id="beta-val">0.40</span>
+    </label>
+    <label>γ (recovery)
+      <input type="range" id="gamma-slider" min="0.05" max="0.5" step="0.01" value="0.1"/>
+      <span class="val" id="gamma-val">0.10</span>
+    </label>
+    <label>Initial infected
+      <input type="range" id="infected-slider" min="1" max="20" step="1" value="5"/>
+      <span class="val" id="infected-val">5</span>
+    </label>
+    <label>Vaccination %
+      <input type="range" id="vacc-slider" min="0" max="0.5" step="0.01" value="0"/>
+      <span class="val" id="vacc-val">0%</span>
+    </label>
+    <div class="sep"></div>
+    <div id="r0-display">R₀ = <span id="r0-val">4.0</span></div>
+    <div class="sep"></div>
+    <button id="restart-btn">Restart</button>
+    <button id="info-btn">? Equations</button>
+  </div>
+
+  <div id="info-pane">
+    <button id="pane-close">✕</button>
+    <div class="pane-section">
+      <h3>The SIR Model</h3>
+      <p>Every individual belongs to one of three compartments: <b style="color:#4488ff">Susceptible</b> (can catch the disease), <b style="color:#ff3333">Infected</b> (currently sick and contagious), or <b style="color:#33cc55">Recovered</b> (immune). The dots in the left panel show this state in colour.</p>
+    </div>
+    <div class="pane-section">
+      <h3>Differential Equations</h3>
+      <p>The compartment sizes evolve according to:</p>
+      <div class="eq">dS/dt = −β · S · I / N</div>
+      <div class="eq">dI/dt =  β · S · I / N − γ · I</div>
+      <div class="eq">dR/dt =  γ · I</div>
+      <p>β is the transmission rate, γ is the recovery rate, N = S + I + R is the total population. The three values always sum to N — no one is created or destroyed.</p>
+    </div>
+    <div class="pane-section">
+      <h3>Reproduction Number R₀</h3>
+      <div id="r0-big"><span id="r0-pane-val">4.0</span></div>
+      <div class="eq">R₀ = β / γ</div>
+      <p>R₀ is the average number of people one infected person infects in a fully susceptible population. When <b>R₀ &lt; 1</b>, each case causes less than one new case — the epidemic shrinks and dies out. When R₀ &gt; 1 it grows.</p>
+    </div>
+    <div class="pane-section">
+      <h3>Flatten the Curve</h3>
+      <p>Reduce β (social distancing, masks) and the red peak in the right panel spreads out and drops in height — the same epidemic, but stretched over a longer time. This buys capacity for health systems.</p>
+      <p>The Vaccination slider starts a fraction of the population already in the Recovered state. Once enough are vaccinated, the effective R₀ falls below 1 even with a high β — this is herd immunity.</p>
+    </div>
+  </div>
+
+  <script>
+    // ---- Constants ----
+    const N_PARTICLES = 300;
+    const RADIUS = 3;
+    const SPEED = 1.6;
+    const CONTACT_DIST = 14;
+    const HISTORY_LEN = 500;
+
+    // Per-frame probability scaling: makes γ=0.1 give ~200 frame recovery time
+    const GAMMA_SCALE = 0.04;
+    // Per-contact per-frame infection probability scaling
+    const BETA_SCALE = 0.12;
+
+    // ---- Mutable simulation parameters ----
+    let beta = 0.4;
+    let gamma_rate = 0.1;
+    let initInfected = 5;
+    let vaccFrac = 0;
+
+    // ---- Simulation state ----
+    let particles = [];
+    let history = [];
+
+    // ---- Canvas setup ----
+    const simCanvas = document.getElementById('sim-canvas');
+    const chartCanvas = document.getElementById('chart-canvas');
+    const simCtx = simCanvas.getContext('2d');
+    const chartCtx = chartCanvas.getContext('2d');
+
+    /**
+     * Resize both canvases to match their CSS layout size.
+     * Called on init and on window resize.
+     */
+    function resizeCanvases() {
+      const sw = simCanvas.parentElement;
+      const cw = chartCanvas.parentElement;
+      simCanvas.width  = sw.clientWidth;
+      simCanvas.height = sw.clientHeight;
+      chartCanvas.width  = cw.clientWidth;
+      chartCanvas.height = cw.clientHeight;
+    }
+
+    /**
+     * Create N_PARTICLES particles with random positions and velocities.
+     * States assigned according to initInfected and vaccFrac.
+     */
+    function initParticles() {
+      const vaccCount = Math.round(N_PARTICLES * vaccFrac);
+      const infCount  = Math.min(initInfected, N_PARTICLES - vaccCount);
+      const W = simCanvas.width;
+      const H = simCanvas.height;
+      particles = [];
+
+      for (let i = 0; i < N_PARTICLES; i++) {
+        const angle = Math.random() * 2 * Math.PI;
+        let state;
+        if (i < infCount)                  state = 'I';
+        else if (i < infCount + vaccCount) state = 'R';
+        else                               state = 'S';
+
+        particles.push({
+          x:  RADIUS + Math.random() * (W - 2 * RADIUS),
+          y:  RADIUS + Math.random() * (H - 2 * RADIUS),
+          vx: Math.cos(angle) * SPEED,
+          vy: Math.sin(angle) * SPEED,
+          state,
+        });
+      }
+
+      history = [];
+    }
+
+    /**
+     * Advance the simulation by one frame.
+     * Moves all particles, bounces off walls, then applies
+     * contact-based infection and probabilistic recovery.
+     */
+    function step() {
+      const W = simCanvas.width;
+      const H = simCanvas.height;
+
+      for (const p of particles) {
+        p.x += p.vx;
+        p.y += p.vy;
+        if (p.x < RADIUS)      { p.x = RADIUS;      p.vx =  Math.abs(p.vx); }
+        if (p.x > W - RADIUS)  { p.x = W - RADIUS;  p.vx = -Math.abs(p.vx); }
+        if (p.y < RADIUS)      { p.y = RADIUS;       p.vy =  Math.abs(p.vy); }
+        if (p.y > H - RADIUS)  { p.y = H - RADIUS;  p.vy = -Math.abs(p.vy); }
+      }
+
+      // Compute next states; write after loop to avoid order-dependency.
+      const next = particles.map(p => p.state);
+      const contactDistSq = CONTACT_DIST * CONTACT_DIST;
+
+      for (let i = 0; i < N_PARTICLES; i++) {
+        const p = particles[i];
+        if (p.state !== 'I') continue;
+
+        // Recovery: probabilistic per frame
+        if (Math.random() < gamma_rate * GAMMA_SCALE) {
+          next[i] = 'R';
+          continue;
+        }
+
+        // Infect nearby susceptibles
+        for (let j = 0; j < N_PARTICLES; j++) {
+          if (particles[j].state !== 'S') continue;
+          const dx = p.x - particles[j].x;
+          const dy = p.y - particles[j].y;
+          if (dx * dx + dy * dy < contactDistSq) {
+            if (Math.random() < beta * BETA_SCALE) next[j] = 'I';
+          }
+        }
+      }
+
+      for (let i = 0; i < N_PARTICLES; i++) particles[i].state = next[i];
+
+      // Record snapshot
+      let S = 0, I = 0, R = 0;
+      for (const p of particles) {
+        if      (p.state === 'S') S++;
+        else if (p.state === 'I') I++;
+        else                      R++;
+      }
+      history.push({ S, I, R });
+      if (history.length > HISTORY_LEN) history.shift();
+    }
+
+    /**
+     * Draw all particles on the sim canvas.
+     * Blue = susceptible, red = infected, green = recovered.
+     */
+    function drawParticles() {
+      const W = simCanvas.width;
+      const H = simCanvas.height;
+      const ctx = simCtx;
+
+      ctx.fillStyle = 'rgba(10,10,18,0.40)';
+      ctx.fillRect(0, 0, W, H);
+
+      for (const p of particles) {
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, RADIUS, 0, 6.283185);
+        ctx.fillStyle = p.state === 'S' ? '#4488ff'
+                      : p.state === 'I' ? '#ff3333'
+                      :                   '#33cc55';
+        ctx.fill();
+      }
+    }
+
+    /**
+     * Draw the S/I/R history as three polylines on the chart canvas.
+     * X-axis = time steps (scrolling left), Y-axis = particle count.
+     */
+    function drawChart() {
+      const W = chartCanvas.width;
+      const H = chartCanvas.height;
+      const ctx = chartCtx;
+
+      ctx.fillStyle = '#0a0a12';
+      ctx.fillRect(0, 0, W, H);
+
+      if (history.length < 2) return;
+
+      const pad = { top: 20, right: 12, bottom: 28, left: 32 };
+      const cw = W - pad.left - pad.right;
+      const ch = H - pad.top - pad.bottom;
+
+      // Faint grid
+      ctx.strokeStyle = '#141420';
+      ctx.lineWidth = 1;
+      for (let i = 0; i <= 4; i++) {
+        const y = pad.top + (ch * i) / 4;
+        ctx.beginPath();
+        ctx.moveTo(pad.left, y);
+        ctx.lineTo(pad.left + cw, y);
+        ctx.stroke();
+        ctx.fillStyle = '#2a2a40';
+        ctx.font = '8px system-ui';
+        ctx.textAlign = 'right';
+        ctx.fillText(Math.round(N_PARTICLES * (1 - i / 4)), pad.left - 3, y + 3);
+      }
+
+      const len = history.length;
+
+      function polyline(key, color) {
+        ctx.beginPath();
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 1.5;
+        for (let i = 0; i < len; i++) {
+          const x = pad.left + (i / (HISTORY_LEN - 1)) * cw;
+          const y = pad.top + ch * (1 - history[i][key] / N_PARTICLES);
+          if (i === 0) ctx.moveTo(x, y);
+          else         ctx.lineTo(x, y);
+        }
+        ctx.stroke();
+      }
+
+      polyline('S', '#4488ff');
+      polyline('R', '#33cc55');
+      polyline('I', '#ff3333');
+
+      // Legend
+      const legend = [['S', '#4488ff'], ['I', '#ff3333'], ['R', '#33cc55']];
+      ctx.font = '9px system-ui';
+      legend.forEach(([label, color], idx) => {
+        const lx = pad.left + idx * 38;
+        const ly = H - pad.bottom + 12;
+        ctx.fillStyle = color;
+        ctx.fillRect(lx, ly - 5, 12, 2);
+        ctx.fillStyle = color;
+        ctx.textAlign = 'left';
+        ctx.fillText(label, lx + 15, ly);
+      });
+    }
+
+    /**
+     * Recompute R₀ = β/γ and update both toolbar and pane displays.
+     * Colours the value green when < 1 (epidemic dies out) or red when ≥ 1.
+     */
+    function updateR0Display() {
+      const r0 = (beta / gamma_rate).toFixed(2);
+      const color = parseFloat(r0) < 1 ? '#33cc55' : '#ff5555';
+      const valEl = document.getElementById('r0-val');
+      valEl.textContent = r0;
+      valEl.style.color = color;
+      const paneEl = document.getElementById('r0-pane-val');
+      paneEl.textContent = r0;
+      paneEl.style.color = color;
+      document.getElementById('r0-big').style.color = color;
+    }
+
+    // ---- Slider wiring ----
+
+    function wire(sliderId, valId, fmt, onchange) {
+      const slider = document.getElementById(sliderId);
+      const valEl  = document.getElementById(valId);
+      slider.addEventListener('input', () => {
+        onchange(slider.value);
+        valEl.textContent = fmt(slider.value);
+        updateR0Display();
+      });
+    }
+
+    wire('beta-slider',     'beta-val',     v => parseFloat(v).toFixed(2), v => { beta = parseFloat(v); });
+    wire('gamma-slider',    'gamma-val',    v => parseFloat(v).toFixed(2), v => { gamma_rate = parseFloat(v); });
+    wire('infected-slider', 'infected-val', v => v,                        v => { initInfected = parseInt(v); });
+    wire('vacc-slider',     'vacc-val',     v => Math.round(parseFloat(v) * 100) + '%', v => { vaccFrac = parseFloat(v); });
+
+    // ---- Buttons ----
+
+    document.getElementById('restart-btn').addEventListener('click', () => {
+      resizeCanvases();
+      initParticles();
+    });
+
+    document.getElementById('info-btn').addEventListener('click', () => {
+      document.getElementById('info-pane').classList.add('open');
+    });
+
+    document.getElementById('pane-close').addEventListener('click', () => {
+      document.getElementById('info-pane').classList.remove('open');
+    });
+
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Escape') document.getElementById('info-pane').classList.remove('open');
+    });
+
+    // ---- Animation loop ----
+    function loop() {
+      step();
+      drawParticles();
+      drawChart();
+      requestAnimationFrame(loop);
+    }
+
+    // ---- Bootstrap ----
+    window.addEventListener('resize', () => {
+      resizeCanvases();
+      initParticles();
+    });
+
+    resizeCanvases();
+    initParticles();
+    updateR0Display();
+    loop();
+  </script>
+</body>
+</html>
