@@ -938,5 +938,15 @@
         "path": "pieces/234-truchet-tiles",
         "thumbnail": "pieces/234-truchet-tiles/thumbnail.svg",
         "description": "A 30×30 grid of quarter-circle Truchet tiles rendered as a static SVG. Each cell is assigned one of two orientations by seeded random: arcs curving through the top-left and bottom-right corners (orientation A, deep indigo #1e1b4b) or arcs curving through the top-right and bottom-left corners (orientation B, dark terracotta #7c3030). Where adjacent cells share a matching edge midpoint the arcs merge into continuous flowing curves — large-scale structure emerging from purely local chance. The dual-color orientation encoding is the distinguishing feature: coloring by orientation lets the viewer trace each arc-stream independently across the grid, revealing the underlying flow topology of the random tiling. Generated entirely in Python with no external dependencies."
+    },
+    {
+        "id": "238-curl-noise",
+        "title": "Curl Noise: The River That Doesn't Repeat",
+        "tagline": "3 000 particles follow a divergence-free curl-noise flow field — velocity derived from a scalar potential via finite differences — leaving fading ink trails in deep violet, electric cyan, and pale gold on a near-black canvas",
+        "year": 2026,
+        "technique": "canvas / curl noise / value noise / finite-difference curl / particle trails / divergence-free flow",
+        "path": "pieces/238-curl-noise",
+        "thumbnail": "pieces/238-curl-noise/thumbnail.png",
+        "description": "3,000 particles follow a 2D curl-noise vector field derived from a scalar potential P(x,y,t) via central finite differences — vx = ∂P/∂y, vy = −∂P/∂x — guaranteeing divergence-free flow where particles never pile up. The underlying potential uses 3D value noise with slow temporal drift (z = t×0.0003) so the field evolves without jump cuts. Each frame a semi-transparent near-black fill fades the trails, creating the ink-in-water look without ever fully clearing the canvas. Particles wrap toroidally. Color encodes instantaneous speed through a deep violet → electric cyan → pale gold gradient."
     }
 ]
