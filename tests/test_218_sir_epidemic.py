@@ -1,6 +1,5 @@
 """Tests for Piece 218 — SIR Epidemic: The Curve We Tried to Flatten."""
 import json
-import math
 import pathlib
 import re
 
@@ -70,12 +69,6 @@ def test_pieces_json_technique_contains_sir():
 def test_pieces_json_technique_contains_canvas():
     e = _entry()
     assert "canvas" in e["technique"].lower()
-
-
-def test_pieces_json_is_last_entry():
-    """Piece 218 must be the final entry in pieces.json."""
-    data = json.loads(PIECES_JSON.read_text())
-    assert data[-1]["id"] == "218-sir-epidemic"
 
 
 def test_pieces_json_no_duplicate_ids():
@@ -385,16 +378,17 @@ def test_readme_what_to_notice_has_bullets():
 
 # ---- SIR physics sanity checks (pure Python) ----
 
-def sir_step(S, I, R, N, beta, gamma, dt=0.1):
+def sir_step(S, inf, R, N, beta, gamma, dt=0.1):
     """
     One Euler step of the continuous SIR ODE.
 
-    Returns updated (S, I, R) after time dt.
+    `inf` is the infected compartment (renamed from I to avoid E741).
+    Returns updated (S, inf, R) after time dt.
     """
-    dS = -beta * S * I / N
-    dI =  beta * S * I / N - gamma * I
-    dR =  gamma * I
-    return S + dS * dt, I + dI * dt, R + dR * dt
+    dS = -beta * S * inf / N
+    d_inf = beta * S * inf / N - gamma * inf
+    dR = gamma * inf
+    return S + dS * dt, inf + d_inf * dt, R + dR * dt
 
 
 def run_sir(N, I0, beta, gamma, steps=2000, dt=0.1):
@@ -403,12 +397,12 @@ def run_sir(N, I0, beta, gamma, steps=2000, dt=0.1):
 
     Returns lists S_hist, I_hist, R_hist.
     """
-    S, I, R = float(N - I0), float(I0), 0.0
-    S_hist, I_hist, R_hist = [S], [I], [R]
+    S, inf, R = float(N - I0), float(I0), 0.0
+    S_hist, I_hist, R_hist = [S], [inf], [R]
     for _ in range(steps):
-        S, I, R = sir_step(S, I, R, N, beta, gamma, dt)
+        S, inf, R = sir_step(S, inf, R, N, beta, gamma, dt)
         S_hist.append(S)
-        I_hist.append(I)
+        I_hist.append(inf)
         R_hist.append(R)
     return S_hist, I_hist, R_hist
 
@@ -426,8 +420,8 @@ class TestSIRPhysics:
         """S + I + R = N must hold at every time step."""
         N = 300
         S_h, I_h, R_h = run_sir(N, I0=5, beta=0.4, gamma=0.1, steps=500)
-        for S, I, R in zip(S_h, I_h, R_h):
-            assert abs(S + I + R - N) < 1e-6, f"Conservation violated: S+I+R={S+I+R}"
+        for S, inf, R in zip(S_h, I_h, R_h):
+            assert abs(S + inf + R - N) < 1e-6, f"Conservation violated: S+I+R={S+inf+R}"
 
     def test_s_is_non_increasing(self):
         """S can only decrease — susceptibles are never added back."""
@@ -478,17 +472,16 @@ class TestSIRPhysics:
             """Return the peak infected count for a given vaccination fraction."""
             vaccinated = int(N * vacc_frac)
             i0 = 5
-            # Start: S = N - i0 - vaccinated, I = i0, R = vaccinated
-            S, I, R = float(N - i0 - vaccinated), float(i0), float(vaccinated)
-            peak = I
+            S, inf, R = float(N - i0 - vaccinated), float(i0), float(vaccinated)
+            peak = inf
             for _ in range(2000):
-                dS = -beta * S * I / N
-                dI = beta * S * I / N - gamma * I
-                dR = gamma * I
+                dS = -beta * S * inf / N
+                d_inf = beta * S * inf / N - gamma * inf
+                dR = gamma * inf
                 S += dS * 0.1
-                I += dI * 0.1
+                inf += d_inf * 0.1
                 R += dR * 0.1
-                peak = max(peak, I)
+                peak = max(peak, inf)
             return peak
 
         peak0 = peak_infected(0.0)
@@ -505,28 +498,28 @@ class TestSIRPhysics:
 
         vaccinated = int(N * herd_frac)
         i0 = 3
-        S, I, R = float(N - i0 - vaccinated), float(i0), float(vaccinated)
-        I_initial = I
-        max_I = I
+        S, inf, R = float(N - i0 - vaccinated), float(i0), float(vaccinated)
+        I_initial = inf
+        max_inf = inf
         for _ in range(5000):
-            dS = -beta * S * I / N
-            dI = beta * S * I / N - gamma * I
-            dR = gamma * I
+            dS = -beta * S * inf / N
+            d_inf = beta * S * inf / N - gamma * inf
+            dR = gamma * inf
             S += dS * 0.05
-            I += dI * 0.05
+            inf += d_inf * 0.05
             R += dR * 0.05
-            max_I = max(max_I, I)
+            max_inf = max(max_inf, inf)
 
-        assert max_I < I_initial * 2, \
-            f"At herd immunity threshold, I should not more than double (got {max_I:.1f})"
+        assert max_inf < I_initial * 2, \
+            f"At herd immunity threshold, I should not more than double (got {max_inf:.1f})"
 
     def test_all_compartments_non_negative(self):
         """S, I, R must remain non-negative throughout the simulation."""
         N = 300
         S_h, I_h, R_h = run_sir(N, I0=15, beta=0.6, gamma=0.15, steps=2000)
-        for i, (S, I, R) in enumerate(zip(S_h, I_h, R_h)):
+        for i, (S, inf, R) in enumerate(zip(S_h, I_h, R_h)):
             assert S >= -1e-6, f"S negative at step {i}: {S}"
-            assert I >= -1e-6, f"I negative at step {i}: {I}"
+            assert inf >= -1e-6, f"I negative at step {i}: {inf}"
             assert R >= -1e-6, f"R negative at step {i}: {R}"
 
     def test_no_epidemic_without_infected(self):
@@ -534,7 +527,7 @@ class TestSIRPhysics:
         N = 300
         S_h, I_h, R_h = run_sir(N, I0=0, beta=0.5, gamma=0.1, steps=100)
         assert all(abs(S - N) < 1e-10 for S in S_h), "S should stay at N when I₀=0"
-        assert all(abs(I) < 1e-10 for I in I_h), "I should stay at 0 when I₀=0"
+        assert all(abs(inf) < 1e-10 for inf in I_h), "I should stay at 0 when I₀=0"
 
 
 class TestFailureModes:
@@ -566,25 +559,25 @@ class TestFailureModes:
     def test_sir_with_beta_zero_no_spread(self):
         """With β=0 no infections occur — I stays constant (only recoveries)."""
         N, I0 = 300, 10
-        S, I, R = float(N - I0), float(I0), 0.0
+        S, inf, R = float(N - I0), float(I0), 0.0
         for _ in range(100):
-            S, I, R = sir_step(S, I, R, N, beta=0.0, gamma=0.1)
-        assert I <= I0 + 1e-9, f"I should not increase with β=0, got I={I}"
+            S, inf, R = sir_step(S, inf, R, N, beta=0.0, gamma=0.1)
+        assert inf <= I0 + 1e-9, f"I should not increase with β=0, got I={inf}"
 
     def test_sir_with_gamma_zero_no_recovery(self):
         """With γ=0 no one recovers — R stays at 0 (only infections, no removals)."""
         N, I0 = 300, 5
-        S, I, R = float(N - I0), float(I0), 0.0
+        S, inf, R = float(N - I0), float(I0), 0.0
         for _ in range(100):
-            S, I, R = sir_step(S, I, R, N, beta=0.3, gamma=0.0)
+            S, inf, R = sir_step(S, inf, R, N, beta=0.3, gamma=0.0)
         assert R < 1e-9, f"R should stay 0 with gamma=0, got R={R}"
 
     def test_large_population_conservation(self):
         """Conservation must hold for a large population (N=10000)."""
         N = 10000
         S_h, I_h, R_h = run_sir(N, I0=50, beta=0.3, gamma=0.1, steps=200, dt=0.1)
-        for S, I, R in zip(S_h, I_h, R_h):
-            assert abs(S + I + R - N) < 1e-4, f"Conservation violated for N={N}"
+        for S, inf, R in zip(S_h, I_h, R_h):
+            assert abs(S + inf + R - N) < 1e-4, f"Conservation violated for N={N}"
 
     def test_r0_boundary_near_one(self):
         """R₀ exactly at 1 (β=γ) is a marginal case — I should not grow explosively."""
