@@ -1,0 +1,680 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Piece 227 — Charge Canvas: Electric Fields and Equipotentials</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{
+  background:#0a0a14;
+  color:#999;
+  font:12px/1.5 system-ui,sans-serif;
+  display:flex;
+  flex-direction:column;
+  height:100vh;
+  overflow:hidden;
+  user-select:none;
+}
+#canvas-wrap{
+  flex:1 1 0;
+  position:relative;
+  min-height:0;
+  cursor:crosshair;
+}
+canvas{
+  display:block;
+  width:100%;
+  height:100%;
+}
+#controls{
+  flex:0 0 auto;
+  background:#0a0a1a;
+  border-top:1px solid #16163a;
+  padding:8px 14px 10px;
+  display:flex;
+  align-items:center;
+  gap:18px;
+  flex-wrap:wrap;
+}
+button{
+  background:#12122a;
+  border:1px solid #25254a;
+  color:#999;
+  font:11px system-ui,sans-serif;
+  padding:4px 12px;
+  border-radius:3px;
+  cursor:pointer;
+  letter-spacing:0.04em;
+}
+button:hover{background:#1a1a38;color:#bbb}
+#hint-bar{
+  font-size:10px;
+  color:#444;
+  flex:1;
+  text-align:right;
+}
+#info-pane{
+  position:fixed;
+  bottom:0;left:0;right:0;
+  max-height:68vh;
+  overflow-y:auto;
+  background:#0b0b22;
+  border-top:1px solid #25254a;
+  padding:16px 22px 14px;
+  transform:translateY(100%);
+  transition:transform 0.3s ease;
+  z-index:20;
+}
+#info-pane.open{transform:translateY(0)}
+#pane-close{
+  float:right;
+  background:none;border:none;
+  color:#555;font-size:18px;
+  cursor:pointer;padding:0 4px;
+  line-height:1;
+}
+#pane-close:hover{color:#bbb}
+#info-pane h2{
+  font-size:14px;font-weight:700;
+  color:#c08030;
+  margin-bottom:10px;
+  letter-spacing:0.08em;
+}
+#info-pane h3{
+  font-size:12px;font-weight:700;
+  color:#a07028;
+  margin:12px 0 4px;
+}
+#info-pane p{
+  font-size:11px;color:#888;
+  line-height:1.65;
+  max-width:720px;
+  margin-bottom:6px;
+}
+.eq{
+  font-family:monospace;
+  font-size:11px;
+  color:#c0a070;
+  background:#0e0e28;
+  border-left:3px solid #7050a0;
+  padding:6px 10px;
+  margin:6px 0;
+}
+#legend{
+  position:absolute;
+  top:10px;left:12px;
+  display:flex;
+  flex-direction:column;
+  gap:5px;
+  pointer-events:none;
+}
+.leg{display:flex;align-items:center;gap:6px;font-size:10px;color:#555}
+.leg-dot{width:10px;height:10px;border-radius:50%}
+.leg-line{width:18px;height:2px;border-radius:1px}
+#hint{
+  position:absolute;
+  bottom:6px;right:10px;
+  font-size:9px;color:#333;
+  pointer-events:none;
+}
+</style>
+</head>
+<body>
+<div id="canvas-wrap">
+  <canvas id="c"></canvas>
+  <div id="legend">
+    <div class="leg"><div class="leg-dot" style="background:#e04040"></div>Positive charge (+)</div>
+    <div class="leg"><div class="leg-dot" style="background:#4080e0"></div>Negative charge (−)</div>
+    <div class="leg"><div class="leg-line" style="background:#d4a030"></div>Electric field lines</div>
+    <div class="leg"><div class="leg-line" style="background:#208888;opacity:0.7"></div>Equipotentials</div>
+  </div>
+  <div id="hint">drag charges · click empty = add · click charge = remove</div>
+</div>
+
+<div id="controls">
+  <button id="clear-btn">Clear charges</button>
+  <button id="reset-btn">Reset</button>
+  <button id="about-btn">About ▴</button>
+  <div id="hint-bar">Next charge: <span id="next-sign">+</span></div>
+</div>
+
+<div id="info-pane">
+  <button id="pane-close">✕</button>
+  <h2>Charge Canvas — Electric Fields and Equipotentials</h2>
+
+  <h3>Coulomb's Law</h3>
+  <p>The electric force between two point charges q₁ and q₂ separated by distance r obeys:</p>
+  <div class="eq">F = k·q₁·q₂ / r²    (k ≈ 8.99 × 10⁹ N·m²/C²)</div>
+  <p>The electric field <strong>E</strong> at a point is the force per unit positive test charge: <strong>E</strong> = F/q. A single charge q produces a field pointing radially outward (positive) or inward (negative) with magnitude k|q|/r².</p>
+
+  <h3>Superposition Principle</h3>
+  <p>The total electric field from multiple charges is the <em>vector sum</em> of each individual contribution. This linearity allows any distribution to be decomposed into point charges:</p>
+  <div class="eq">E_total(x,y) = Σᵢ k·qᵢ·(r − rᵢ) / |r − rᵢ|³</div>
+  <p>This simulation evaluates the superposition at every step of the field-line trace and at every node of the potential grid.</p>
+
+  <h3>Field Lines</h3>
+  <p>A field line is a curve whose tangent at every point is parallel to the electric field at that point. Lines originate on positive charges and terminate on negative charges (or escape to infinity if there is no opposite charge nearby).</p>
+  <p>• <strong>Direction</strong>: the arrow tells you which way a positive test charge would accelerate.<br>
+  • <strong>Density</strong>: where lines bunch together the field is stronger; wide spacing means weaker field.<br>
+  • <strong>No crossing</strong>: the field has a unique direction at every point, so two lines can never cross.</p>
+  <p>The streamlines are traced by Euler integration: at each position compute the local <strong>E</strong> vector, normalise it, then step 2 px in that direction. The trace stops when it lands within 5 px of a negative charge, exits the canvas, or exceeds 2 000 steps.</p>
+
+  <h3>Electric Potential and Equipotentials</h3>
+  <p>The electric potential V is the work done per unit charge to bring a test charge from infinity:</p>
+  <div class="eq">V(x,y) = Σᵢ k·qᵢ / |r − rᵢ|</div>
+  <p>An <strong>equipotential</strong> is a curve on which V is constant — no work is done moving a charge along it. Equipotentials are always <strong>perpendicular</strong> to field lines because the electric field is E = −∇V, and the gradient is always perpendicular to the level sets of V.</p>
+  <p>The teal dashed contours are computed on an 80×80 grid using the <strong>marching-squares</strong> algorithm: each 2×2 cell gets a 4-bit code from its four corner values, and a lookup table emits the interpolated contour segment for that code. Ambiguous saddle-point cases (codes 5 and 10) are resolved by comparing the cell average to the iso-level.</p>
+
+  <h3>Controls</h3>
+  <p>• <strong>Click empty canvas</strong> — add a charge; sign alternates between + and −.<br>
+  • <strong>Click a charge</strong> — remove it.<br>
+  • <strong>Drag a charge</strong> — move it; field lines and equipotentials update live at 60 fps.<br>
+  • <strong>Clear charges</strong> — remove all charges.<br>
+  • <strong>Reset</strong> — restore the two default charges (one +, one −).</p>
+</div>
+
+<script>
+(function(){
+'use strict';
+
+const canvas = document.getElementById('c');
+const wrap   = canvas.parentElement;
+const ctx    = canvas.getContext('2d');
+
+// ── Constants ──────────────────────────────────────────────────────────────
+const K          = 1e5;   // scaled Coulomb constant (canvas pixels, arbitrary units)
+const CHARGE_R   = 10;    // visual radius of charge circles
+const HIT_R      = 12;    // click/drag detection radius
+const LINE_STEP  = 2;     // Euler step size in pixels
+const MAX_STEPS  = 2000;  // max Euler steps per field line trace
+const N_LINES    = 16;    // streamlines launched per positive charge
+const GRID_W     = 80;    // potential grid columns
+const GRID_H     = 80;    // potential grid rows
+const N_CONTOURS = 10;    // number of equipotential iso-levels
+
+// ── Mutable state ──────────────────────────────────────────────────────────
+let charges  = [];
+let nextSign = 1;   // +1 or -1, alternates with each click-to-add
+let dragIdx  = -1;  // index of charge being dragged (-1 = none)
+let dirty    = true;
+let lastFrameTime = 0;
+
+// ── Canvas resize ──────────────────────────────────────────────────────────
+function resize() {
+  canvas.width  = wrap.clientWidth;
+  canvas.height = wrap.clientHeight;
+  dirty = true;
+}
+window.addEventListener('resize', resize);
+resize();
+
+// ── Charge presets ─────────────────────────────────────────────────────────
+function resetCharges() {
+  const cx = canvas.width  / 2;
+  const cy = canvas.height / 2;
+  charges = [
+    { x: cx - 80, y: cy, q:  1 },
+    { x: cx + 80, y: cy, q: -1 },
+  ];
+  nextSign = 1;
+  dirty = true;
+  updateNextSignDisplay();
+}
+resetCharges();
+
+function updateNextSignDisplay() {
+  document.getElementById('next-sign').textContent = nextSign > 0 ? '+' : '−';
+}
+
+// ── Physics ────────────────────────────────────────────────────────────────
+
+/**
+ * Compute the electric field vector at (x,y) via Coulomb superposition.
+ * A soft core (+1 px² in r²) prevents division-by-zero at charge centres.
+ */
+function getField(x, y) {
+  let Ex = 0, Ey = 0;
+  for (let i = 0; i < charges.length; i++) {
+    const c  = charges[i];
+    const dx = x - c.x;
+    const dy = y - c.y;
+    const r2 = dx * dx + dy * dy + 1;
+    const r  = Math.sqrt(r2);
+    const f  = K * c.q / (r2 * r);
+    Ex += f * dx;
+    Ey += f * dy;
+  }
+  return { Ex, Ey };
+}
+
+/**
+ * Compute the electric potential V = Σ K*q/r at (x,y).
+ * Clamped to ±1e6 to avoid overflow near charge centres.
+ */
+function getPotential(x, y) {
+  let V = 0;
+  for (let i = 0; i < charges.length; i++) {
+    const c  = charges[i];
+    const dx = x - c.x;
+    const dy = y - c.y;
+    const r  = Math.sqrt(dx * dx + dy * dy) + 0.5;
+    V += K * c.q / r;
+  }
+  return Math.max(-1e6, Math.min(1e6, V));
+}
+
+// ── Field line tracing ─────────────────────────────────────────────────────
+
+/**
+ * Trace one streamline from (x0,y0) forward along the electric field.
+ * Returns an array of [x,y] waypoints. Stops on a negative charge (within
+ * 5 px), on the canvas edge, or after MAX_STEPS steps.
+ */
+function traceFieldLine(x0, y0) {
+  const pts = [[x0, y0]];
+  let x = x0, y = y0;
+  const W = canvas.width, H = canvas.height;
+
+  for (let step = 0; step < MAX_STEPS; step++) {
+    const { Ex, Ey } = getField(x, y);
+    const mag = Math.sqrt(Ex * Ex + Ey * Ey);
+    if (mag < 1e-12) break;
+
+    x += (Ex / mag) * LINE_STEP;
+    y += (Ey / mag) * LINE_STEP;
+    pts.push([x, y]);
+
+    if (x < 0 || x > W || y < 0 || y > H) break;
+
+    for (let i = 0; i < charges.length; i++) {
+      if (charges[i].q < 0) {
+        const ddx = x - charges[i].x;
+        const ddy = y - charges[i].y;
+        if (ddx * ddx + ddy * ddy < 25) {
+          pts.push([charges[i].x, charges[i].y]);
+          return pts;
+        }
+      }
+    }
+  }
+  return pts;
+}
+
+// ── Potential grid ─────────────────────────────────────────────────────────
+
+/**
+ * Evaluate the potential on a GRID_W×GRID_H grid spanning the canvas.
+ * Returns a Float64Array indexed as grid[row * GRID_W + col].
+ */
+function buildPotentialGrid() {
+  const W = canvas.width, H = canvas.height;
+  const grid = new Float64Array(GRID_W * GRID_H);
+  for (let row = 0; row < GRID_H; row++) {
+    const py = (row / (GRID_H - 1)) * H;
+    for (let col = 0; col < GRID_W; col++) {
+      const px = (col / (GRID_W - 1)) * W;
+      grid[row * GRID_W + col] = getPotential(px, py);
+    }
+  }
+  return grid;
+}
+
+// ── Marching squares ───────────────────────────────────────────────────────
+
+/**
+ * Trace the iso-contour V = V0 through the potential grid.
+ * Returns an array of [{x,y},{x,y}] segment pairs.
+ *
+ * Each 2×2 cell gets a 4-bit code: bit 3=TL, bit 2=TR, bit 1=BR, bit 0=BL,
+ * where a bit is 1 when the corner value exceeds V0. A lookup table maps the
+ * 16 codes to edge crossings. Ambiguous cases (5=0101 and 10=1010) are resolved
+ * by comparing the cell-average to V0.
+ */
+function marchingSquares(grid, V0) {
+  const W = canvas.width, H = canvas.height;
+  const cellW = W / (GRID_W - 1);
+  const cellH = H / (GRID_H - 1);
+  const segments = [];
+
+  function lerp(a, b) {
+    if (Math.abs(b - a) < 1e-12) return 0.5;
+    return (V0 - a) / (b - a);
+  }
+
+  for (let row = 0; row < GRID_H - 1; row++) {
+    for (let col = 0; col < GRID_W - 1; col++) {
+      const vTL = grid[ row      * GRID_W + col    ];
+      const vTR = grid[ row      * GRID_W + col + 1];
+      const vBR = grid[(row + 1) * GRID_W + col + 1];
+      const vBL = grid[(row + 1) * GRID_W + col    ];
+
+      const xL = col * cellW,      xR = (col + 1) * cellW;
+      const yT = row * cellH,      yB = (row + 1) * cellH;
+
+      let code = 0;
+      if (vTL > V0) code |= 8;
+      if (vTR > V0) code |= 4;
+      if (vBR > V0) code |= 2;
+      if (vBL > V0) code |= 1;
+
+      const eTop    = { x: xL + lerp(vTL, vTR) * cellW, y: yT };
+      const eRight  = { x: xR,                           y: yT + lerp(vTR, vBR) * cellH };
+      const eBottom = { x: xL + lerp(vBL, vBR) * cellW, y: yB };
+      const eLeft   = { x: xL,                           y: yT + lerp(vTL, vBL) * cellH };
+
+      switch (code) {
+        case  1: case 14: segments.push([eBottom, eLeft]);   break;
+        case  2: case 13: segments.push([eRight,  eBottom]); break;
+        case  3: case 12: segments.push([eRight,  eLeft]);   break;
+        case  4: case 11: segments.push([eTop,    eRight]);  break;
+        case  6: case  9: segments.push([eTop,    eBottom]); break;
+        case  7: case  8: segments.push([eTop,    eLeft]);   break;
+        case 5: {
+          const avg = (vTL + vTR + vBR + vBL) / 4;
+          if (avg > V0) {
+            segments.push([eTop, eLeft]);
+            segments.push([eRight, eBottom]);
+          } else {
+            segments.push([eTop, eRight]);
+            segments.push([eLeft, eBottom]);
+          }
+          break;
+        }
+        case 10: {
+          const avg = (vTL + vTR + vBR + vBL) / 4;
+          if (avg > V0) {
+            segments.push([eTop, eRight]);
+            segments.push([eLeft, eBottom]);
+          } else {
+            segments.push([eTop, eLeft]);
+            segments.push([eRight, eBottom]);
+          }
+          break;
+        }
+        // codes 0 and 15: all corners same side — no crossing
+      }
+    }
+  }
+  return segments;
+}
+
+// ── Drawing ────────────────────────────────────────────────────────────────
+
+/**
+ * Draw all streamlines originating from positive charges in warm gold.
+ * N_LINES lines are launched at equal angular spacing from each + charge.
+ */
+function drawFieldLines() {
+  ctx.strokeStyle = '#d4a030';
+  ctx.lineWidth   = 1;
+  ctx.globalAlpha = 0.85;
+
+  for (let ci = 0; ci < charges.length; ci++) {
+    const c = charges[ci];
+    if (c.q <= 0) continue;
+
+    for (let li = 0; li < N_LINES; li++) {
+      const angle = (li / N_LINES) * 2 * Math.PI;
+      const sx = c.x + Math.cos(angle) * (CHARGE_R + 3);
+      const sy = c.y + Math.sin(angle) * (CHARGE_R + 3);
+
+      const pts = traceFieldLine(sx, sy);
+      if (pts.length < 2) continue;
+
+      ctx.beginPath();
+      ctx.moveTo(pts[0][0], pts[0][1]);
+      for (let k = 1; k < pts.length; k++) {
+        ctx.lineTo(pts[k][0], pts[k][1]);
+      }
+      ctx.stroke();
+    }
+  }
+  ctx.globalAlpha = 1;
+}
+
+/**
+ * Draw equipotential iso-lines at N_CONTOURS levels in cool teal.
+ * Levels are spaced across the 10th–90th percentile of grid values to
+ * avoid extreme near-charge artifacts.
+ */
+function drawEquipotentials(grid) {
+  const sorted = Array.from(grid).sort((a, b) => a - b);
+  const lo = sorted[Math.floor(sorted.length * 0.10)];
+  const hi = sorted[Math.floor(sorted.length * 0.90)];
+  if (hi <= lo) return;
+
+  ctx.strokeStyle = '#208888';
+  ctx.lineWidth   = 0.8;
+  ctx.globalAlpha = 0.45;
+  ctx.setLineDash([4, 5]);
+
+  for (let level = 0; level <= N_CONTOURS; level++) {
+    const V0 = lo + (level / N_CONTOURS) * (hi - lo);
+    const segs = marchingSquares(grid, V0);
+    for (const [p1, p2] of segs) {
+      ctx.beginPath();
+      ctx.moveTo(p1.x, p1.y);
+      ctx.lineTo(p2.x, p2.y);
+      ctx.stroke();
+    }
+  }
+
+  ctx.setLineDash([]);
+  ctx.globalAlpha = 1;
+}
+
+/**
+ * Draw charge discs with +/− labels. Red for positive, blue for negative.
+ */
+function drawCharges() {
+  for (let i = 0; i < charges.length; i++) {
+    const c = charges[i];
+    const isPos = c.q > 0;
+
+    ctx.beginPath();
+    ctx.arc(c.x, c.y, CHARGE_R, 0, 2 * Math.PI);
+    ctx.fillStyle   = isPos ? '#e04040' : '#4080e0';
+    ctx.fill();
+    ctx.strokeStyle = isPos ? '#ff8080' : '#80b0ff';
+    ctx.lineWidth   = 1.5;
+    ctx.stroke();
+
+    ctx.fillStyle    = '#ffffff';
+    ctx.font         = 'bold 13px system-ui,sans-serif';
+    ctx.textAlign    = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(isPos ? '+' : '−', c.x, c.y);
+  }
+  ctx.textAlign    = 'left';
+  ctx.textBaseline = 'alphabetic';
+}
+
+// ── Render ─────────────────────────────────────────────────────────────────
+
+function render() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.fillStyle = '#0a0a14';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  if (charges.length > 0) {
+    const grid = buildPotentialGrid();
+    drawEquipotentials(grid);
+    drawFieldLines();
+  }
+
+  drawCharges();
+  dirty = false;
+}
+
+// ── Animation loop (~60 fps) ───────────────────────────────────────────────
+
+function frame(ts) {
+  if (dirty && ts - lastFrameTime >= 16) {
+    lastFrameTime = ts;
+    render();
+  }
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+
+// ── Pointer helpers ────────────────────────────────────────────────────────
+
+/**
+ * Return the index of the charge within HIT_R px of (x,y), or -1.
+ */
+function hitTest(x, y) {
+  for (let i = 0; i < charges.length; i++) {
+    const dx = x - charges[i].x;
+    const dy = y - charges[i].y;
+    if (dx * dx + dy * dy <= HIT_R * HIT_R) return i;
+  }
+  return -1;
+}
+
+/** Convert a mouse/touch client position to canvas pixel coordinates. */
+function toCanvas(clientX, clientY) {
+  const rect   = canvas.getBoundingClientRect();
+  const scaleX = canvas.width  / rect.width;
+  const scaleY = canvas.height / rect.height;
+  return {
+    x: (clientX - rect.left) * scaleX,
+    y: (clientY - rect.top)  * scaleY,
+  };
+}
+
+// ── Mouse interaction ──────────────────────────────────────────────────────
+
+let pointerDown  = false;
+let pointerMoved = false;
+let pointerStart = { x: 0, y: 0 };
+
+canvas.addEventListener('mousedown', function(e) {
+  const { x, y } = toCanvas(e.clientX, e.clientY);
+  pointerDown  = true;
+  pointerMoved = false;
+  pointerStart = { x, y };
+  dragIdx = hitTest(x, y);
+  if (dragIdx !== -1) wrap.style.cursor = 'grabbing';
+  e.preventDefault();
+});
+
+window.addEventListener('mousemove', function(e) {
+  if (!pointerDown) return;
+  const { x, y } = toCanvas(e.clientX, e.clientY);
+  const dx = x - pointerStart.x, dy = y - pointerStart.y;
+  if (dx * dx + dy * dy > 4) pointerMoved = true;
+  if (dragIdx !== -1) {
+    charges[dragIdx].x = x;
+    charges[dragIdx].y = y;
+    dirty = true;
+  }
+});
+
+window.addEventListener('mouseup', function(e) {
+  if (!pointerDown) return;
+  pointerDown = false;
+  const { x, y } = toCanvas(e.clientX, e.clientY);
+
+  if (!pointerMoved) {
+    const hit = hitTest(x, y);
+    if (hit !== -1) {
+      charges.splice(hit, 1);
+      dirty = true;
+    } else if (charges.length < 8) {
+      charges.push({ x, y, q: nextSign });
+      nextSign = -nextSign;
+      updateNextSignDisplay();
+      dirty = true;
+    }
+  }
+
+  dragIdx = -1;
+  wrap.style.cursor = 'crosshair';
+});
+
+// ── Touch interaction ──────────────────────────────────────────────────────
+
+let touchId = null;
+
+canvas.addEventListener('touchstart', function(e) {
+  if (e.changedTouches.length === 0) return;
+  const t = e.changedTouches[0];
+  touchId = t.identifier;
+  const { x, y } = toCanvas(t.clientX, t.clientY);
+  pointerDown  = true;
+  pointerMoved = false;
+  pointerStart = { x, y };
+  dragIdx = hitTest(x, y);
+  e.preventDefault();
+}, {passive: false});
+
+canvas.addEventListener('touchmove', function(e) {
+  for (let i = 0; i < e.changedTouches.length; i++) {
+    const t = e.changedTouches[i];
+    if (t.identifier !== touchId) continue;
+    const { x, y } = toCanvas(t.clientX, t.clientY);
+    const dx = x - pointerStart.x, dy = y - pointerStart.y;
+    if (dx * dx + dy * dy > 4) pointerMoved = true;
+    if (dragIdx !== -1) {
+      charges[dragIdx].x = x;
+      charges[dragIdx].y = y;
+      dirty = true;
+    }
+  }
+  e.preventDefault();
+}, {passive: false});
+
+canvas.addEventListener('touchend', function(e) {
+  for (let i = 0; i < e.changedTouches.length; i++) {
+    const t = e.changedTouches[i];
+    if (t.identifier !== touchId) continue;
+    const { x, y } = toCanvas(t.clientX, t.clientY);
+    if (!pointerMoved) {
+      const hit = hitTest(x, y);
+      if (hit !== -1) {
+        charges.splice(hit, 1);
+        dirty = true;
+      } else if (charges.length < 8) {
+        charges.push({ x, y, q: nextSign });
+        nextSign = -nextSign;
+        updateNextSignDisplay();
+        dirty = true;
+      }
+    }
+    pointerDown = false;
+    dragIdx = -1;
+    touchId = null;
+  }
+});
+
+// ── Button wiring ──────────────────────────────────────────────────────────
+
+document.getElementById('clear-btn').addEventListener('click', function() {
+  charges = [];
+  dirty = true;
+});
+
+document.getElementById('reset-btn').addEventListener('click', function() {
+  resetCharges();
+});
+
+// ── Info pane ──────────────────────────────────────────────────────────────
+
+const pane     = document.getElementById('info-pane');
+const aboutBtn = document.getElementById('about-btn');
+
+document.getElementById('pane-close').addEventListener('click', function() {
+  pane.classList.remove('open');
+  aboutBtn.textContent = 'About ▴';
+});
+
+aboutBtn.addEventListener('click', function() {
+  pane.classList.toggle('open');
+  this.textContent = pane.classList.contains('open') ? 'About ▾' : 'About ▴';
+});
+
+})();
+</script>
+</body>
+</html>
