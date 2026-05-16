@@ -888,5 +888,15 @@
         "path": "pieces/221-ulam-spiral",
         "thumbnail": "pieces/221-ulam-spiral/thumbnail.svg",
         "description": "An interactive canvas that renders the Ulam prime spiral for all integers 1 to 200 000. A Sieve of Eratosthenes pre-computes smallest prime factors in O(N log log N); the spiral coordinates are stored in a 500×500 Uint32Array for O(1) cell lookup. Three colour modes expose different mathematical structure: monochrome (prime amber vs composite near-black) makes the diagonal streaks visible at a glance; residue mod 4 (teal for p≡1, rose for p≡3, Dirichlet's theorem) shows the prime race between the two residue classes; smallest-prime-factor colouring reveals the sieve of Eratosthenes itself laid over the grid. Zoom via scroll wheel (cursor stays fixed), pan via click-drag, and pinch-to-zoom on touch. Hovering any cell shows the integer and its full prime factorisation. A slide-out educational drawer explains the spiral layout, why diagonals form via prime-dense quadratic polynomials (Euler's lucky polynomial n²+n+41), Dirichlet's theorem on primes in arithmetic progressions, and the open questions that remain unsolved."
+    },
+    {
+        "id": "224-lorenz-attractor",
+        "title": "The Butterfly Effect — Lorenz Attractor in 3D",
+        "tagline": "50 000-point Lorenz orbit glows deep-violet to cyan in WebGL; press Nudge to spawn a coral twin 0.001 units away and watch chaos theory happen in real time",
+        "year": 2026,
+        "technique": "chaos / Lorenz attractor / WebGL / RK4 integration / line-strip / additive blending",
+        "path": "pieces/224-lorenz-attractor",
+        "thumbnail": "pieces/224-lorenz-attractor/thumbnail.svg",
+        "description": "A WebGL 2 line-strip renderer integrates the Lorenz strange attractor via fourth-order Runge-Kutta at dt=0.005, maintaining a 50 001-point ring buffer coloured deep-violet (oldest) to electric-cyan (newest) through additive blending. The camera auto-rotates around the Z axis while mouse-drag controls full yaw and pitch. A Nudge button spawns a second trajectory starting 0.001 units away in warm coral, demonstrating sensitive dependence on initial conditions as the two paths diverge exponentially. Three sliders tune σ (Prandtl, 1–20), ρ (Rayleigh, 1–50), and β (geometric, 0.1–8) live, reshaping the attractor instantly. A slide-out panel covers Lorenz's 1963 atmospheric-convection model, the physical meaning of each variable, what chaos means mathematically (Lyapunov exponent λ₁ ≈ 0.9), and the butterfly-effect origin story, with an inline SVG diagram of the two-lobed wing structure."
     }
 ]

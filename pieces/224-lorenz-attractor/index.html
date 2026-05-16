@@ -1,0 +1,617 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Piece 224 — The Butterfly Effect: Lorenz Attractor in 3D</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{
+  background:#07071a;
+  color:#999;
+  font:12px/1.5 system-ui,sans-serif;
+  display:flex;
+  flex-direction:column;
+  height:100vh;
+  overflow:hidden;
+  user-select:none;
+}
+#canvas-wrap{
+  flex:1 1 0;
+  position:relative;
+  min-height:0;
+  cursor:grab;
+}
+#canvas-wrap.dragging{cursor:grabbing}
+canvas{
+  display:block;
+  width:100%;
+  height:100%;
+}
+#controls{
+  flex:0 0 auto;
+  background:#0a0a20;
+  border-top:1px solid #16163a;
+  padding:8px 14px 10px;
+  display:flex;
+  align-items:center;
+  gap:18px;
+  flex-wrap:wrap;
+}
+.ctrl{display:flex;align-items:center;gap:6px}
+.ctrl label{
+  font-size:13px;
+  font-weight:700;
+  color:#a080d0;
+  min-width:18px;
+}
+.ctrl input[type=range]{
+  width:100px;
+  accent-color:#6040b0;
+  cursor:pointer;
+}
+.ctrl .val{
+  font-size:10px;
+  color:#888;
+  min-width:34px;
+  text-align:right;
+}
+button{
+  background:#12122a;
+  border:1px solid #25254a;
+  color:#999;
+  font:11px system-ui,sans-serif;
+  padding:4px 12px;
+  border-radius:3px;
+  cursor:pointer;
+  letter-spacing:0.04em;
+}
+button:hover{background:#1a1a38;color:#bbb}
+#nudge-btn{border-color:#6a2a20;color:#e08070}
+#nudge-btn:hover{background:#200c08;border-color:#a04030;color:#f0a090}
+#nudge-btn.active{background:#300e0a;border-color:#c05040;color:#ff8070}
+
+/* Slide-out info pane */
+#info-pane{
+  position:fixed;
+  bottom:0;left:0;right:0;
+  max-height:68vh;
+  overflow-y:auto;
+  background:#0b0b22;
+  border-top:1px solid #25254a;
+  padding:16px 22px 14px;
+  transform:translateY(100%);
+  transition:transform 0.3s ease;
+  z-index:20;
+}
+#info-pane.open{transform:translateY(0)}
+#pane-close{
+  float:right;
+  background:none;border:none;
+  color:#555;font-size:18px;
+  cursor:pointer;padding:0 4px;
+  line-height:1;
+}
+#pane-close:hover{color:#bbb}
+#info-pane h2{
+  font-size:14px;font-weight:700;
+  color:#a080d0;
+  margin-bottom:10px;
+  letter-spacing:0.08em;
+}
+#info-pane h3{
+  font-size:12px;font-weight:700;
+  color:#8070b0;
+  margin:12px 0 4px;
+}
+#info-pane p{
+  font-size:11px;color:#888;
+  line-height:1.65;
+  max-width:720px;
+  margin-bottom:6px;
+}
+.eq{
+  font-family:monospace;
+  font-size:11px;
+  color:#b0a0e0;
+  background:#0e0e28;
+  border-left:3px solid #3020a0;
+  padding:6px 10px;
+  margin:6px 0;
+}
+.diagram-wrap{
+  display:flex;
+  gap:16px;
+  align-items:flex-start;
+  flex-wrap:wrap;
+  margin:10px 0;
+}
+#legend{
+  position:absolute;
+  top:10px;left:12px;
+  display:flex;
+  flex-direction:column;
+  gap:5px;
+  pointer-events:none;
+}
+.leg{display:flex;align-items:center;gap:6px;font-size:10px;color:#666}
+.leg-dot{width:8px;height:8px;border-radius:50%}
+#hint{
+  position:absolute;
+  bottom:6px;right:10px;
+  font-size:9px;color:#333;
+  pointer-events:none;
+}
+</style>
+</head>
+<body>
+<div id="canvas-wrap">
+  <canvas id="c"></canvas>
+  <div id="legend">
+    <div class="leg"><div class="leg-dot" style="background:#00d8d8"></div>Lorenz orbit</div>
+    <div class="leg" id="leg-nudge" style="display:none">
+      <div class="leg-dot" style="background:#ff7060"></div>Nudged orbit (ε=0.001)
+    </div>
+  </div>
+  <div id="hint">drag to orbit</div>
+</div>
+
+<div id="controls">
+  <div class="ctrl">
+    <label>σ</label>
+    <input type="range" id="sl-sigma" min="1" max="20" step="0.1" value="10">
+    <span class="val" id="vl-sigma">10.0</span>
+  </div>
+  <div class="ctrl">
+    <label>ρ</label>
+    <input type="range" id="sl-rho" min="1" max="50" step="0.1" value="28">
+    <span class="val" id="vl-rho">28.0</span>
+  </div>
+  <div class="ctrl">
+    <label>β</label>
+    <input type="range" id="sl-beta" min="0.1" max="8" step="0.01" value="2.67">
+    <span class="val" id="vl-beta">2.67</span>
+  </div>
+  <button id="nudge-btn" title="Spawn a second trajectory at (x+0.001,y,z)">Nudge ε</button>
+  <button id="reset-btn">Reset</button>
+  <button id="about-btn">About ▴</button>
+</div>
+
+<div id="info-pane">
+  <button id="pane-close">✕</button>
+  <h2>The Butterfly Effect — Lorenz Attractor in 3D</h2>
+
+  <div class="diagram-wrap">
+    <svg width="210" height="160" viewBox="0 0 210 160" style="flex-shrink:0;background:#07071a;border:1px solid #14143a;border-radius:4px">
+      <!-- Left lobe outline -->
+      <path d="M105,82 C90,66 52,58 42,80 C33,101 55,122 84,116 C102,111 108,96 105,82Z"
+            fill="none" stroke="#4020a0" stroke-width="2"/>
+      <path d="M105,82 C93,70 60,64 51,82 C43,99 62,116 87,111 C103,107 108,93 105,82Z"
+            fill="none" stroke="#2060c0" stroke-width="1.4"/>
+      <path d="M105,82 C97,74 68,70 60,83 C53,96 69,110 90,106 C104,103 108,91 105,82Z"
+            fill="none" stroke="#0090c8" stroke-width="1"/>
+      <!-- Right lobe outline -->
+      <path d="M105,82 C120,66 158,58 168,80 C177,101 155,122 126,116 C108,111 102,96 105,82Z"
+            fill="none" stroke="#4020a0" stroke-width="2"/>
+      <path d="M105,82 C117,70 150,64 159,82 C167,99 148,116 123,111 C107,107 102,93 105,82Z"
+            fill="none" stroke="#2060c0" stroke-width="1.4"/>
+      <path d="M105,82 C113,74 142,70 150,83 C157,96 141,110 120,106 C106,103 102,91 105,82Z"
+            fill="none" stroke="#0090c8" stroke-width="1"/>
+      <!-- Wing labels -->
+      <text x="62" y="95" fill="#8060c0" font-size="9" font-family="system-ui" text-anchor="middle">Wing A</text>
+      <text x="148" y="95" fill="#8060c0" font-size="9" font-family="system-ui" text-anchor="middle">Wing B</text>
+      <!-- Unpredictable hop arrow -->
+      <defs>
+        <marker id="arr" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto">
+          <path d="M0,0 L6,3 L0,6Z" fill="#e06040"/>
+        </marker>
+      </defs>
+      <path d="M100,80 Q105,55 110,80" fill="none" stroke="#e06040" stroke-width="1.2"
+            stroke-dasharray="3,2" marker-end="url(#arr)"/>
+      <text x="105" y="48" fill="#e06040" font-size="8" font-family="system-ui" text-anchor="middle">unpredictable</text>
+      <text x="105" y="57" fill="#e06040" font-size="8" font-family="system-ui" text-anchor="middle">wing switch</text>
+    </svg>
+    <div>
+      <p>Two concentric spirals form each wing. The dashed red arrow marks the <em>cross-wing jump</em> — deterministic but practically unpredictable. Even knowing the equations exactly, you cannot say in advance which wing the next excursion will visit.</p>
+      <p>Press <strong>Nudge ε</strong> to spawn a second trajectory starting 0.001 units away and watch the two paths separate within seconds.</p>
+    </div>
+  </div>
+
+  <h3>Who was Edward Lorenz?</h3>
+  <p>Edward Lorenz (1917–2008) was an MIT meteorologist who in 1963 derived three coupled ODEs to model atmospheric convection. He discovered chaos accidentally: re-running a simulation from its midpoint produced a completely different forecast. The culprit was rounding — he had printed only three decimal places. He named the phenomenon the <em>butterfly effect</em> in a celebrated 1972 lecture: "Does the Flap of a Butterfly's Wings in Brazil Set Off a Tornado in Texas?"</p>
+
+  <h3>What do the three variables represent?</h3>
+  <p>The system models Rayleigh–Bénard convection — a thin horizontal fluid layer heated from below, the same mechanism that drives thunderstorms, ocean gyres, and the Earth's mantle:</p>
+  <div class="eq">x  —  angular velocity of the convection roll
+y  —  horizontal temperature contrast (warm vs cool side of roll)
+z  —  vertical temperature deviation from the linear background profile</div>
+  <p>The three parameters: <strong>σ</strong> (Prandtl number) is the ratio of kinematic viscosity to thermal diffusivity; <strong>ρ</strong> (Rayleigh number) is the normalised heating rate — chaos onset near ρ ≈ 24.7; <strong>β</strong> is a geometric aspect-ratio factor, classically 8/3 for a cell twice as wide as it is tall.</p>
+
+  <h3>The equations (Runge-Kutta 4 integration, dt = 0.005)</h3>
+  <div class="eq">dx/dt = σ(y − x)
+dy/dt = x(ρ − z) − y
+dz/dt = xy − βz</div>
+  <p>Both trajectories use fourth-order Runge-Kutta (RK4) — four derivative evaluations per step combined with 1:2:2:1 weights — giving fifth-order local error and keeping orbits faithful to the true attractor far longer than simple Euler integration.</p>
+
+  <h3>What is chaos, mathematically?</h3>
+  <p>A dynamical system is <em>chaotic</em> when it is deterministic, bounded, and exhibits sensitive dependence on initial conditions: nearby trajectories diverge exponentially. The Lorenz attractor's largest Lyapunov exponent is λ₁ ≈ 0.9 nats/time-unit, so a separation δ₀ grows as δ₀·e<sup>0.9t</sup>. Starting just 0.001 apart (one nudge), the two paths reach macroscopic separation in roughly t ≈ 8 time units — about 1 600 RK4 steps. The attractor is <em>strange</em>: it has fractal dimension ≈ 2.06 and no orbit ever repeats.</p>
+
+  <h3>Controls</h3>
+  <p>Drag the canvas to orbit in 3D (yaw + pitch). The camera also auto-rotates slowly around the Z axis. Sliders reshape the attractor live; Reset restarts from a fresh initial condition. The trail shows ≥50 000 points coloured deep-violet (oldest) → electric-cyan (newest) via additive WebGL blending.</p>
+</div>
+
+<script>
+(function(){
+'use strict';
+
+// ---- Mutable Lorenz parameters ----
+let SIGMA = 10.0, RHO = 28.0, BETA = 8.0/3.0;
+
+// ---- Integration constants ----
+const DT = 0.005, DT2 = DT/2, DT6 = DT/6;
+
+// ---- Ring buffer of trajectory points ----
+// Capacity must be > 50000 to satisfy acceptance criteria.
+const N = 50001;
+// Steps integrated per animation frame.
+const BATCH = 200;
+
+// Main trajectory buffers.
+const mPos = new Float32Array(N * 3);
+let mHead = 0, mFilled = 0;
+let mx = 0.1, my = 0.0, mz = 1.0;
+
+// Nudge trajectory buffers (active only after Nudge button press).
+const nPos = new Float32Array(N * 3);
+let nHead = 0, nFilled = 0;
+let nx = 0, ny = 0, nz = 0;
+let nudgeActive = false;
+
+// Display buffer: ring buffer reordered oldest→newest before GPU upload.
+const dispBuf = new Float32Array(N * 3);
+
+// ---- Camera state ----
+let autoYaw = 0.0;       // slowly incremented each frame
+let dragYaw = 0.0;       // accumulated from mouse drag
+let pitch = -0.38;       // initial pitch angle (radians)
+const AUTO_YAW_SPEED = 0.004; // radians per frame
+
+// ---- WebGL setup ----
+const canvas = document.getElementById('c');
+const wrap = canvas.parentElement;
+const gl = canvas.getContext('webgl2');
+
+if (!gl) {
+  wrap.innerHTML = '<p style="color:#c88;padding:20px;font-size:14px">WebGL 2 is required. Please use a modern browser (Chrome, Firefox, Edge).</p>';
+  return;
+}
+
+// Vertex shader uses gl_VertexID (WebGL 2 / GLSL ES 3.00) to derive trail age
+// for color interpolation without a separate attribute.
+const VS = `#version 300 es
+in vec3 aPos;
+uniform float uYaw;
+uniform float uPitch;
+uniform int  uNFilled;
+uniform vec3 uCol0;
+uniform vec3 uCol1;
+uniform float uAR;
+out vec4 vColor;
+void main(){
+  // Center the attractor vertically (z spans ~0-48, center at 25).
+  vec3 p = aPos - vec3(0.0, 0.0, 25.0);
+
+  // Rotate around Z axis by yaw.
+  float cy = cos(uYaw), sy = sin(uYaw);
+  float rx =  p.x*cy - p.y*sy;
+  float ry =  p.x*sy + p.y*cy;
+  float rz =  p.z;
+
+  // Rotate around X axis by pitch.
+  float cp = cos(uPitch), sp = sin(uPitch);
+  float fy =  ry*cp - rz*sp;
+  float fz =  ry*sp + rz*cp;
+
+  // Orthographic projection with aspect-ratio correction.
+  float sc = 0.038;
+  gl_Position = vec4(rx * sc * uAR, fy * sc, 0.0, 1.0);
+
+  // Age: 0 = oldest point, 1 = newest point.
+  float age = float(gl_VertexID) / float(max(uNFilled - 1, 1));
+  float alpha = mix(0.06, 1.0, age * age);
+  vColor = vec4(mix(uCol0, uCol1, age), alpha);
+}`;
+
+const FS = `#version 300 es
+precision mediump float;
+in vec4 vColor;
+out vec4 fragColor;
+void main(){ fragColor = vColor; }`;
+
+function mkShader(type, src) {
+  const s = gl.createShader(type);
+  gl.shaderSource(s, src);
+  gl.compileShader(s);
+  if (!gl.getShaderParameter(s, gl.COMPILE_STATUS))
+    throw new Error('Shader: ' + gl.getShaderInfoLog(s));
+  return s;
+}
+
+const prog = gl.createProgram();
+gl.attachShader(prog, mkShader(gl.VERTEX_SHADER, VS));
+gl.attachShader(prog, mkShader(gl.FRAGMENT_SHADER, FS));
+gl.linkProgram(prog);
+if (!gl.getProgramParameter(prog, gl.LINK_STATUS))
+  throw new Error('Program: ' + gl.getProgramInfoLog(prog));
+
+const locPos   = gl.getAttribLocation(prog, 'aPos');
+const locYaw   = gl.getUniformLocation(prog, 'uYaw');
+const locPitch = gl.getUniformLocation(prog, 'uPitch');
+const locNF    = gl.getUniformLocation(prog, 'uNFilled');
+const locCol0  = gl.getUniformLocation(prog, 'uCol0');
+const locCol1  = gl.getUniformLocation(prog, 'uCol1');
+const locAR    = gl.getUniformLocation(prog, 'uAR');
+
+/** Create a VAO+VBO pair for one trajectory. */
+function mkTrajectoryBuffers() {
+  const vao = gl.createVertexArray();
+  const vbo = gl.createBuffer();
+  gl.bindVertexArray(vao);
+  gl.bindBuffer(gl.ARRAY_BUFFER, vbo);
+  gl.bufferData(gl.ARRAY_BUFFER, N * 3 * 4, gl.DYNAMIC_DRAW);
+  gl.enableVertexAttribArray(locPos);
+  gl.vertexAttribPointer(locPos, 3, gl.FLOAT, false, 0, 0);
+  gl.bindVertexArray(null);
+  return {vao, vbo};
+}
+
+const mBuf = mkTrajectoryBuffers();
+const nBuf = mkTrajectoryBuffers();
+
+// ---- RK4 integration (inline, no allocation) ----
+
+/** Advance the main trajectory one RK4 step and append to ring buffer. */
+function stepMain() {
+  const x = mx, y = my, z = mz;
+  const dx1 = SIGMA*(y-x),     dy1 = x*(RHO-z)-y,     dz1 = x*y-BETA*z;
+  const x2 = x+DT2*dx1, y2 = y+DT2*dy1, z2 = z+DT2*dz1;
+  const dx2 = SIGMA*(y2-x2),   dy2 = x2*(RHO-z2)-y2,  dz2 = x2*y2-BETA*z2;
+  const x3 = x+DT2*dx2, y3 = y+DT2*dy2, z3 = z+DT2*dz2;
+  const dx3 = SIGMA*(y3-x3),   dy3 = x3*(RHO-z3)-y3,  dz3 = x3*y3-BETA*z3;
+  const x4 = x+DT*dx3,  y4 = y+DT*dy3,  z4 = z+DT*dz3;
+  mx = x + DT6*(dx1+2*dx2+2*dx3+dx4);
+  my = y + DT6*(dy1+2*dy2+2*dy3+dy4);
+  mz = z + DT6*(dz1+2*dz2+2*dz3+dz4);
+  const i = mHead * 3;
+  mPos[i] = mx; mPos[i+1] = my; mPos[i+2] = mz;
+  mHead = (mHead + 1) % N;
+  if (mFilled < N) mFilled++;
+}
+
+/** Advance the nudge trajectory one RK4 step and append to ring buffer. */
+function stepNudge() {
+  const x = nx, y = ny, z = nz;
+  const dx1 = SIGMA*(y-x),     dy1 = x*(RHO-z)-y,     dz1 = x*y-BETA*z;
+  const x2 = x+DT2*dx1, y2 = y+DT2*dy1, z2 = z+DT2*dz1;
+  const dx2 = SIGMA*(y2-x2),   dy2 = x2*(RHO-z2)-y2,  dz2 = x2*y2-BETA*z2;
+  const x3 = x+DT2*dx2, y3 = y+DT2*dy2, z3 = z+DT2*dz2;
+  const dx3 = SIGMA*(y3-x3),   dy3 = x3*(RHO-z3)-y3,  dz3 = x3*y3-BETA*z3;
+  const x4 = x+DT*dx3,  y4 = y+DT*dy3,  z4 = z+DT*dz3;
+  nx = x + DT6*(dx1+2*dx2+2*dx3+dx4);
+  ny = y + DT6*(dy1+2*dy2+2*dy3+dy4);
+  nz = z + DT6*(dz1+2*dz2+2*dz3+dz4);
+  const i = nHead * 3;
+  nPos[i] = nx; nPos[i+1] = ny; nPos[i+2] = nz;
+  nHead = (nHead + 1) % N;
+  if (nFilled < N) nFilled++;
+}
+
+/** Discard the initial transient by advancing state without recording. */
+function warmup(steps) {
+  for (let i = 0; i < steps; i++) {
+    const x = mx, y = my, z = mz;
+    const dx1 = SIGMA*(y-x),     dy1 = x*(RHO-z)-y,     dz1 = x*y-BETA*z;
+    const x2 = x+DT2*dx1, y2 = y+DT2*dy1, z2 = z+DT2*dz1;
+    const dx2 = SIGMA*(y2-x2),   dy2 = x2*(RHO-z2)-y2,  dz2 = x2*y2-BETA*z2;
+    const x3 = x+DT2*dx2, y3 = y+DT2*dy2, z3 = z+DT2*dz2;
+    const dx3 = SIGMA*(y3-x3),   dy3 = x3*(RHO-z3)-y3,  dz3 = x3*y3-BETA*z3;
+    const x4 = x+DT*dx3,  y4 = y+DT*dy3,  z4 = z+DT*dz3;
+    mx = x + DT6*(dx1+2*dx2+2*dx3+dx4);
+    my = y + DT6*(dy1+2*dy2+2*dy3+dy4);
+    mz = z + DT6*(dz1+2*dz2+2*dz3+dz4);
+  }
+}
+
+/**
+ * Copy the ring buffer into dispBuf in oldest-to-newest order so that
+ * gl_VertexID = 0 is the oldest point and gl_VertexID = filled-1 is newest.
+ * This lets the vertex shader compute age = gl_VertexID / (filled-1) without
+ * a per-vertex attribute.
+ */
+function reorderInto(src, head, filled, dst) {
+  const oldest = (head - filled + N * 2) % N;
+  if (oldest + filled <= N) {
+    dst.set(src.subarray(oldest * 3, (oldest + filled) * 3));
+  } else {
+    const firstLen = N - oldest;
+    dst.set(src.subarray(oldest * 3));
+    dst.set(src.subarray(0, (filled - firstLen) * 3), firstLen * 3);
+  }
+}
+
+/**
+ * Upload display buffer to GPU and draw as a LINE_STRIP.
+ * col0 is the oldest-point colour, col1 is the newest-point colour.
+ */
+function drawTrajectory(buf, head, filled, col0, col1) {
+  if (filled < 2) return;
+  reorderInto(buf, head, filled, dispBuf);
+  gl.bindVertexArray(buf === mPos ? mBuf.vao : nBuf.vao);
+  gl.bindBuffer(gl.ARRAY_BUFFER, buf === mPos ? mBuf.vbo : nBuf.vbo);
+  gl.bufferSubData(gl.ARRAY_BUFFER, 0, dispBuf, 0, filled * 3);
+  gl.uniform1i(locNF, filled);
+  gl.uniform3fv(locCol0, col0);
+  gl.uniform3fv(locCol1, col1);
+  gl.drawArrays(gl.LINE_STRIP, 0, filled);
+  gl.bindVertexArray(null);
+}
+
+// ---- Resize ----
+function resize() {
+  const w = wrap.clientWidth, h = wrap.clientHeight;
+  canvas.width = w; canvas.height = h;
+  gl.viewport(0, 0, w, h);
+}
+
+window.addEventListener('resize', resize);
+resize();
+
+// ---- Reset / Nudge ----
+function resetMain() {
+  mx = 0.1; my = 0.0; mz = 1.0;
+  warmup(2000);
+  mHead = 0; mFilled = 0;
+  nudgeActive = false;
+  nHead = 0; nFilled = 0;
+  document.getElementById('nudge-btn').classList.remove('active');
+  document.getElementById('leg-nudge').style.display = 'none';
+}
+
+function startNudge() {
+  // Start the nudge trajectory at current main position + ε in x.
+  nx = mx + 0.001; ny = my; nz = mz;
+  nHead = 0; nFilled = 0;
+  nudgeActive = true;
+  document.getElementById('nudge-btn').classList.add('active');
+  document.getElementById('leg-nudge').style.display = '';
+}
+
+// ---- Main render loop ----
+function frame() {
+  // Integrate BATCH new steps for each active trajectory.
+  for (let i = 0; i < BATCH; i++) {
+    stepMain();
+    if (nudgeActive) stepNudge();
+  }
+
+  autoYaw = (autoYaw + AUTO_YAW_SPEED) % (2 * Math.PI);
+
+  const w = canvas.width, h = canvas.height;
+  const ar = h > 0 ? w / h : 1.0;
+
+  gl.clearColor(0.027, 0.027, 0.102, 1.0);
+  gl.clear(gl.COLOR_BUFFER_BIT);
+  gl.enable(gl.BLEND);
+  // Additive blending so overlapping trail segments accumulate into a glow.
+  gl.blendFunc(gl.SRC_ALPHA, gl.ONE);
+
+  gl.useProgram(prog);
+  gl.uniform1f(locYaw, autoYaw + dragYaw);
+  gl.uniform1f(locPitch, pitch);
+  gl.uniform1f(locAR, ar > 0 ? h / w : 1.0);
+
+  // Main trajectory: deep violet → electric cyan
+  drawTrajectory(mPos, mHead, mFilled,
+    [0.25, 0.0,  0.55],
+    [0.0,  0.85, 0.85]);
+
+  // Nudge trajectory: dark coral → bright coral
+  if (nudgeActive) {
+    drawTrajectory(nPos, nHead, nFilled,
+      [0.5,  0.08, 0.04],
+      [1.0,  0.44, 0.28]);
+  }
+
+  requestAnimationFrame(frame);
+}
+
+// ---- Initialization ----
+resetMain();
+
+// Pre-fill the ring buffer so the attractor is fully visible from frame 1.
+for (let i = 0; i < N; i++) stepMain();
+
+requestAnimationFrame(frame);
+
+// ---- Mouse / touch orbit ----
+let dragging = false, dragX = 0, dragY = 0;
+
+wrap.addEventListener('mousedown', function(e) {
+  dragging = true; dragX = e.clientX; dragY = e.clientY;
+  wrap.classList.add('dragging');
+  e.preventDefault();
+});
+window.addEventListener('mousemove', function(e) {
+  if (!dragging) return;
+  dragYaw   += (e.clientX - dragX) * 0.007;
+  pitch     += (e.clientY - dragY) * 0.007;
+  pitch = Math.max(-Math.PI/2, Math.min(Math.PI/2, pitch));
+  dragX = e.clientX; dragY = e.clientY;
+});
+window.addEventListener('mouseup', function() {
+  dragging = false;
+  wrap.classList.remove('dragging');
+});
+
+wrap.addEventListener('touchstart', function(e) {
+  if (e.touches.length !== 1) return;
+  dragging = true;
+  dragX = e.touches[0].clientX; dragY = e.touches[0].clientY;
+  e.preventDefault();
+}, {passive: false});
+window.addEventListener('touchmove', function(e) {
+  if (!dragging || e.touches.length !== 1) return;
+  dragYaw += (e.touches[0].clientX - dragX) * 0.007;
+  pitch   += (e.touches[0].clientY - dragY) * 0.007;
+  pitch = Math.max(-Math.PI/2, Math.min(Math.PI/2, pitch));
+  dragX = e.touches[0].clientX; dragY = e.touches[0].clientY;
+});
+window.addEventListener('touchend', function() { dragging = false; });
+
+// ---- Slider wiring ----
+function bindSlider(id, valId, dec, onChange) {
+  const sl = document.getElementById(id);
+  const vl = document.getElementById(valId);
+  sl.addEventListener('input', function() {
+    const v = parseFloat(this.value);
+    vl.textContent = v.toFixed(dec);
+    onChange(v);
+  });
+}
+
+bindSlider('sl-sigma', 'vl-sigma', 1, function(v) { SIGMA = v; resetMain(); });
+bindSlider('sl-rho',   'vl-rho',   1, function(v) { RHO   = v; resetMain(); });
+bindSlider('sl-beta',  'vl-beta',  2, function(v) { BETA  = v; resetMain(); });
+
+// ---- Nudge / Reset buttons ----
+document.getElementById('nudge-btn').addEventListener('click', function() {
+  if (nudgeActive) {
+    nudgeActive = false;
+    nHead = 0; nFilled = 0;
+    this.classList.remove('active');
+    document.getElementById('leg-nudge').style.display = 'none';
+  } else {
+    startNudge();
+  }
+});
+
+document.getElementById('reset-btn').addEventListener('click', function() {
+  resetMain();
+});
+
+// ---- Info pane toggle ----
+const pane     = document.getElementById('info-pane');
+const aboutBtn = document.getElementById('about-btn');
+document.getElementById('pane-close').addEventListener('click', function() {
+  pane.classList.remove('open');
+  aboutBtn.textContent = 'About ▴';
+});
+aboutBtn.addEventListener('click', function() {
+  pane.classList.toggle('open');
+  this.textContent = pane.classList.contains('open') ? 'About ▾' : 'About ▴';
+});
+
+})();
+</script>
+</body>
+</html>
