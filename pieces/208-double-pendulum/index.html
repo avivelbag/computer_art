@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Double Pendulum — Chaos Made Visible</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{
+  background:#06061a;
+  color:#888;
+  font:12px/1.4 system-ui,sans-serif;
+  display:flex;
+  flex-direction:column;
+  height:100vh;
+  overflow:hidden;
+  user-select:none;
+}
+#canvas-wrap{
+  flex:1 1 0;
+  position:relative;
+  min-height:0;
+}
+canvas{
+  display:block;
+  width:100%;
+  height:100%;
+}
+#controls{
+  flex:0 0 auto;
+  background:#09091f;
+  border-top:1px solid #15152f;
+  padding:8px 16px 10px;
+  display:flex;
+  align-items:center;
+  gap:14px;
+  flex-wrap:wrap;
+}
+.param{
+  display:flex;
+  align-items:center;
+  gap:6px;
+  flex:1;
+  min-width:110px;
+}
+.param label{
+  font-size:12px;
+  font-weight:700;
+  color:#c8a96e;
+  min-width:32px;
+  white-space:nowrap;
+}
+.param input[type=range]{
+  flex:1;
+  accent-color:#c8a96e;
+  height:4px;
+  cursor:pointer;
+}
+.param .val{
+  font-size:10px;
+  color:#aaa;
+  min-width:38px;
+  text-align:right;
+}
+#btn-row{
+  display:flex;
+  gap:8px;
+  align-items:center;
+  flex:0 0 auto;
+}
+.ctrl-btn{
+  background:none;
+  border:1px solid #2a2a50;
+  color:#666;
+  font-size:11px;
+  padding:4px 10px;
+  cursor:pointer;
+  border-radius:2px;
+  letter-spacing:0.06em;
+}
+.ctrl-btn:hover{color:#aaa;border-color:#44447a}
+#info-pane{
+  position:fixed;
+  bottom:0;left:0;right:0;
+  background:#0c0c24;
+  border-top:1px solid #2a2a50;
+  padding:14px 24px 14px;
+  transform:translateY(100%);
+  transition:transform 0.3s ease;
+  z-index:10;
+  max-height:55vh;
+  overflow-y:auto;
+}
+#info-pane.open{transform:translateY(0)}
+#info-pane h2{
+  font-size:13px;
+  font-weight:700;
+  color:#c8a96e;
+  margin-bottom:8px;
+  letter-spacing:0.08em;
+}
+#info-pane p{
+  font-size:11px;
+  color:#999;
+  line-height:1.75;
+  max-width:780px;
+  margin-bottom:7px;
+}
+#info-pane strong{color:#c8a96e}
+#pane-close{
+  position:absolute;
+  top:10px;right:14px;
+  background:none;border:none;
+  color:#555;font-size:16px;cursor:pointer;
+}
+#pane-close:hover{color:#aaa}
+</style>
+</head>
+<body>
+<div id="canvas-wrap"><canvas id="c"></canvas></div>
+
+<div id="controls">
+  <div class="param">
+    <label>θ₁</label>
+    <input type="range" id="sl-t1" min="-175" max="175" value="120" step="1">
+    <span class="val" id="vt1">120°</span>
+  </div>
+  <div class="param">
+    <label>θ₂</label>
+    <input type="range" id="sl-t2" min="-175" max="175" value="-30" step="1">
+    <span class="val" id="vt2">-30°</span>
+  </div>
+  <div class="param">
+    <label>m₂/m₁</label>
+    <input type="range" id="sl-mr" min="0.1" max="5" value="1" step="0.1">
+    <span class="val" id="vmr">1.0</span>
+  </div>
+  <div class="param">
+    <label>Trail</label>
+    <input type="range" id="sl-trail" min="50" max="600" value="300" step="10">
+    <span class="val" id="vtrail">300</span>
+  </div>
+  <div id="btn-row">
+    <button class="ctrl-btn" id="btn-reset">Reset</button>
+    <button class="ctrl-btn" id="btn-info">About</button>
+  </div>
+</div>
+
+<div id="info-pane">
+  <button id="pane-close">✕</button>
+  <h2>Double Pendulum — Lagrangian Mechanics &amp; Chaos</h2>
+  <p>A <strong>double pendulum</strong> is two rigid arms pivoting in series: the second bob hangs from the tip of the first. The <strong>Lagrangian</strong> L = T − V (kinetic minus potential energy) yields two coupled nonlinear ODEs for the angles θ₁ and θ₂. Because the equations are nonlinear and the system has two degrees of freedom, its motion is <strong>chaotic</strong> for most large-angle initial conditions.</p>
+  <p>The physics is integrated with <strong>4th-order Runge-Kutta (RK4)</strong>: within each time step the derivative is estimated at four internal points and combined with weights ⅙, ⅓, ⅓, ⅙ — far more accurate than a naïve Euler step and with no small-angle approximation.</p>
+  <p>The <strong>Lyapunov exponent</strong> λ quantifies exponential trajectory separation: if the distance between two nearby orbits grows as e^(λt), then λ is the Lyapunov exponent. For the double pendulum λ ≈ 3–7 s⁻¹ depending on initial conditions. Here, a second pendulum started just <strong>0.001° offset</strong> in θ₁ (the teal trail) diverges visibly from the first (gold) within seconds — a live rendering of the Lyapunov exponent.</p>
+  <p>Trail hue encodes <strong>time</strong>: recent segments glow bright, older segments fade. Drag the angle sliders to set initial conditions, or click the pivot dot to reset. The mass ratio m₂/m₁ changes the inertia coupling between the arms and alters the chaotic onset.</p>
+</div>
+
+<script>
+// Physics constants
+const G = 9.81;
+const L1 = 1.0, L2 = 1.0;
+const M1 = 1.0;
+
+// Twin offset: 0.001 degrees in radians
+const TWIN_OFFSET = 0.001 * Math.PI / 180;
+
+const DEG = Math.PI / 180;
+
+// RK4 timestep; 4 sub-steps per frame gives ~240 physics steps/s at 60fps
+const DT = 0.012;
+const STEPS_PER_FRAME = 4;
+
+let M2 = 1.0;
+let theta1Init = 120 * DEG;
+let theta2Init = -30 * DEG;
+let trailLen = 300;
+
+// state vectors: [theta1, omega1, theta2, omega2]
+let stateA, stateB;
+let trailA = [], trailB = [];
+
+function initStates() {
+  stateA = [theta1Init, 0, theta2Init, 0];
+  stateB = [theta1Init + TWIN_OFFSET, 0, theta2Init, 0];
+  trailA = [];
+  trailB = [];
+}
+
+/**
+ * Exact Lagrangian equations of motion for a double pendulum.
+ * Derived by computing d/dt(∂L/∂ω_i) − ∂L/∂θ_i = 0 and solving the
+ * resulting 2×2 linear system for [θ1'', θ2''].
+ * Returns [dθ1/dt, dω1/dt, dθ2/dt, dω2/dt].
+ */
+function deriv(s, m2) {
+  const [t1, w1, t2, w2] = s;
+  const delta = t1 - t2;
+  const sinD = Math.sin(delta);
+  const cosD = Math.cos(delta);
+  // Shared denominator term from the mass-matrix determinant
+  const denom = 2 * M1 + m2 - m2 * Math.cos(2 * delta);
+
+  const dw1 = (
+    -G * (2 * M1 + m2) * Math.sin(t1)
+    - m2 * G * Math.sin(t1 - 2 * t2)
+    - 2 * sinD * m2 * (w2 * w2 * L2 + w1 * w1 * L1 * cosD)
+  ) / (L1 * denom);
+
+  const dw2 = (
+    2 * sinD * (
+      w1 * w1 * L1 * (M1 + m2)
+      + G * (M1 + m2) * Math.cos(t1)
+      + w2 * w2 * L2 * m2 * cosD
+    )
+  ) / (L2 * denom);
+
+  return [w1, dw1, w2, dw2];
+}
+
+/** One 4th-order Runge-Kutta step for the current M2 value. */
+function rk4Step(s) {
+  const k1 = deriv(s, M2);
+  const s2 = s.map((v, i) => v + 0.5 * DT * k1[i]);
+  const k2 = deriv(s2, M2);
+  const s3 = s.map((v, i) => v + 0.5 * DT * k2[i]);
+  const k3 = deriv(s3, M2);
+  const s4 = s.map((v, i) => v + DT * k3[i]);
+  const k4 = deriv(s4, M2);
+  return s.map((v, i) => v + (DT / 6) * (k1[i] + 2 * k2[i] + 2 * k3[i] + k4[i]));
+}
+
+/** Convert angles to canvas pixel positions given pivot (cx, cy) and scale. */
+function getPositions(s, cx, cy, scale) {
+  const [t1, , t2] = s;
+  const x1 = cx + scale * L1 * Math.sin(t1);
+  const y1 = cy + scale * L1 * Math.cos(t1);
+  const x2 = x1 + scale * L2 * Math.sin(t2);
+  const y2 = y1 + scale * L2 * Math.cos(t2);
+  return { x1, y1, x2, y2 };
+}
+
+// Canvas setup
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+
+function resize() {
+  const wrap = canvas.parentElement;
+  canvas.width = wrap.clientWidth;
+  canvas.height = wrap.clientHeight;
+}
+window.addEventListener('resize', resize);
+resize();
+
+/**
+ * Draw a time-encoded trail: older segments fade (low alpha, dim), newer glow.
+ * hue is the HSL hue value (38 = amber/gold, 175 = teal).
+ */
+function drawTrail(trail, hue) {
+  if (trail.length < 2) return;
+  const n = trail.length;
+  for (let i = 1; i < n; i++) {
+    const t = i / n;           // 0 = oldest, 1 = newest
+    const alpha = t * t;       // quadratic fade makes recent segments pop
+    const lightness = 30 + 38 * t;
+    ctx.beginPath();
+    ctx.moveTo(trail[i - 1][0], trail[i - 1][1]);
+    ctx.lineTo(trail[i][0], trail[i][1]);
+    ctx.strokeStyle = `hsla(${hue},75%,${lightness.toFixed(0)}%,${alpha.toFixed(3)})`;
+    ctx.lineWidth = 0.4 + 1.2 * t;
+    ctx.stroke();
+  }
+}
+
+/** Draw pendulum arms and bobs in the given color. */
+function drawPendulum(s, cx, cy, scale, color) {
+  const { x1, y1, x2, y2 } = getPositions(s, cx, cy, scale);
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 1.8;
+  ctx.beginPath();
+  ctx.moveTo(cx, cy);
+  ctx.lineTo(x1, y1);
+  ctx.lineTo(x2, y2);
+  ctx.stroke();
+  ctx.fillStyle = color;
+  ctx.beginPath();
+  ctx.arc(x1, y1, 5, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.arc(x2, y2, 5, 0, Math.PI * 2);
+  ctx.fill();
+}
+
+/**
+ * Draw live θ₁/θ₂ readouts and arm labels directly on the canvas.
+ * Labels follow the midpoints of each arm.
+ */
+function drawAnnotations(s, cx, cy, scale) {
+  const { x1, y1, x2, y2 } = getPositions(s, cx, cy, scale);
+  const t1deg = (s[0] / DEG).toFixed(1);
+  const t2deg = (s[2] / DEG).toFixed(1);
+
+  ctx.font = '10px system-ui,sans-serif';
+  ctx.globalAlpha = 0.82;
+
+  const mx1 = (cx + x1) / 2;
+  const my1 = (cy + y1) / 2;
+  ctx.fillStyle = '#c8a96e';
+  ctx.fillText('arm 1', mx1 + 7, my1 - 2);
+  ctx.fillText(`θ₁ = ${t1deg}°`, mx1 + 7, my1 + 11);
+
+  const mx2 = (x1 + x2) / 2;
+  const my2 = (y1 + y2) / 2;
+  ctx.fillStyle = '#4ecdc4';
+  ctx.fillText('arm 2', mx2 + 7, my2 - 2);
+  ctx.fillText(`θ₂ = ${t2deg}°`, mx2 + 7, my2 + 11);
+
+  ctx.globalAlpha = 1;
+}
+
+// Click the pivot region to reset the simulation
+canvas.addEventListener('click', (e) => {
+  const rect = canvas.getBoundingClientRect();
+  const cx = canvas.width / 2;
+  const cy = canvas.height * 0.32;
+  const px = (e.clientX - rect.left) * (canvas.width / rect.width);
+  const py = (e.clientY - rect.top) * (canvas.height / rect.height);
+  if (Math.hypot(px - cx, py - cy) < 28) {
+    initStates();
+  }
+});
+
+// Pause physics when tab is hidden to avoid drift
+let hidden = false;
+document.addEventListener('visibilitychange', () => {
+  hidden = document.hidden;
+  if (!hidden) requestAnimationFrame(loop);
+});
+
+function loop() {
+  if (hidden) return;
+
+  for (let i = 0; i < STEPS_PER_FRAME; i++) {
+    stateA = rk4Step(stateA);
+    stateB = rk4Step(stateB);
+  }
+
+  const cx = canvas.width / 2;
+  const cy = canvas.height * 0.32;
+  const scale = Math.min(canvas.width, canvas.height) * 0.27;
+
+  const pA = getPositions(stateA, cx, cy, scale);
+  const pB = getPositions(stateB, cx, cy, scale);
+  trailA.push([pA.x2, pA.y2]);
+  trailB.push([pB.x2, pB.y2]);
+  if (trailA.length > trailLen) trailA.shift();
+  if (trailB.length > trailLen) trailB.shift();
+
+  // Clear to deep navy
+  ctx.fillStyle = '#06061a';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  // Pivot marker
+  ctx.beginPath();
+  ctx.arc(cx, cy, 4, 0, Math.PI * 2);
+  ctx.fillStyle = '#333355';
+  ctx.fill();
+
+  // Trails: teal behind gold so gold reads clearest
+  drawTrail(trailB, 175);
+  drawTrail(trailA, 38);
+
+  // Pendulums: twin first so primary is on top
+  drawPendulum(stateB, cx, cy, scale, 'rgba(78,205,196,0.65)');
+  drawPendulum(stateA, cx, cy, scale, '#c8a96e');
+
+  // Arm labels and live angle readouts
+  drawAnnotations(stateA, cx, cy, scale);
+
+  // Top-right legend
+  const lx = canvas.width - 148, ly = 18;
+  ctx.globalAlpha = 0.72;
+  ctx.font = '10px system-ui,sans-serif';
+  ctx.fillStyle = '#c8a96e';
+  ctx.fillRect(lx, ly + 2, 12, 2);
+  ctx.fillText('pendulum 1', lx + 16, ly + 6);
+  ctx.fillStyle = '#4ecdc4';
+  ctx.fillRect(lx, ly + 16, 12, 2);
+  ctx.fillText('twin (Δθ₁ = 0.001°)', lx + 16, ly + 20);
+  ctx.globalAlpha = 1;
+
+  requestAnimationFrame(loop);
+}
+
+// Slider wiring
+document.getElementById('sl-t1').addEventListener('input', function() {
+  document.getElementById('vt1').textContent = this.value + '°';
+  theta1Init = parseFloat(this.value) * DEG;
+  initStates();
+});
+document.getElementById('sl-t2').addEventListener('input', function() {
+  document.getElementById('vt2').textContent = this.value + '°';
+  theta2Init = parseFloat(this.value) * DEG;
+  initStates();
+});
+document.getElementById('sl-mr').addEventListener('input', function() {
+  const v = parseFloat(this.value);
+  document.getElementById('vmr').textContent = v.toFixed(1);
+  M2 = v;
+  initStates();
+});
+document.getElementById('sl-trail').addEventListener('input', function() {
+  const v = parseInt(this.value);
+  document.getElementById('vtrail').textContent = v;
+  trailLen = v;
+});
+
+document.getElementById('btn-reset').addEventListener('click', initStates);
+document.getElementById('btn-info').addEventListener('click', () => {
+  document.getElementById('info-pane').classList.toggle('open');
+});
+document.getElementById('pane-close').addEventListener('click', () => {
+  document.getElementById('info-pane').classList.remove('open');
+});
+
+initStates();
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>

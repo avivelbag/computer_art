@@ -808,5 +808,15 @@
     "path": "pieces/207-lorenz-attractor",
     "thumbnail": "pieces/207-lorenz-attractor/thumbnail.svg",
     "description": "Two Lorenz trajectories starting ε = 10⁻⁴ apart are integrated via fourth-order Runge-Kutta at dt = 0.005 and projected from 3D to 2D with a fixed rotation matrix; the amber path and teal twin diverge exponentially on the strange attractor, their luminous ghost trails fading each frame via canvas alpha-blend. Three sliders control σ (Prandtl), ρ (Rayleigh), and β live — any change restarts both trajectories so the butterfly effect is visible from the first step."
+  },
+  {
+    "id": "208-double-pendulum",
+    "title": "Double Pendulum — Chaos Made Visible",
+    "tagline": "Two pendulums started 0.001° apart diverge into chaos — gold and teal trails encode exponential separation via the Lyapunov exponent, driven by exact Lagrangian RK4 equations",
+    "year": 2026,
+    "technique": "canvas / Lagrangian double pendulum / chaos / twin trajectory / RK4 / interactive sliders",
+    "path": "pieces/208-double-pendulum",
+    "thumbnail": "pieces/208-double-pendulum/thumbnail.svg",
+    "description": "A double pendulum with two rigid arms is integrated via 4th-order Runge-Kutta using the exact Lagrangian equations of motion — no small-angle approximation. A twin pendulum started 0.001° offset in θ₁ diverges exponentially, with gold and teal trails whose separation embodies the Lyapunov exponent λ ≈ 3–7 s⁻¹. Initial angle sliders, mass-ratio control, and trail-length settings let the user explore the boundary between regular and chaotic motion. Trail color encodes time: older segments fade, recent segments glow bright."
   }
 ]
