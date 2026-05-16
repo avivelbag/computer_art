@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Curl Noise: The River That Doesn't Repeat</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { background: #0a0010; display: flex; align-items: center; justify-content: center; min-height: 100vh; overflow: hidden; }
+    canvas { display: block; width: min(100vw, calc(100vh * 8/5)); height: min(calc(100vw * 5/8), 100vh); }
+  </style>
+</head>
+<body>
+  <canvas id="c" width="800" height="500"></canvas>
+  <script>
+    // Inline value noise — no external library.
+    // A 256-entry permutation table is used to hash lattice corners.
+    const _perm = new Uint8Array(512);
+    {
+      const p = Uint8Array.from({length: 256}, (_, i) => i);
+      for (let i = 255; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [p[i], p[j]] = [p[j], p[i]];
+      }
+      for (let i = 0; i < 512; i++) _perm[i] = p[i & 255];
+    }
+
+    // Smooth Hermite interpolation (quintic for C2 continuity).
+    function fade(t) { return t * t * t * (t * (t * 6 - 15) + 10); }
+
+    // Evaluate 3D value noise at (x, y, z).
+    // Returns a value in [-1, 1].
+    function valueNoise3(x, y, z) {
+      const xi = Math.floor(x) & 255;
+      const yi = Math.floor(y) & 255;
+      const zi = Math.floor(z) & 255;
+      const xf = x - Math.floor(x);
+      const yf = y - Math.floor(y);
+      const zf = z - Math.floor(z);
+      const u = fade(xf), v = fade(yf), w = fade(zf);
+
+      // Hash the eight lattice corners.
+      const aaa = _perm[_perm[_perm[xi    ] + yi    ] + zi    ];
+      const aba = _perm[_perm[_perm[xi    ] + yi + 1] + zi    ];
+      const aab = _perm[_perm[_perm[xi    ] + yi    ] + zi + 1];
+      const abb = _perm[_perm[_perm[xi    ] + yi + 1] + zi + 1];
+      const baa = _perm[_perm[_perm[xi + 1] + yi    ] + zi    ];
+      const bba = _perm[_perm[_perm[xi + 1] + yi + 1] + zi    ];
+      const bab = _perm[_perm[_perm[xi + 1] + yi    ] + zi + 1];
+      const bbb = _perm[_perm[_perm[xi + 1] + yi + 1] + zi + 1];
+
+      // Trilinear interpolation of the hashed values mapped to [-1, 1].
+      function lerp(a, b, t) { return a + t * (b - a); }
+      function val(h) { return (h / 127.5) - 1; }
+      return lerp(
+        lerp(lerp(val(aaa), val(baa), u), lerp(val(aba), val(bba), u), v),
+        lerp(lerp(val(aab), val(bab), u), lerp(val(abb), val(bbb), u), v),
+        w
+      );
+    }
+
+    // Evaluate the 2D curl-noise velocity at world position (wx, wy) at time t.
+    // Curl in 2D from scalar potential P(x,y,t):
+    //   vx =  ∂P/∂y   vy = -∂P/∂x
+    // Approximate partial derivatives via central finite differences.
+    const CURL_EPS = 0.0001;
+    const NOISE_SCALE = 0.003;
+    const TIME_SCALE = 0.0003;
+
+    function curl(wx, wy, t) {
+      const nx = wx * NOISE_SCALE;
+      const ny = wy * NOISE_SCALE;
+      const nz = t * TIME_SCALE;
+      const dPdy = (valueNoise3(nx, ny + CURL_EPS, nz) - valueNoise3(nx, ny - CURL_EPS, nz)) / (2 * CURL_EPS);
+      const dPdx = (valueNoise3(nx + CURL_EPS, ny, nz) - valueNoise3(nx - CURL_EPS, ny, nz)) / (2 * CURL_EPS);
+      return [dPdy, -dPdx];
+    }
+
+    // Palette: deep violet → cyan → pale gold (3-stop, colored by speed).
+    // PALETTE_STOPS[i] = [r, g, b] at stop i (t=0, 0.5, 1).
+    const PALETTE = [
+      [45,  10,  80],   // deep violet   (#2d0a50)
+      [0,  200, 220],   // electric cyan (#00c8dc)
+      [255, 220, 130],  // pale gold     (#ffdc82)
+    ];
+
+    function speedColor(speed) {
+      // Map speed in [0, MAX_SPEED] to a t in [0, 1].
+      // Gradient of value noise in noise-space is bounded ~[0, 5]; tune against it.
+    const MAX_SPEED = 4.0;
+      const t = Math.min(speed / MAX_SPEED, 1);
+      let r, g, b;
+      if (t < 0.5) {
+        const s = t * 2;
+        r = PALETTE[0][0] + s * (PALETTE[1][0] - PALETTE[0][0]);
+        g = PALETTE[0][1] + s * (PALETTE[1][1] - PALETTE[0][1]);
+        b = PALETTE[0][2] + s * (PALETTE[1][2] - PALETTE[0][2]);
+      } else {
+        const s = (t - 0.5) * 2;
+        r = PALETTE[1][0] + s * (PALETTE[2][0] - PALETTE[1][0]);
+        g = PALETTE[1][1] + s * (PALETTE[2][1] - PALETTE[1][1]);
+        b = PALETTE[1][2] + s * (PALETTE[2][2] - PALETTE[1][2]);
+      }
+      return `rgb(${r|0},${g|0},${b|0})`;
+    }
+
+    const W = 800, H = 500;
+    const N = 3000;
+    const STEP = 1.5;
+
+    const canvas = document.getElementById('c');
+    const ctx = canvas.getContext('2d');
+
+    // Initialize particles at random positions.
+    const px = new Float32Array(N);
+    const py = new Float32Array(N);
+    for (let i = 0; i < N; i++) {
+      px[i] = Math.random() * W;
+      py[i] = Math.random() * H;
+    }
+
+    let frameCount = 0;
+
+    // Fill with near-black background on first frame only.
+    ctx.fillStyle = '#0a0010';
+    ctx.fillRect(0, 0, W, H);
+
+    function frame(ts) {
+      const t = frameCount;
+
+      // Trail fade: draw a semi-transparent dark fill each frame.
+      // This never fully clears the canvas — trails accumulate then fade.
+      ctx.fillStyle = 'rgba(10,0,16,0.03)';
+      ctx.fillRect(0, 0, W, H);
+
+      ctx.lineWidth = 1;
+
+      for (let i = 0; i < N; i++) {
+        const [vx, vy] = curl(px[i], py[i], t);
+        const speed = Math.sqrt(vx * vx + vy * vy);
+
+        const ox = px[i];
+        const oy = py[i];
+
+        px[i] += vx * STEP;
+        py[i] += vy * STEP;
+
+        // Torus topology: wrap at canvas edges.
+        px[i] = ((px[i] % W) + W) % W;
+        py[i] = ((py[i] % H) + H) % H;
+
+        // Skip drawing segments that crossed the wrap boundary.
+        if (Math.abs(px[i] - ox) > W * 0.4 || Math.abs(py[i] - oy) > H * 0.4) continue;
+
+        ctx.strokeStyle = speedColor(speed);
+        ctx.beginPath();
+        ctx.moveTo(ox, oy);
+        ctx.lineTo(px[i], py[i]);
+        ctx.stroke();
+      }
+
+      frameCount++;
+      requestAnimationFrame(frame);
+    }
+
+    requestAnimationFrame(frame);
+  </script>
+</body>
+</html>
