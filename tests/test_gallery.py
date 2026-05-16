@@ -170,7 +170,7 @@ class TestDescriptionPane:
         assert 'id="description-pane"' in content or "id='description-pane'" in content
 
 
-class TestEdgeCases:
+class TestDescriptionPaneEdgeCases:
     def test_description_field_in_pieces_json(self):
         """Every entry in pieces.json must have a non-empty description field."""
         import json
