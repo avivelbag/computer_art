@@ -13,6 +13,13 @@
   </header>
   <div id="grid"></div>
 
+  <aside class="description-pane" id="description-pane" aria-label="Piece description">
+    <button class="pane-close" id="pane-close" aria-label="Close">×</button>
+    <h2 class="pane-title" id="pane-title"></h2>
+    <p class="pane-meta" id="pane-meta"></p>
+    <p class="pane-description" id="pane-description"></p>
+  </aside>
+
   <script>
     // localStorage key for theme preference: "theme"
     (function () {
@@ -33,21 +40,44 @@
       return Array.from(document.querySelectorAll('.card'));
     }
 
+    function openPane(piece) {
+      const pane = document.getElementById('description-pane');
+      document.getElementById('pane-title').textContent = piece.title;
+      document.getElementById('pane-meta').textContent =
+        [piece.technique, piece.year].filter(Boolean).join(' · ');
+      document.getElementById('pane-description').textContent =
+        piece.description || piece.tagline || '';
+      pane.classList.add('open');
+    }
+
+    function closePane() {
+      document.getElementById('description-pane').classList.remove('open');
+    }
+
     document.addEventListener('keydown', function (e) {
       const cards = getCards();
       if (!cards.length) return;
 
-      if (e.key === 'ArrowRight') {
+      if (e.key === 'Escape') {
+        const pane = document.getElementById('description-pane');
+        if (pane.classList.contains('open')) {
+          closePane();
+          return;
+        }
+        if (focusedIdx >= 0) {
+          cards[focusedIdx].blur();
+          focusedIdx = -1;
+        }
+      } else if (e.key === 'i' || e.key === 'I') {
+        if (focusedIdx >= 0 && window._galleryPieces) {
+          openPane(window._galleryPieces[focusedIdx]);
+        }
+      } else if (e.key === 'ArrowRight') {
         focusedIdx = Math.min(focusedIdx + 1, cards.length - 1);
         cards[focusedIdx].focus();
       } else if (e.key === 'ArrowLeft') {
         focusedIdx = Math.max(focusedIdx - 1, 0);
         cards[focusedIdx].focus();
-      } else if (e.key === 'Escape') {
-        if (focusedIdx >= 0) {
-          cards[focusedIdx].blur();
-          focusedIdx = -1;
-        }
       }
     });
 
@@ -92,12 +122,16 @@
         return;
       }
 
-      for (const piece of pieces) {
+      window._galleryPieces = pieces;
+
+      for (let i = 0; i < pieces.length; i++) {
+        const piece = pieces[i];
         const card = document.createElement('a');
         card.className = 'card';
         card.href = piece.path + '/index.html';
         card.target = '_blank';
         card.rel = 'noopener noreferrer';
+        card.style.position = 'relative';
 
         const img = document.createElement('img');
         img.src = piece.thumbnail;
@@ -115,13 +149,26 @@
         tagline.className = 'card-tagline';
         tagline.textContent = piece.tagline;
 
+        const infoBtn = document.createElement('button');
+        infoBtn.className = 'info-btn';
+        infoBtn.setAttribute('aria-label', 'About this piece');
+        infoBtn.textContent = 'ℹ';
+        infoBtn.addEventListener('click', function (e) {
+          e.preventDefault();
+          e.stopPropagation();
+          openPane(piece);
+        });
+
         body.appendChild(title);
         body.appendChild(tagline);
         card.appendChild(img);
         card.appendChild(body);
+        card.appendChild(infoBtn);
         grid.appendChild(card);
       }
     }
+
+    document.getElementById('pane-close').addEventListener('click', closePane);
 
     init();
   </script>
