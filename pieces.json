@@ -673,5 +673,23 @@
     "technique": "canvas 2D / halftone dot grid / multi-wave interference / traveling sine waves / radius clamping",
     "path": "pieces/190-halftone-tides",
     "thumbnail": "pieces/190-halftone-tides/thumbnail.svg"
+  },
+  {
+    "id": "191-quasicrystal",
+    "title": "Quasicrystal — Five-Wave Interference",
+    "tagline": "Five cosine plane waves at 72° intervals superimpose into a 5-fold quasicrystal field rendered pixel-by-pixel via ImageData; the pattern slowly rotates at 0.15 rad/s, cycling bright-cyan constructive peaks through a dark navy background in a seamless 60 fps loop",
+    "year": 2026,
+    "technique": "canvas 2D / ImageData / quasicrystal / 5-wave plane-wave interference / cosine LUT / pixel shader",
+    "path": "pieces/191-quasicrystal",
+    "thumbnail": "pieces/191-quasicrystal/thumbnail.svg"
+  },
+  {
+    "id": "194-chladni",
+    "title": "Chladni Figures — Nodal Lines of a Vibrating Plate",
+    "tagline": "Ten vibrational modes sin(m·πx)·sin(n·πy) of a square plate cycle with 1.5-second cross-fades; nodal lines where the field ≈ 0 glow sand-gold with white highlights against a near-black background, rendered pixel-by-pixel via ImageData at 60 fps",
+    "year": 2026,
+    "technique": "canvas 2D / ImageData / Chladni figures / standing wave modes / colour LUT / pixel shader",
+    "path": "pieces/194-chladni",
+    "thumbnail": "pieces/194-chladni/thumbnail.svg"
   }
 ]

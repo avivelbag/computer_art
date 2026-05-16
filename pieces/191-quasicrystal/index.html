@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Quasicrystal — Five-Wave Interference</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { background: #020810; display: flex; align-items: center; justify-content: center; min-height: 100vh; }
+    canvas { display: block; box-shadow: 0 4px 40px rgba(0,0,0,0.7); }
+  </style>
+</head>
+<body>
+<canvas id="canvas" width="600" height="600"></canvas>
+<script>
+  const canvas = document.getElementById('canvas');
+  const ctx    = canvas.getContext('2d');
+  const W = 600, H = 600;
+
+  const N         = 5;
+  const K         = 2 * Math.PI / 120; // spatial wavelength = 120 pixels
+  const OMEGA_ROT = 0.15;              // pattern rotation rate, rad/s
+
+  // Cosine lookup table for fast pixel-level computation.
+  // 65536 entries give angular error < 5e-5 rad, imperceptible in colour.
+  const LUT_SIZE  = 1 << 16;
+  const LUT_SCALE = LUT_SIZE / (Math.PI * 2);
+  const COS_LUT   = new Float32Array(LUT_SIZE);
+  for (let i = 0; i < LUT_SIZE; i++) {
+    COS_LUT[i] = Math.cos((i / LUT_SIZE) * Math.PI * 2);
+  }
+
+  function fastCos(x) {
+    let idx = (x * LUT_SCALE) | 0;
+    return COS_LUT[((idx % LUT_SIZE) + LUT_SIZE) % LUT_SIZE];
+  }
+
+  /**
+   * Map quasicrystal field value v ∈ [-1, 1] to an RGB triplet.
+   * Palette: dark navy (destructive) → dark teal (zero) → bright cyan-white (constructive).
+   */
+  function valueToRGB(v) {
+    const t = (v + 1) * 0.5; // [0, 1]
+    let r, g, b;
+    if (t < 0.5) {
+      const s = t * 2;
+      r = 2  + s * 8   | 0;   // #02 → #0a
+      g = 8  + s * 66  | 0;   // #08 → #4a
+      b = 16 + s * 79  | 0;   // #10 → #5f
+    } else {
+      const s = (t - 0.5) * 2;
+      r = 10  + s * 116 | 0;  // #0a → #7e
+      g = 74  + s * 174 | 0;  // #4a → #f8
+      b = 95  + s * 137 | 0;  // #5f → #e8
+    }
+    return [r, g, b];
+  }
+
+  const imageData = ctx.createImageData(W, H);
+  const data      = imageData.data;
+
+  const FPS_CAP  = 60;
+  const FRAME_MS = 1000 / FPS_CAP;
+  let lastNow = 0;
+  let elapsed = 0;
+
+  function render(now) {
+    requestAnimationFrame(render);
+    if (now - lastNow < FRAME_MS) return;
+    const dt = Math.min(now - lastNow, 50) / 1000;
+    lastNow = now;
+    elapsed += dt;
+
+    const rot = OMEGA_ROT * elapsed;
+
+    // Precompute wave-vector components for this frame (5 values each).
+    const cosT = new Float64Array(N);
+    const sinT = new Float64Array(N);
+    for (let i = 0; i < N; i++) {
+      const theta = (i * 2 * Math.PI / N) + rot;
+      cosT[i] = Math.cos(theta);
+      sinT[i] = Math.sin(theta);
+    }
+
+    for (let py = 0; py < H; py++) {
+      const dy = py - H * 0.5;
+      // Per-row y-contribution for each wave avoids one multiply per pixel per wave.
+      const yc0 = K * sinT[0] * dy;
+      const yc1 = K * sinT[1] * dy;
+      const yc2 = K * sinT[2] * dy;
+      const yc3 = K * sinT[3] * dy;
+      const yc4 = K * sinT[4] * dy;
+      const kc0 = K * cosT[0];
+      const kc1 = K * cosT[1];
+      const kc2 = K * cosT[2];
+      const kc3 = K * cosT[3];
+      const kc4 = K * cosT[4];
+
+      for (let px = 0; px < W; px++) {
+        const dx = px - W * 0.5;
+        const v = (
+          fastCos(kc0 * dx + yc0) +
+          fastCos(kc1 * dx + yc1) +
+          fastCos(kc2 * dx + yc2) +
+          fastCos(kc3 * dx + yc3) +
+          fastCos(kc4 * dx + yc4)
+        ) * 0.2; // divide by N=5
+
+        const [r, g, b] = valueToRGB(v);
+        const idx = (py * W + px) * 4;
+        data[idx]     = r;
+        data[idx + 1] = g;
+        data[idx + 2] = b;
+        data[idx + 3] = 255;
+      }
+    }
+
+    ctx.putImageData(imageData, 0, 0);
+  }
+
+  requestAnimationFrame(render);
+</script>
+</body>
+</html>

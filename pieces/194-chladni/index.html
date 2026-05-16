@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Chladni Figures</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { background: #0a0a0f; display: flex; align-items: center; justify-content: center; min-height: 100vh; }
+    canvas { display: block; box-shadow: 0 4px 40px rgba(0,0,0,0.7); }
+  </style>
+</head>
+<body>
+<canvas id="canvas" width="600" height="600"></canvas>
+<script>
+  const canvas = document.getElementById('canvas');
+  const ctx    = canvas.getContext('2d');
+  const W = 600, H = 600;
+
+  // Mode pairs (m, n) for a square plate: sin(m·π·x)·sin(n·π·y).
+  const MODES = [[1,1],[1,2],[2,3],[3,4],[2,5],[4,3],[5,5],[3,7],[4,6],[6,5]];
+
+  const HOLD_S  = 2.0;  // seconds to hold each mode before fading
+  const FADE_S  = 1.5;  // seconds for the cross-fade
+  const CYCLE_S = HOLD_S + FADE_S;
+
+  // K_SHARP controls nodal-line width: higher → finer, crisper lines.
+  const K_SHARP = 40.0;
+
+  // Colour stops: background #0a0a0f, sand-gold #f2c94c, white core #ffffff.
+  const BG_R = 10,  BG_G = 10,  BG_B = 15;
+  const AU_R = 242, AU_G = 201, AU_B = 76;
+  const WH_R = 255, WH_G = 255, WH_B = 255;
+
+  // Precomputed colour LUT: 1024 entries for |field| values in [0, 1].
+  // Avoids Math.exp in the per-pixel inner loop.
+  const LUT_N = 1024;
+  const COLOR_LUT = new Uint8Array(LUT_N * 3);
+  (function buildLUT() {
+    for (let i = 0; i < LUT_N; i++) {
+      const v = i / (LUT_N - 1);
+      // t = 1 at nodal lines (v=0), falls toward 0 away from nodal lines.
+      const t = Math.exp(-v * v * K_SHARP);
+      let r, g, b;
+      if (t < 0.4) {
+        const s = t / 0.4;
+        r = BG_R + (AU_R - BG_R) * s | 0;
+        g = BG_G + (AU_G - BG_G) * s | 0;
+        b = BG_B + (AU_B - BG_B) * s | 0;
+      } else {
+        const s = (t - 0.4) / 0.6;
+        r = AU_R + (WH_R - AU_R) * s | 0;
+        g = AU_G + (WH_G - AU_G) * s | 0;
+        b = AU_B + (WH_B - AU_B) * s | 0;
+      }
+      COLOR_LUT[i * 3]     = r;
+      COLOR_LUT[i * 3 + 1] = g;
+      COLOR_LUT[i * 3 + 2] = b;
+    }
+  })();
+
+  /**
+   * Precompute |sin(m·π·x)·sin(n·π·y)| for every canvas pixel.
+   * x, y ∈ [0,1] mapped from pixel coords [0, W-1] × [0, H-1].
+   * Returns Float32Array of length W*H.
+   */
+  function computeField(m, n) {
+    const buf = new Float32Array(W * H);
+    for (let py = 0; py < H; py++) {
+      const y  = py / (H - 1);
+      const sy = Math.abs(Math.sin(n * Math.PI * y));
+      for (let px = 0; px < W; px++) {
+        const x = px / (W - 1);
+        buf[py * W + px] = Math.abs(Math.sin(m * Math.PI * x)) * sy;
+      }
+    }
+    return buf;
+  }
+
+  // Precompute all mode field buffers at startup.
+  const buffers = MODES.map(([m, n]) => computeField(m, n));
+
+  const imageData = ctx.createImageData(W, H);
+  const data      = imageData.data;
+
+  const FPS_CAP  = 60;
+  const FRAME_MS = 1000 / FPS_CAP;
+  let lastNow = 0;
+  let elapsed = 0;
+
+  function render(now) {
+    requestAnimationFrame(render);
+    if (now - lastNow < FRAME_MS) return;
+    const dt = Math.min(now - lastNow, 50) / 1000;
+    lastNow  = now;
+    elapsed += dt;
+
+    const totalCycle = MODES.length * CYCLE_S;
+    const t         = elapsed % totalCycle;
+    const modeIdx   = Math.floor(t / CYCLE_S) % MODES.length;
+    const modeT     = t % CYCLE_S;
+    // alpha = 0 during hold, ramps from 0→1 during fade.
+    const alpha     = modeT < HOLD_S ? 0.0 : (modeT - HOLD_S) / FADE_S;
+
+    const curBuf  = buffers[modeIdx];
+    const nextBuf = buffers[(modeIdx + 1) % MODES.length];
+    const LUT_MAX = LUT_N - 1;
+
+    for (let i = 0; i < W * H; i++) {
+      // Lerp |field| values between the two modes, then look up colour.
+      const v    = curBuf[i] + (nextBuf[i] - curBuf[i]) * alpha;
+      const vi   = v * LUT_MAX + 0.5 | 0;
+      const ci   = (vi < 0 ? 0 : vi > LUT_MAX ? LUT_MAX : vi) * 3;
+      const off  = i * 4;
+      data[off]     = COLOR_LUT[ci];
+      data[off + 1] = COLOR_LUT[ci + 1];
+      data[off + 2] = COLOR_LUT[ci + 2];
+      data[off + 3] = 255;
+    }
+
+    ctx.putImageData(imageData, 0, 0);
+  }
+
+  requestAnimationFrame(render);
+</script>
+</body>
+</html>
