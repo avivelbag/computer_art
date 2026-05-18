@@ -1018,5 +1018,15 @@
         "path": "pieces/259-pursuit-curves",
         "thumbnail": "pieces/259-pursuit-curves/thumbnail.svg",
         "description": "Six concurrent pursuit swarms — triangles through octagons — are superimposed at the canvas centre, each running the classic n-agent pursuit algorithm: every agent moves 1.5% of the distance toward its clockwise neighbour each frame. The simultaneous update preserves n-fold rotational symmetry, and the path of each agent is provably a logarithmic spiral. Distinct radii keep the six spiral families visually separated: the triangle (n=3) sweeps the outermost ring in amber while the octagon (n=8) traces tight coral spirals at the core. A 1.2%-opacity background fade creates a trail half-life of about 1 second, so roughly one full spiral cycle of accumulation is always visible. When a swarm converges to within 3 px of centre it respawns with its initial angle offset by π/n, depositing each new spiral between the previous one's traces and building a dense mandala over time."
+    },
+    {
+        "id": "261-sdf-raymarching",
+        "title": "SDF Kaleidoscope — Mirror Lattice",
+        "tagline": "A WebGL sphere-tracer folds space with 48-fold octahedral mirror symmetry, blending spheres and rounded boxes through a pulsating smoothmin — neon crimson surfaces emerge from a near-black teal void as the camera slowly orbits the infinite lattice",
+        "year": 2026,
+        "technique": "WebGL / SDF raymarching / kaleidoscopic IFS / octahedral domain fold / smoothmin / GLSL fragment shader",
+        "path": "pieces/261-sdf-raymarching",
+        "thumbnail": "pieces/261-sdf-raymarching/thumbnail.svg",
+        "description": "A fullscreen WebGL fragment shader fires one ray per pixel through a scene defined entirely by signed-distance functions. The domain fold applies abs() across all three axes then sorts the components, collapsing the infinite space into 48 mirror-equivalent octants before tiling with mod() — a kaleidoscopic IFS that is categorically different from plain translational repetition. Inside each tile, a sphere and a rounded box are blended via the polynomial smooth-minimum (smin) whose blend radius oscillates with a slow sin(time), continuously morphing the silhouette. Lighting uses single-direction Phong diffuse and specular, five-tap ambient occlusion, an electric-cyan rim light, and exponential depth fog into the near-black teal void. The palette — neon crimson surfaces on absolute darkness — contrasts sharply with the warm gold-on-indigo scheme of other raymarched pieces in this gallery."
     }
 ]
