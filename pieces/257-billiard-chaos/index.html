@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Stadium Billiard: The Orbit That Never Closes</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { background: #06060e; display: flex; align-items: center; justify-content: center; min-height: 100vh; overflow: hidden; }
+    canvas { display: block; width: min(100vw, calc(100vh * 2)); height: min(calc(100vw / 2), 100vh); }
+  </style>
+</head>
+<body>
+  <canvas id="c" width="900" height="450"></canvas>
+  <script>
+    const W = 900, H = 450;
+    const canvas = document.getElementById('c');
+    const ctx = canvas.getContext('2d');
+
+    // Square table: 360×360 at (25, 45)
+    const TABLE_H = 360;
+    const SQ_X = 25, SQ_Y = 45;
+    const SQ_LEFT   = SQ_X;
+    const SQ_RIGHT  = SQ_X + TABLE_H;
+    const SQ_TOP    = SQ_Y;
+    const SQ_BOTTOM = SQ_Y + TABLE_H;
+
+    // Stadium table: total width 480, height 360, starting at x=400
+    // Two semicircular caps of radius R=180, rectangle in the middle
+    const ST_X = 400, ST_W = 480, ST_H = 360;
+    const R = ST_H / 2;                     // 180
+    const ST_LEFT_CX  = ST_X + R;           // 580
+    const ST_RIGHT_CX = ST_X + ST_W - R;    // 700
+    const ST_CY = SQ_Y + ST_H / 2;          // 225
+    const ST_TOP    = SQ_Y;                 // 45
+    const ST_BOTTOM = SQ_Y + ST_H;          // 405
+
+    const NUM_PARTICLES = 10;
+    const CYCLE_MS = 15000;     // 15 s before reset
+    const STEPS_PER_FRAME = 8;  // sub-steps for accuracy at boundaries
+    const SPEED = 3.0;          // pixels per sub-step
+
+    let particles = [];
+    let cycleStart = 0;
+
+    function applyFade() {
+      ctx.globalAlpha = 0.018;
+      ctx.fillStyle = '#06060e';
+      ctx.fillRect(0, 0, W, H);
+      ctx.globalAlpha = 1.0;
+    }
+
+    function drawTables() {
+      ctx.save();
+      ctx.strokeStyle = 'rgba(200,200,220,0.55)';
+      ctx.lineWidth = 1.5;
+
+      // Square outline
+      ctx.beginPath();
+      ctx.rect(SQ_LEFT, SQ_TOP, TABLE_H, TABLE_H);
+      ctx.stroke();
+
+      // Stadium: flat top/bottom + two semicircular caps
+      ctx.beginPath();
+      ctx.moveTo(ST_LEFT_CX, ST_TOP);
+      ctx.lineTo(ST_RIGHT_CX, ST_TOP);
+      ctx.arc(ST_RIGHT_CX, ST_CY, R, -Math.PI / 2, Math.PI / 2);
+      ctx.lineTo(ST_LEFT_CX, ST_BOTTOM);
+      ctx.arc(ST_LEFT_CX, ST_CY, R, Math.PI / 2, -Math.PI / 2);
+      ctx.closePath();
+      ctx.stroke();
+
+      // Labels
+      ctx.fillStyle = 'rgba(180,180,200,0.5)';
+      ctx.font = '13px monospace';
+      ctx.textAlign = 'center';
+      ctx.fillText('Square (integrable)', SQ_X + TABLE_H / 2, SQ_Y - 14);
+      ctx.fillText('Bunimovich Stadium (ergodic)', ST_X + ST_W / 2, ST_TOP - 14);
+
+      ctx.restore();
+    }
+
+    /**
+     * Reflect velocity (vx, vy) through unit surface normal (nx, ny).
+     * v_out = v_in - 2*(v_in·n)*n — elastic, speed-preserving.
+     */
+    function reflect(vx, vy, nx, ny) {
+      const dot = vx * nx + vy * ny;
+      return [vx - 2 * dot * nx, vy - 2 * dot * ny];
+    }
+
+    /**
+     * Advance a square-billiard particle by one sub-step.
+     * Flat walls have axis-aligned normals so reflections simply flip the
+     * corresponding velocity component.
+     */
+    function stepSquare(x, y, vx, vy) {
+      x += vx;
+      y += vy;
+      if (x <= SQ_LEFT)   { x = SQ_LEFT;   [vx, vy] = reflect(vx, vy,  1, 0); }
+      if (x >= SQ_RIGHT)  { x = SQ_RIGHT;  [vx, vy] = reflect(vx, vy, -1, 0); }
+      if (y <= SQ_TOP)    { y = SQ_TOP;    [vx, vy] = reflect(vx, vy, 0,  1); }
+      if (y >= SQ_BOTTOM) { y = SQ_BOTTOM; [vx, vy] = reflect(vx, vy, 0, -1); }
+      return [x, y, vx, vy];
+    }
+
+    /**
+     * Advance a stadium-billiard particle by one sub-step.
+     *
+     * The stadium has flat top/bottom walls (axis-aligned normals) and two
+     * semicircular caps.  For a cap centred at C, the outward normal at impact
+     * point P is the radial unit vector (P − C) / |P − C|.  The particle is
+     * snapped back to the cap surface to prevent tunnelling through thin walls.
+     */
+    function stepStadium(x, y, vx, vy) {
+      x += vx;
+      y += vy;
+
+      // Flat top and bottom walls
+      if (y <= ST_TOP)    { y = ST_TOP;    [vx, vy] = reflect(vx, vy, 0,  1); }
+      if (y >= ST_BOTTOM) { y = ST_BOTTOM; [vx, vy] = reflect(vx, vy, 0, -1); }
+
+      // Left semicircular cap (active when x is left of cap centre)
+      const dlx = x - ST_LEFT_CX;
+      const dly = y - ST_CY;
+      if (dlx <= 0 && dlx * dlx + dly * dly >= R * R) {
+        const dist = Math.sqrt(dlx * dlx + dly * dly);
+        const nx = dlx / dist;
+        const ny = dly / dist;
+        x = ST_LEFT_CX + nx * R;
+        y = ST_CY      + ny * R;
+        [vx, vy] = reflect(vx, vy, nx, ny);
+      }
+
+      // Right semicircular cap (active when x is right of cap centre)
+      const drx = x - ST_RIGHT_CX;
+      const dry = y - ST_CY;
+      if (drx >= 0 && drx * drx + dry * dry >= R * R) {
+        const dist = Math.sqrt(drx * drx + dry * dry);
+        const nx = drx / dist;
+        const ny = dry / dist;
+        x = ST_RIGHT_CX + nx * R;
+        y = ST_CY       + ny * R;
+        [vx, vy] = reflect(vx, vy, nx, ny);
+      }
+
+      return [x, y, vx, vy];
+    }
+
+    /**
+     * Spawn NUM_PARTICLES from a fresh random seed inside each table.
+     * Angles are evenly spread across [0, 2π) with a random offset so
+     * successive cycles look different.
+     */
+    function spawnParticles() {
+      particles = [];
+      const angleOffset = Math.random() * Math.PI * 2;
+
+      // Random seed inside the square (inset from walls)
+      const sqSeedX = SQ_LEFT + 40 + Math.random() * (TABLE_H - 80);
+      const sqSeedY = SQ_TOP  + 40 + Math.random() * (TABLE_H - 80);
+
+      // Random seed inside the stadium rectangular body
+      const stSeedX = ST_LEFT_CX + Math.random() * (ST_RIGHT_CX - ST_LEFT_CX);
+      const stSeedY = ST_TOP  + 40 + Math.random() * (ST_H - 80);
+
+      for (let i = 0; i < NUM_PARTICLES; i++) {
+        const angle = angleOffset + (i / NUM_PARTICLES) * Math.PI * 2;
+        const hue = Math.round((i / NUM_PARTICLES) * 300);
+        const color = `hsl(${hue}, 80%, 55%)`;
+        const vx = Math.cos(angle) * SPEED;
+        const vy = Math.sin(angle) * SPEED;
+
+        particles.push({ x: sqSeedX, y: sqSeedY, vx, vy, color, table: 'sq' });
+        particles.push({ x: stSeedX, y: stSeedY, vx, vy, color, table: 'st' });
+      }
+
+      cycleStart = performance.now();
+    }
+
+    function clearTables() {
+      ctx.save();
+      ctx.fillStyle = '#06060e';
+      ctx.fillRect(SQ_LEFT - 5, SQ_TOP - 30, TABLE_H + 10, TABLE_H + 35);
+      ctx.fillRect(ST_X - 5, ST_TOP - 30, ST_W + 10, ST_H + 35);
+      ctx.restore();
+    }
+
+    function tick(now) {
+      requestAnimationFrame(tick);
+
+      if (now - cycleStart >= CYCLE_MS) {
+        clearTables();
+        spawnParticles();
+      }
+
+      applyFade();
+      drawTables();
+
+      ctx.lineWidth = 1;
+      ctx.globalAlpha = 0.65;
+
+      for (const p of particles) {
+        const x0 = p.x;
+        const y0 = p.y;
+
+        for (let s = 0; s < STEPS_PER_FRAME; s++) {
+          if (p.table === 'sq') {
+            [p.x, p.y, p.vx, p.vy] = stepSquare(p.x, p.y, p.vx, p.vy);
+          } else {
+            [p.x, p.y, p.vx, p.vy] = stepStadium(p.x, p.y, p.vx, p.vy);
+          }
+        }
+
+        ctx.beginPath();
+        ctx.strokeStyle = p.color;
+        ctx.moveTo(x0, y0);
+        ctx.lineTo(p.x, p.y);
+        ctx.stroke();
+      }
+
+      ctx.globalAlpha = 1.0;
+    }
+
+    ctx.fillStyle = '#06060e';
+    ctx.fillRect(0, 0, W, H);
+    spawnParticles();
+    requestAnimationFrame(tick);
+  </script>
+</body>
+</html>
