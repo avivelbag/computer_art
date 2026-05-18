@@ -1,0 +1,48 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" width="400" height="400">
+  <defs>
+    <clipPath id="clip"><rect width="400" height="400"/></clipPath>
+  </defs>
+
+  <!-- Background -->
+  <rect width="400" height="400" fill="#060812"/>
+
+  <g clip-path="url(#clip)">
+
+  <!-- Triangle pursuit (amber hsl(42,85%,62%) ≈ #e8a82a) — 5 spiral stages -->
+  <!-- Base vertices pointing up, r=170: (200,30), (52.7,285), (347.3,285) -->
+  <!-- Rotation per stage: ~22° (20 pursuit steps). Scale per stage: ~0.64 -->
+  <g fill="none" stroke="#e8a82a" stroke-width="1.4">
+    <polygon transform="rotate(0 200 200)"   points="200,30 52.7,285 347.3,285"  opacity="0.95"/>
+    <polygon transform="rotate(22 200 200)"  points="200,92 101.3,262 298.7,262" opacity="0.75"/>
+    <polygon transform="rotate(44 200 200)"  points="200,133 135.3,244 264.7,244" opacity="0.56"/>
+    <polygon transform="rotate(66 200 200)"  points="200,160 158.8,231 241.2,231" opacity="0.38"/>
+    <polygon transform="rotate(88 200 200)"  points="200,180 174.7,222 225.3,222" opacity="0.22"/>
+  </g>
+
+  <!-- Pentagon pursuit (rose hsl(330,75%,60%) ≈ #d94080) — 5 spiral stages -->
+  <!-- Base vertices: r=120, φ=90° (pointing up) -->
+  <!-- v0=(200,320) v1=(200-114.1,200+37.1)=(85.9,237.1) v2=(200-70.5,200-97.1)=(129.5,102.9) v3=(200+70.5,102.9)=(270.5,102.9) v4=(200+114.1,237.1)=(314.1,237.1) -->
+  <!-- Scale per stage 0.815, rotation per stage 16.3° -->
+  <g fill="none" stroke="#d94080" stroke-width="1.3">
+    <polygon transform="rotate(0 200 200)"    points="200,320 85.9,237.1 129.5,102.9 270.5,102.9 314.1,237.1" opacity="0.95"/>
+    <polygon transform="rotate(16.3 200 200)" points="200,298 113.7,226.3 147.1,117.0 252.9,117.0 286.3,226.3" opacity="0.75"/>
+    <polygon transform="rotate(32.6 200 200)" points="200,279.5 137.8,216.9 162.0,129.1 238.0,129.1 262.2,216.9" opacity="0.56"/>
+    <polygon transform="rotate(48.9 200 200)" points="200,262.7 158.5,208.7 174.6,139.9 225.4,139.9 241.5,208.7" opacity="0.38"/>
+    <polygon transform="rotate(65.2 200 200)" points="200,247.6 175.7,201.7 185.2,149.3 214.8,149.3 224.3,201.7" opacity="0.22"/>
+  </g>
+
+  <!-- Hexagon pursuit (lime hsl(95,65%,52%) ≈ #78cc26) — 4 spiral stages -->
+  <!-- Base vertices: r=90, φ=90° (pointing up) -->
+  <!-- v0=(200,290) v1=(122.1,245) v2=(122.1,155) v3=(200,110) v4=(277.9,155) v5=(277.9,245) -->
+  <!-- Scale per stage 0.848, rotation per stage 9.3° -->
+  <g fill="none" stroke="#78cc26" stroke-width="1.2">
+    <polygon transform="rotate(0 200 200)"   points="200,290 122.1,245 122.1,155 200,110 277.9,155 277.9,245"   opacity="0.90"/>
+    <polygon transform="rotate(9.3 200 200)" points="200,276.3 130.3,241.1 130.3,158.9 200,123.7 269.7,158.9 269.7,241.1" opacity="0.68"/>
+    <polygon transform="rotate(18.6 200 200)" points="200,263.5 137.7,237.4 137.7,162.6 200,136.5 262.3,162.6 262.3,237.4" opacity="0.46"/>
+    <polygon transform="rotate(27.9 200 200)" points="200,251.5 144.4,233.7 144.4,166.3 200,148.5 255.6,166.3 255.6,233.7" opacity="0.26"/>
+  </g>
+
+  </g>
+
+  <text x="6" y="394" font-family="system-ui,sans-serif" font-size="10" fill="#3a3060" letter-spacing="0.04em">PURSUIT CURVES · THE SPIDER AND THE FLY</text>
+</svg>

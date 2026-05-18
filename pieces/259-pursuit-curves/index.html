@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Pursuit Curves — The Spider and the Fly</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { background: #060812; display: flex; align-items: center; justify-content: center; min-height: 100vh; overflow: hidden; }
+    canvas { display: block; width: min(100vw, 100vh); height: min(100vw, 100vh); }
+  </style>
+</head>
+<body>
+  <canvas id="c" width="800" height="800"></canvas>
+  <script>
+    const W = 800, H = 800;
+    const CX = W / 2, CY = H / 2;
+
+    // Each frame, agents move this fraction of the distance toward their target.
+    // At 60 fps a swarm with radius 220 converges in ~260 frames (~4.3 s).
+    const SPEED = 0.015;
+
+    // Opacity of the dark-fill fade applied every frame.
+    // Trails persist for roughly 1/FADE_ALPHA frames (~83 frames / ~1.4 s half-life).
+    const FADE_ALPHA = 0.012;
+
+    // Swarms are re-spawned when every agent is within this many pixels of centre.
+    const CONVERGE_R = 3;
+
+    const BG = '#060812';
+
+    // One committed palette per n-gon.  Hues are perceptually spaced so that
+    // overlapping swarms remain visually separable against the dark ground.
+    const CONFIGS = [
+      { n: 3, radius: 220, color: 'hsl(42,85%,62%)'  },  // amber   — triangle
+      { n: 4, radius: 185, color: 'hsl(192,70%,58%)' },  // teal    — square
+      { n: 5, radius: 155, color: 'hsl(330,75%,60%)' },  // rose    — pentagon
+      { n: 6, radius: 130, color: 'hsl(95,65%,52%)'  },  // lime    — hexagon
+      { n: 7, radius: 110, color: 'hsl(270,70%,64%)' },  // violet  — heptagon
+      { n: 8, radius:  95, color: 'hsl(18,80%,60%)'  },  // coral   — octagon
+    ];
+
+    const canvas = document.getElementById('c');
+    const ctx = canvas.getContext('2d');
+
+    /**
+     * Build a swarm: n agents placed at the vertices of a regular n-gon
+     * centred on (CX, CY) with the given radius, rotated by angleOffset.
+     *
+     * @param {Object} cfg       - entry from CONFIGS
+     * @param {number} angleOffset - initial rotation in radians
+     * @returns {Object} swarm state
+     */
+    function spawnSwarm(cfg, angleOffset) {
+      const agents = [];
+      for (let i = 0; i < cfg.n; i++) {
+        const a = angleOffset + (2 * Math.PI * i) / cfg.n;
+        agents.push({ x: CX + cfg.radius * Math.cos(a),
+                      y: CY + cfg.radius * Math.sin(a) });
+      }
+      return { cfg, agents, angleOffset };
+    }
+
+    /**
+     * Advance all agents one step: each agent moves SPEED of the way toward
+     * its clockwise neighbour.  Positions are computed simultaneously so no
+     * agent sees an already-updated neighbour.
+     *
+     * @param {Object} swarm
+     */
+    function stepSwarm(swarm) {
+      const a = swarm.agents;
+      const n = a.length;
+      const nx = new Float64Array(n);
+      const ny = new Float64Array(n);
+      for (let i = 0; i < n; i++) {
+        const t = a[(i + 1) % n];
+        nx[i] = a[i].x + SPEED * (t.x - a[i].x);
+        ny[i] = a[i].y + SPEED * (t.y - a[i].y);
+      }
+      for (let i = 0; i < n; i++) {
+        a[i].x = nx[i];
+        a[i].y = ny[i];
+      }
+    }
+
+    /**
+     * Return true when the swarm has converged to within CONVERGE_R pixels
+     * of the canvas centre and should be respawned.
+     *
+     * @param {Object} swarm
+     * @returns {boolean}
+     */
+    function hasConverged(swarm) {
+      return swarm.agents.every(a => Math.hypot(a.x - CX, a.y - CY) < CONVERGE_R);
+    }
+
+    /**
+     * Draw the current polygon outline of a swarm: thin line segments from
+     * each agent to its clockwise neighbour, using the swarm's committed colour.
+     *
+     * @param {Object} swarm
+     */
+    function drawSwarm(swarm) {
+      const a = swarm.agents;
+      const n = a.length;
+      ctx.strokeStyle = swarm.cfg.color;
+      ctx.lineWidth = 0.9;
+      ctx.globalAlpha = 0.92;
+      ctx.beginPath();
+      for (let i = 0; i < n; i++) {
+        ctx.moveTo(a[i].x, a[i].y);
+        ctx.lineTo(a[(i + 1) % n].x, a[(i + 1) % n].y);
+      }
+      ctx.stroke();
+      ctx.globalAlpha = 1;
+    }
+
+    // Stagger the initial angles so all six n-gons do not start aligned.
+    let swarms = CONFIGS.map((cfg, i) =>
+      spawnSwarm(cfg, (i * Math.PI * 2) / CONFIGS.length)
+    );
+
+    // Fill the canvas once at startup so the first fade cycle starts clean.
+    ctx.fillStyle = BG;
+    ctx.fillRect(0, 0, W, H);
+
+    function loop() {
+      // Partial fade: paint a near-opaque background rectangle to gradually
+      // dim every previously drawn pixel, producing trailing spiral ghosts.
+      ctx.globalAlpha = FADE_ALPHA;
+      ctx.fillStyle = BG;
+      ctx.fillRect(0, 0, W, H);
+      ctx.globalAlpha = 1;
+
+      for (let i = 0; i < swarms.length; i++) {
+        drawSwarm(swarms[i]);
+        stepSwarm(swarms[i]);
+        if (hasConverged(swarms[i])) {
+          // Rotate the initial angle by half an edge arc so each new cycle
+          // deposits its spiral at a slight offset, building up dense layering.
+          const nextAngle = swarms[i].angleOffset + Math.PI / swarms[i].cfg.n;
+          swarms[i] = spawnSwarm(swarms[i].cfg, nextAngle);
+        }
+      }
+
+      requestAnimationFrame(loop);
+    }
+
+    requestAnimationFrame(loop);
+  </script>
+</body>
+</html>
