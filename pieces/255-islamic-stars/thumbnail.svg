@@ -1,0 +1,102 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 150" width="200" height="150">
+  <defs>
+    <clipPath id="clip"><rect width="200" height="150"/></clipPath>
+  </defs>
+
+  <!-- Background -->
+  <rect width="200" height="150" fill="#081818"/>
+
+  <g clip-path="url(#clip)">
+
+  <!-- Teal background squares for 8-fold grid: step=68, centred at (32,37),(100,37),(168,37),(32,113),(100,113),(168,113) -->
+  <!-- Square half-side = 34 -->
+  <rect x="-2"  y="3"  width="68" height="68" fill="#0d4040"/>
+  <rect x="66"  y="3"  width="68" height="68" fill="#0d4040"/>
+  <rect x="134" y="3"  width="68" height="68" fill="#0d4040"/>
+  <rect x="-2"  y="79" width="68" height="68" fill="#0d4040"/>
+  <rect x="66"  y="79" width="68" height="68" fill="#0d4040"/>
+  <rect x="134" y="79" width="68" height="68" fill="#0d4040"/>
+
+  <!-- Dark grid lines -->
+  <line x1="66"  y1="3"   x2="66"  y2="147" stroke="#051010" stroke-width="1"/>
+  <line x1="134" y1="3"   x2="134" y2="147" stroke="#051010" stroke-width="1"/>
+  <line x1="-2"  y1="71"  x2="202" y2="71"  stroke="#051010" stroke-width="1"/>
+
+  <!-- 8-pointed star at (32, 37): R=28, r=11 -->
+  <!-- Off-white corner triangles -->
+  <polygon points="-2,3   6,15  18,3"  fill="#e8dfc0"/>
+  <polygon points="66,3   60,15 54,3"  fill="#e8dfc0"/>
+  <polygon points="-2,71  6,59  18,71" fill="#e8dfc0"/>
+  <polygon points="66,71  60,59 54,71" fill="#e8dfc0"/>
+  <!-- Gold star polygon (16-point alternating outer/inner) -->
+  <polygon points="
+    32,9   37,22  46,11  44,24
+    60,37  47,37  57,53  44,50
+    32,65  32,52  19,53  18,50
+    4,37   17,37  7,53   20,24
+  " fill="#c8922a"/>
+
+  <!-- Star at (100, 37) -->
+  <polygon points="66,3   74,15  86,3"  fill="#e8dfc0"/>
+  <polygon points="134,3  128,15 122,3" fill="#e8dfc0"/>
+  <polygon points="66,71  74,59  86,71" fill="#e8dfc0"/>
+  <polygon points="134,71 128,59 122,71" fill="#e8dfc0"/>
+  <polygon points="
+    100,9  105,22 114,11 112,24
+    128,37 115,37 125,53 112,50
+    100,65 100,52  87,53  88,50
+     72,37  85,37  75,53  88,24
+  " fill="#c8922a"/>
+
+  <!-- Star at (168, 37) -->
+  <polygon points="134,3  142,15 154,3" fill="#e8dfc0"/>
+  <polygon points="202,3  196,15 190,3" fill="#e8dfc0"/>
+  <polygon points="134,71 142,59 154,71" fill="#e8dfc0"/>
+  <polygon points="202,71 196,59 190,71" fill="#e8dfc0"/>
+  <polygon points="
+    168,9  173,22 182,11 180,24
+    196,37 183,37 193,53 180,50
+    168,65 168,52 155,53 156,50
+    140,37 153,37 143,53 156,24
+  " fill="#c8922a"/>
+
+  <!-- Star at (32, 113) -->
+  <polygon points="-2,79   6,91  18,79"  fill="#e8dfc0"/>
+  <polygon points="66,79   60,91 54,79"  fill="#e8dfc0"/>
+  <polygon points="-2,147  6,135 18,147" fill="#e8dfc0"/>
+  <polygon points="66,147  60,135 54,147" fill="#e8dfc0"/>
+  <polygon points="
+    32,85  37,98  46,87  44,100
+    60,113 47,113 57,129 44,126
+    32,141 32,128 19,129 18,126
+    4,113  17,113  7,129 20,100
+  " fill="#c8922a"/>
+
+  <!-- Star at (100, 113) -->
+  <polygon points="66,79  74,91  86,79"  fill="#e8dfc0"/>
+  <polygon points="134,79 128,91 122,79" fill="#e8dfc0"/>
+  <polygon points="66,147 74,135 86,147" fill="#e8dfc0"/>
+  <polygon points="134,147 128,135 122,147" fill="#e8dfc0"/>
+  <polygon points="
+    100,85  105,98  114,87  112,100
+    128,113 115,113 125,129 112,126
+    100,141 100,128  87,129  88,126
+     72,113  85,113  75,129  88,100
+  " fill="#c8922a"/>
+
+  <!-- Star at (168, 113) -->
+  <polygon points="134,79  142,91 154,79"  fill="#e8dfc0"/>
+  <polygon points="202,79  196,91 190,79" fill="#e8dfc0"/>
+  <polygon points="134,147 142,135 154,147" fill="#e8dfc0"/>
+  <polygon points="202,147 196,135 190,147" fill="#e8dfc0"/>
+  <polygon points="
+    168,85  173,98  182,87  180,100
+    196,113 183,113 193,129 180,126
+    168,141 168,128 155,129 156,126
+    140,113 153,113 143,129 156,100
+  " fill="#c8922a"/>
+
+  </g>
+
+  <text x="4" y="146" font-family="system-ui,sans-serif" font-size="8.5" fill="#3a5a5a" letter-spacing="0.05em">HANKIN'S ROSE · ISLAMIC STAR PATTERNS</text>
+</svg>

@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Hankin's Infinite Rose — Islamic Star Patterns</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { background: #081818; display: flex; align-items: center; justify-content: center; min-height: 100vh; overflow: hidden; }
+    canvas { display: block; width: min(100vw, 100vh); height: min(100vw, 100vh); }
+  </style>
+</head>
+<body>
+  <canvas id="c" width="800" height="800"></canvas>
+  <script>
+    const W = 800, H = 800;
+    const canvas = document.getElementById('c');
+    const ctx = canvas.getContext('2d');
+
+    const C_BG    = '#081818';
+    const C_TEAL  = '#0d4040';
+    const C_GOLD  = '#c8922a';
+    const C_WHITE = '#e8dfc0';
+    const C_DARK  = '#051010';
+
+    // -------------------------------------------------------------------
+    // Parametric star polygon — outer tips at radius R, inner notches at r,
+    // n tips total. Starts pointing up (first tip at -π/2).
+    // -------------------------------------------------------------------
+    function starPolygon(cx, cy, R, r, n) {
+      const pts = [];
+      const step = Math.PI / n;
+      for (let i = 0; i < n; i++) {
+        const a1 = -Math.PI / 2 + 2 * Math.PI * i / n;
+        const a2 = a1 + step;
+        pts.push([cx + R * Math.cos(a1), cy + R * Math.sin(a1)]);
+        pts.push([cx + r * Math.cos(a2), cy + r * Math.sin(a2)]);
+      }
+      return pts;
+    }
+
+    // -------------------------------------------------------------------
+    // n-gon polygon centred at (cx,cy) with circumradius r, flat-top if
+    // flatTop is true (rotate so edge faces up instead of vertex).
+    // -------------------------------------------------------------------
+    function ngon(cx, cy, r, n, offset) {
+      const pts = [];
+      const base = (offset !== undefined ? offset : -Math.PI / 2);
+      for (let i = 0; i < n; i++) {
+        const a = base + 2 * Math.PI * i / n;
+        pts.push([cx + r * Math.cos(a), cy + r * Math.sin(a)]);
+      }
+      return pts;
+    }
+
+    // -------------------------------------------------------------------
+    // Fill a polygon from [x,y] point array.
+    // -------------------------------------------------------------------
+    function fillPoly(pts, color, alpha) {
+      if (!pts || pts.length < 3) return;
+      ctx.beginPath();
+      ctx.moveTo(pts[0][0], pts[0][1]);
+      for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i][0], pts[i][1]);
+      ctx.closePath();
+      if (alpha !== undefined) ctx.globalAlpha = alpha;
+      ctx.fillStyle = color;
+      ctx.fill();
+    }
+
+    // -------------------------------------------------------------------
+    // Grid generators
+    // -------------------------------------------------------------------
+
+    function hexGrid(R) {
+      // Flat-top hexagons: horizontal spacing = R*√3, vertical = R*1.5
+      const dx = R * Math.sqrt(3);
+      const dy = R * 1.5;
+      const margin = R * 3;
+      const cells = [];
+      for (let row = -3; row * dy < H + margin; row++) {
+        for (let col = -3; col * dx < W + margin; col++) {
+          cells.push({
+            cx: col * dx + (row & 1 ? dx / 2 : 0),
+            cy: row * dy
+          });
+        }
+      }
+      return cells;
+    }
+
+    function squareGrid(sideHalf) {
+      // Square tiles: side = 2*sideHalf
+      const step = sideHalf * 2;
+      const margin = sideHalf * 3;
+      const cells = [];
+      for (let y = -margin; y < H + margin; y += step) {
+        for (let x = -margin; x < W + margin; x += step) {
+          cells.push({ cx: x + sideHalf, cy: y + sideHalf });
+        }
+      }
+      return cells;
+    }
+
+    // -------------------------------------------------------------------
+    // Draw a single hex tile with 6-pointed star
+    // -------------------------------------------------------------------
+    function drawHexTile(cx, cy, R, r_inner, r_outer) {
+      // Tile background — pointy-top hex
+      fillPoly(ngon(cx, cy, R, 6, -Math.PI / 2), C_TEAL);
+
+      // Off-white "kite" shapes: 6 triangles between star tips and hex edges
+      // Each triangle: two adjacent star tips + hex vertex between them
+      const hexVerts = ngon(cx, cy, R, 6, -Math.PI / 2);
+      const starTips = [];
+      for (let i = 0; i < 6; i++) {
+        const a = -Math.PI / 2 + 2 * Math.PI * i / 6;
+        starTips.push([cx + r_outer * Math.cos(a), cy + r_outer * Math.sin(a)]);
+      }
+      for (let i = 0; i < 6; i++) {
+        fillPoly([
+          hexVerts[i],
+          starTips[i],
+          starTips[(i + 1) % 6]
+        ], C_WHITE);
+      }
+
+      // Gold 6-pointed star
+      fillPoly(starPolygon(cx, cy, r_outer, r_inner, 6), C_GOLD);
+    }
+
+    // -------------------------------------------------------------------
+    // Draw a single square tile with 8-pointed star
+    // -------------------------------------------------------------------
+    function drawSquareTile(cx, cy, half, r_inner, r_outer) {
+      // Square background, rotated 0° (axis-aligned)
+      ctx.fillStyle = C_TEAL;
+      ctx.fillRect(cx - half, cy - half, half * 2, half * 2);
+
+      // Off-white triangles at each corner of the square, between star arms
+      const corners = [
+        [cx - half, cy - half],
+        [cx + half, cy - half],
+        [cx + half, cy + half],
+        [cx - half, cy + half]
+      ];
+      // The 8-pointed star has tips at both 0°,90°,180°,270° (compass) and
+      // 45°,135°,225°,315° (diagonal). Corner fills are small triangles at
+      // each corner vertex, between the two nearest star tips.
+      for (let i = 0; i < 4; i++) {
+        const angle = Math.PI / 4 + Math.PI / 2 * i; // 45°,135°,225°,315°
+        const left  = angle - Math.PI / 8;
+        const right = angle + Math.PI / 8;
+        fillPoly([
+          corners[i],
+          [cx + r_outer * Math.cos(left), cy + r_outer * Math.sin(left)],
+          [cx + r_outer * Math.cos(right), cy + r_outer * Math.sin(right)]
+        ], C_WHITE);
+      }
+
+      // Gold 8-pointed star
+      fillPoly(starPolygon(cx, cy, r_outer, r_inner, 8), C_GOLD);
+    }
+
+    // -------------------------------------------------------------------
+    // Animation
+    // -------------------------------------------------------------------
+    const HALF_PERIOD = 480; // frames for one half-cycle (6→8 fold)
+    let frame = 0;
+
+    const HEX_R  = 74;                   // hex circumradius
+    const SQ_HALF = 52;                  // square half-side
+
+    const hexCells    = hexGrid(HEX_R);
+    const squareCells = squareGrid(SQ_HALF);
+
+    function ease(t) { return t * t * (3 - 2 * t); }
+
+    function loop() {
+      frame++;
+
+      // Morph 0→1→0 between 6-fold and 8-fold every 2*HALF_PERIOD frames
+      const raw = 0.5 - 0.5 * Math.cos(Math.PI * frame / HALF_PERIOD);
+      const t = ease(raw);
+
+      // Slowly oscillate star tip radius (morphs star from thin to fat)
+      const oscHex = 0.5 + 0.12 * Math.sin(frame * 0.011);
+      const oscSq  = 0.5 + 0.12 * Math.sin(frame * 0.011 + 1.0);
+
+      // Star geometry for hex layer
+      const hexOuter = HEX_R * 0.88;
+      const hexInner = hexOuter * oscHex;  // inner notch oscillates
+
+      // Star geometry for square layer
+      const sqOuter = SQ_HALF * 0.93;
+      const sqInner = sqOuter * oscSq;
+
+      // Slow global rotation — completes one turn every ~25 000 frames
+      const rot = frame * 0.00025;
+
+      ctx.clearRect(0, 0, W, H);
+      ctx.fillStyle = C_BG;
+      ctx.fillRect(0, 0, W, H);
+
+      ctx.save();
+      ctx.translate(W / 2, H / 2);
+      ctx.rotate(rot);
+      ctx.translate(-W / 2, -H / 2);
+
+      const a6 = (1 - ease(t));
+      const a8 = ease(t);
+
+      // 6-fold hex layer
+      if (a6 > 0.005) {
+        ctx.globalAlpha = a6;
+        for (const { cx, cy } of hexCells) {
+          drawHexTile(cx, cy, HEX_R, hexInner, hexOuter);
+        }
+      }
+
+      // 8-fold square layer
+      if (a8 > 0.005) {
+        ctx.globalAlpha = a8;
+        for (const { cx, cy } of squareCells) {
+          drawSquareTile(cx, cy, SQ_HALF, sqInner, sqOuter);
+        }
+      }
+
+      ctx.globalAlpha = 1;
+      ctx.restore();
+
+      requestAnimationFrame(loop);
+    }
+
+    loop();
+  </script>
+</body>
+</html>
