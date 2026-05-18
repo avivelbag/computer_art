@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Cloth: What Falls Together</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { background: #080810; display: flex; align-items: center; justify-content: center; min-height: 100vh; overflow: hidden; }
+    canvas { display: block; width: min(100vw, calc(100vh * 8/5)); height: min(calc(100vw * 5/8), 100vh); }
+  </style>
+</head>
+<body>
+  <canvas id="c" width="800" height="500"></canvas>
+  <script>
+    const W = 800, H = 500;
+
+    // Cloth grid dimensions and physics constants
+    const ROWS = 32, COLS = 32;
+    const REST = 11;              // rest length in pixels for structural springs
+    const GRAVITY = 0.38;         // downward acceleration per frame (px/frame²)
+    const ITERS = 5;              // constraint projection iterations per frame
+    const DAMP = 0.997;           // velocity damping factor (applied to Verlet velocity)
+    const WIND_AMP = 1.6;         // peak horizontal wind acceleration (px/frame²)
+    const WIND_FREQ = 0.0015;     // global oscillation frequency (rad/frame)
+    const WIND_K = 0.055;         // spatial wavenumber for per-particle wind phase
+
+    // Cloth color: deep burgundy #8b1a3a
+    const CR = 139, CG = 26, CB = 58;
+
+    const canvas = document.getElementById('c');
+    const ctx = canvas.getContext('2d');
+
+    const N = ROWS * COLS;
+    const START_X = (W - (COLS - 1) * REST) / 2;
+    const START_Y = 35;
+
+    // Particle state: current and previous positions (Verlet stores velocity implicitly)
+    const px  = new Float32Array(N);   // current x
+    const py  = new Float32Array(N);   // current y
+    const ppx = new Float32Array(N);   // previous x
+    const ppy = new Float32Array(N);   // previous y
+    const pin = new Uint8Array(N);     // 1 = pinned (immovable)
+
+    // Constraint arrays: pairs (a, b) held at rest distance caR[k]
+    const MAX_CNT = ROWS * (COLS - 1) + (ROWS - 1) * COLS + 2 * (ROWS - 1) * (COLS - 1);
+    const caA = new Int32Array(MAX_CNT);
+    const caB = new Int32Array(MAX_CNT);
+    const caR = new Float32Array(MAX_CNT);
+    let nc = 0;  // active constraint count
+
+    // Normalisation factor for surface-normal z-component from quad diagonals
+    const NORM_SCALE = 1 / (REST * REST * 2);
+
+    // Pre-built color LUT: index 0 = darkest shadow, 255 = highlight
+    // Maps shade ∈ [0,1] → factor ∈ [0.4, 1.4] × base cloth color
+    const LUT_SIZE = 256;
+    const colorLUT = new Array(LUT_SIZE);
+    for (let i = 0; i < LUT_SIZE; i++) {
+      const f = 0.4 + (i / (LUT_SIZE - 1)) * 1.0;
+      colorLUT[i] = `rgb(${Math.min(255, Math.round(CR * f))},${Math.min(255, Math.round(CG * f))},${Math.min(255, Math.round(CB * f))})`;
+    }
+
+    function init() {
+      nc = 0;
+
+      // Place particles on a regular grid
+      for (let r = 0; r < ROWS; r++) {
+        for (let c = 0; c < COLS; c++) {
+          const i = r * COLS + c;
+          px[i] = ppx[i] = START_X + c * REST;
+          py[i] = ppy[i] = START_Y + r * REST;
+          pin[i] = 0;
+        }
+      }
+
+      // Pin top row at every 5th column plus the last column
+      for (let c = 0; c < COLS; c++) {
+        if (c % 5 === 0 || c === COLS - 1) pin[c] = 1;
+      }
+
+      const DIAG_REST = REST * Math.SQRT2;
+
+      // Structural horizontal springs (within each row)
+      for (let r = 0; r < ROWS; r++)
+        for (let c = 0; c < COLS - 1; c++) {
+          caA[nc] = r * COLS + c;
+          caB[nc] = r * COLS + c + 1;
+          caR[nc] = REST;
+          nc++;
+        }
+
+      // Structural vertical springs (between rows)
+      for (let r = 0; r < ROWS - 1; r++)
+        for (let c = 0; c < COLS; c++) {
+          caA[nc] = r * COLS + c;
+          caB[nc] = (r + 1) * COLS + c;
+          caR[nc] = REST;
+          nc++;
+        }
+
+      // Shear springs (diagonals) — resist angular deformation
+      for (let r = 0; r < ROWS - 1; r++)
+        for (let c = 0; c < COLS - 1; c++) {
+          caA[nc] = r * COLS + c;
+          caB[nc] = (r + 1) * COLS + c + 1;
+          caR[nc] = DIAG_REST;
+          nc++;
+          caA[nc] = r * COLS + c + 1;
+          caB[nc] = (r + 1) * COLS + c;
+          caR[nc] = DIAG_REST;
+          nc++;
+        }
+    }
+
+    let t = 0;
+
+    function update() {
+      // Verlet integration: infer velocity from (current - previous), apply forces
+      for (let i = 0; i < N; i++) {
+        if (pin[i]) continue;
+        const vx = (px[i] - ppx[i]) * DAMP;
+        const vy = (py[i] - ppy[i]) * DAMP;
+        // Sinusoidal wind: global phase t*WIND_FREQ plus spatial phase px[i]*WIND_K
+        const wx = WIND_AMP * Math.sin(t * WIND_FREQ + px[i] * WIND_K);
+        ppx[i] = px[i];
+        ppy[i] = py[i];
+        px[i] += vx + wx;
+        py[i] += vy + GRAVITY;
+      }
+
+      // Constraint projection: iteratively enforce rest lengths
+      for (let iter = 0; iter < ITERS; iter++) {
+        for (let k = 0; k < nc; k++) {
+          const a = caA[k], b = caB[k];
+          const dx = px[b] - px[a];
+          const dy = py[b] - py[a];
+          const d = Math.hypot(dx, dy);
+          if (d < 1e-6) continue;
+          const corr = (d - caR[k]) / d * 0.5;
+          const cx = dx * corr, cy = dy * corr;
+          if (!pin[a]) { px[a] += cx; py[a] += cy; }
+          if (!pin[b]) { px[b] -= cx; py[b] -= cy; }
+        }
+      }
+
+      t++;
+    }
+
+    function draw() {
+      ctx.fillStyle = '#080810';
+      ctx.fillRect(0, 0, W, H);
+
+      for (let r = 0; r < ROWS - 1; r++) {
+        for (let c = 0; c < COLS - 1; c++) {
+          const i00 = r * COLS + c;
+          const i10 = i00 + 1;
+          const i01 = i00 + COLS;
+          const i11 = i01 + 1;
+
+          const x0 = px[i00], y0 = py[i00];
+          const x1 = px[i10], y1 = py[i10];
+          const x2 = px[i11], y2 = py[i11];
+          const x3 = px[i01], y3 = py[i01];
+
+          // z-component of cross product of the two quad diagonals gives a
+          // proxy surface normal: 1.0 for flat cloth facing viewer, <0 for back-facing
+          const d1x = x2 - x0, d1y = y2 - y0;
+          const d2x = x3 - x1, d2y = y3 - y1;
+          const nz = (d1x * d2y - d1y * d2x) * NORM_SCALE;
+          const shade = Math.max(0, Math.min(1, nz));
+          const idx = Math.round(shade * (LUT_SIZE - 1));
+
+          ctx.fillStyle = colorLUT[idx];
+          ctx.beginPath();
+          ctx.moveTo(x0, y0);
+          ctx.lineTo(x1, y1);
+          ctx.lineTo(x2, y2);
+          ctx.lineTo(x3, y3);
+          ctx.closePath();
+          ctx.fill();
+        }
+      }
+    }
+
+    function frame() {
+      update();
+      draw();
+      requestAnimationFrame(frame);
+    }
+
+    init();
+    requestAnimationFrame(frame);
+  </script>
+</body>
+</html>

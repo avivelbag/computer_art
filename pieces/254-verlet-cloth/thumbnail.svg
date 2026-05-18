@@ -1,0 +1,85 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 150" width="200" height="150">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#080810"/>
+      <stop offset="100%" stop-color="#0c0c18"/>
+    </linearGradient>
+    <linearGradient id="clothTop" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#c04060"/>
+      <stop offset="50%" stop-color="#8b1a3a"/>
+      <stop offset="100%" stop-color="#4a0e20"/>
+    </linearGradient>
+    <linearGradient id="clothMid" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#b03050"/>
+      <stop offset="40%" stop-color="#8b1a3a"/>
+      <stop offset="100%" stop-color="#3c0818"/>
+    </linearGradient>
+    <linearGradient id="clothBot" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#a02848"/>
+      <stop offset="50%" stop-color="#6a1230"/>
+      <stop offset="100%" stop-color="#2e0612"/>
+    </linearGradient>
+  </defs>
+
+  <!-- background -->
+  <rect width="200" height="150" fill="url(#bgGrad)"/>
+
+  <!-- cloth mesh — drawn as a series of quad rows simulating a waving cloth -->
+  <!-- Pin points at top -->
+  <rect x="28"  y="10" width="3" height="6" rx="1" fill="#555"/>
+  <rect x="55"  y="10" width="3" height="6" rx="1" fill="#555"/>
+  <rect x="82"  y="10" width="3" height="6" rx="1" fill="#555"/>
+  <rect x="109" y="10" width="3" height="6" rx="1" fill="#555"/>
+  <rect x="136" y="10" width="3" height="6" rx="1" fill="#555"/>
+  <rect x="163" y="10" width="3" height="6" rx="1" fill="#555"/>
+
+  <!-- Row 0 quads (top row, light — facing viewer) -->
+  <polygon points="28,16 55,16 54,32 29,32"   fill="#c04060" opacity="0.95"/>
+  <polygon points="55,16 82,16 80,30 54,32"   fill="#b83858" opacity="0.95"/>
+  <polygon points="82,16 109,16 111,29 80,30" fill="#c84868" opacity="0.95"/>
+  <polygon points="109,16 136,16 134,31 111,29" fill="#b83858" opacity="0.95"/>
+  <polygon points="136,16 163,16 166,30 134,31" fill="#c04060" opacity="0.95"/>
+
+  <!-- Row 1 quads (gentle wave leftward) -->
+  <polygon points="29,32 54,32 51,48 27,47"   fill="#a02848" opacity="0.9"/>
+  <polygon points="54,32 80,30 78,46 51,48"   fill="#9a2242" opacity="0.9"/>
+  <polygon points="80,30 111,29 113,45 78,46" fill="#b03050" opacity="0.9"/>
+  <polygon points="111,29 134,31 133,47 113,45" fill="#a02848" opacity="0.9"/>
+  <polygon points="134,31 166,30 168,46 133,47" fill="#9a2242" opacity="0.9"/>
+
+  <!-- Row 2 quads (swaying rightward) -->
+  <polygon points="27,47 51,48 53,64 26,65"   fill="#801830" opacity="0.88"/>
+  <polygon points="51,48 78,46 81,63 53,64"   fill="#8a2038" opacity="0.88"/>
+  <polygon points="78,46 113,45 116,62 81,63" fill="#902840" opacity="0.88"/>
+  <polygon points="113,45 133,47 132,63 116,62" fill="#80182e" opacity="0.88"/>
+  <polygon points="133,47 168,46 170,62 132,63" fill="#7a1428" opacity="0.88"/>
+
+  <!-- Row 3 (drooping, darker — foreshortened lower cloth) -->
+  <polygon points="26,65 53,64 55,80 24,82"   fill="#5a0e20" opacity="0.85"/>
+  <polygon points="53,64 81,63 84,80 55,80"   fill="#640e22" opacity="0.85"/>
+  <polygon points="81,63 116,62 118,79 84,80" fill="#6a1228" opacity="0.85"/>
+  <polygon points="116,62 132,63 131,79 118,79" fill="#5c0c1e" opacity="0.85"/>
+  <polygon points="132,63 170,62 172,80 131,79" fill="#540a1a" opacity="0.85"/>
+
+  <!-- Row 4 (bottom edge swinging, fading) -->
+  <polygon points="24,82 55,80 57,96 22,99"   fill="#3a0810" opacity="0.8"/>
+  <polygon points="55,80 84,80 87,97 57,96"   fill="#420810" opacity="0.8"/>
+  <polygon points="84,80 118,79 120,97 87,97" fill="#480c14" opacity="0.8"/>
+  <polygon points="118,79 131,79 130,96 120,97" fill="#3a0810" opacity="0.8"/>
+  <polygon points="131,79 172,80 174,97 130,96" fill="#360810" opacity="0.8"/>
+
+  <!-- Bottom fringe (soft) -->
+  <polygon points="22,99 57,96 60,110 20,114"   fill="#200408" opacity="0.6"/>
+  <polygon points="57,96 87,97 90,112 60,110"   fill="#240408" opacity="0.6"/>
+  <polygon points="87,97 120,97 122,112 90,112" fill="#280608" opacity="0.6"/>
+  <polygon points="120,97 130,96 130,110 122,112" fill="#200408" opacity="0.55"/>
+  <polygon points="130,96 174,97 176,112 130,110" fill="#1e0408" opacity="0.55"/>
+
+  <!-- subtle horizontal grid lines to suggest mesh structure -->
+  <line x1="28" y1="16"  x2="166" y2="16"  stroke="#d06080" stroke-width="0.5" opacity="0.4"/>
+  <line x1="27" y1="47"  x2="168" y2="46"  stroke="#c05070" stroke-width="0.4" opacity="0.3"/>
+  <line x1="26" y1="65"  x2="170" y2="62"  stroke="#a03050" stroke-width="0.4" opacity="0.25"/>
+
+  <!-- label -->
+  <text x="4" y="146" font-family="system-ui,sans-serif" font-size="9" fill="#444" letter-spacing="0.05em">VERLET CLOTH · SPRING-MASS SIMULATION</text>
+</svg>
