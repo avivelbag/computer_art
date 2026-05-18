@@ -978,5 +978,15 @@
         "path": "pieces/247-smooth-life",
         "thumbnail": "pieces/247-smooth-life/thumbnail.svg",
         "description": "SmoothLife (Rafler 2011) generalizes Conway's Life to continuous state values in [0,1] and circular neighborhood kernels: for each cell, an inner disk average n and outer annulus average m are combined via logistic sigmoid birth/survival functions σ₂ — the same qualitative life/death rule as Conway's but infinitely smooth rather than threshold-hard. A 20×20 random seed placed at center self-organizes within ~50 frames into traveling blobs, rings, and branching filaments that fill the canvas. Two Float32Array buffers are swapped each frame; precomputed flat kernel arrays make the toroidal convolution efficient. Color maps 0 → near-black (#050508), 0.5 → deep violet (#7b3fff), 1.0 → bright cyan-white (#00e8d6), via a 256-entry LUT. The grid is rendered at 4× zoom with image-rendering:pixelated, giving the organism-under-microscope aesthetic."
+    },
+    {
+        "id": "254-verlet-cloth",
+        "title": "Cloth: What Falls Together",
+        "tagline": "32×32 spring-mass cloth falls under gravity and sways in sinusoidal wind — Verlet integration with 5 constraint-projection iterations per frame, quads shaded by surface-normal depth in deep burgundy on near-black",
+        "year": 2026,
+        "technique": "canvas / Verlet integration / spring-mass cloth / constraint projection / surface-normal shading / requestAnimationFrame",
+        "path": "pieces/254-verlet-cloth",
+        "thumbnail": "pieces/254-verlet-cloth/thumbnail.svg",
+        "description": "A 32×32 grid of particles simulates cloth via Verlet integration: each frame, velocity is computed as the difference between current and previous positions, gravity and a sinusoidal wind force are added, and five rounds of constraint projection keep structural (horizontal/vertical) and shear (diagonal) springs at their rest lengths. The top row is pinned at evenly spaced intervals; a sinusoidal wind force Fx = A·sin(t·ω + x·k) ripples the cloth continuously so it never settles to a static state. Each frame, 31×31 quads are drawn as filled paths shaded by the z-component of the surface normal (cross product of the two diagonals), giving a subtle sense of fabric depth: quads facing the viewer glow in deep burgundy (#8b1a3a), those twisting away darken toward near-black (#080810)."
     }
 ]
