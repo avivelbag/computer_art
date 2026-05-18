@@ -998,5 +998,15 @@
         "path": "pieces/255-islamic-stars",
         "thumbnail": "pieces/255-islamic-stars/thumbnail.svg",
         "description": "Two symmetry families of Islamic girih tilework cross-fade continuously: a hexagonal (6-fold) grid and a square (8-fold) grid, each with star polygons at every cell centre. Stars are drawn as regular 2n-vertex polygons alternating outer tips at radius R and inner notches at radius r. A hermite-eased sine wave over 960 frames morphs globalAlpha between the two layers, so neither family ever cuts abruptly. A secondary oscillation slowly varies the inner notch radius, making star points breathe from sharp to broad. The entire tiling rotates at 0.00025 rad/frame — one full revolution every ~70 minutes — so no fixed boundary is ever visible. Palette: near-black teal ground (#081818), deep teal tile fill (#0d4040), warm gold stars (#c8922a), and off-white parchment corner fills (#e8dfc0), referencing Persian and Moroccan zellige tilework."
+    },
+    {
+        "id": "257-billiard-chaos",
+        "title": "Stadium Billiard: The Orbit That Never Closes",
+        "tagline": "Square vs. Bunimovich stadium — 10 particles bounce elastically inside each table, trails colored by launch angle revealing ordered star patterns against space-filling ergodic chaos",
+        "year": 2026,
+        "technique": "canvas / dynamical billiards / Bunimovich stadium / ergodic / integrable / elastic reflection",
+        "path": "pieces/257-billiard-chaos",
+        "thumbnail": "pieces/257-billiard-chaos/thumbnail.svg",
+        "description": "Two billiard tables drawn side by side: a square (integrable) and a Bunimovich stadium (chaotic). Ten particles per table launch from a shared seed point at evenly spaced angles, each coloured by launch angle using HSL 0–300°. Trails accumulate with low alpha so density builds over the 15-second cycle, after which all trails clear and a fresh cluster spawns from a new random seed. The square builds geometric star patterns because its motion is constrained to low-dimensional tori in phase space; the stadium fills space uniformly because curved caps mix the angle components, producing provably ergodic chaos."
     }
 ]
