@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Smooth Life — The Creature That Has No Name</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{
+  background:#050508;
+  color:#888;
+  font:11px/1.4 system-ui,sans-serif;
+  display:flex;
+  flex-direction:column;
+  height:100vh;
+  overflow:hidden;
+  user-select:none;
+}
+#main{
+  flex:1 1 0;
+  display:flex;
+  min-height:0;
+  overflow:hidden;
+}
+#canvas-wrap{
+  flex:1 1 0;
+  position:relative;
+  overflow:hidden;
+  cursor:crosshair;
+  background:#050508;
+}
+canvas{
+  display:block;
+  position:absolute;
+  top:0;left:0;
+  image-rendering:pixelated;
+  image-rendering:crisp-edges;
+}
+#sidebar{
+  flex:0 0 190px;
+  background:#080810;
+  border-left:1px solid #12121e;
+  display:flex;
+  flex-direction:column;
+  overflow:hidden;
+  padding:10px 9px 10px;
+  gap:8px;
+}
+#sidebar h3{
+  font-size:10px;
+  font-weight:700;
+  color:#7b3fff;
+  letter-spacing:0.08em;
+  text-transform:uppercase;
+  margin-bottom:5px;
+}
+.divider{border:none;border-top:1px solid #12121e}
+.stat-row{
+  display:flex;
+  justify-content:space-between;
+  font-size:10px;
+  color:#777;
+  padding:2px 0;
+}
+.stat-val{
+  color:#00e8d6;
+  font-weight:700;
+  font-variant-numeric:tabular-nums;
+}
+#rule-text{font-size:9.5px;color:#666;line-height:1.75}
+#rule-text em{color:#9966ff;font-style:normal}
+#controls{
+  flex:0 0 auto;
+  background:#060610;
+  border-top:1px solid #0e0e20;
+  padding:6px 12px 8px;
+  display:flex;
+  align-items:center;
+  gap:10px;
+  flex-wrap:wrap;
+}
+#btn-row{display:flex;gap:6px;flex-wrap:wrap}
+.ctrl-btn{
+  background:none;
+  border:1px solid #1e1e40;
+  color:#555;
+  font-size:10px;
+  padding:4px 10px;
+  cursor:pointer;
+  border-radius:2px;
+  letter-spacing:0.06em;
+  white-space:nowrap;
+}
+.ctrl-btn:hover{color:#aaa;border-color:#4444aa}
+.ctrl-btn.active{color:#00e8d6;border-color:#00e8d6}
+.param{display:flex;align-items:center;gap:6px}
+.param label{
+  font-size:10px;
+  font-weight:700;
+  color:#7b3fff;
+  white-space:nowrap;
+}
+.param input[type=range]{
+  width:80px;
+  accent-color:#7b3fff;
+  height:4px;
+  cursor:pointer;
+}
+.param .val{font-size:10px;color:#aaa;min-width:30px;text-align:right}
+#info-pane{
+  position:fixed;
+  bottom:0;left:0;right:0;
+  background:#0a0a1e;
+  border-top:1px solid #2a2a50;
+  padding:14px 24px 14px;
+  transform:translateY(100%);
+  transition:transform 0.3s ease;
+  z-index:10;
+  max-height:60vh;
+  overflow-y:auto;
+}
+#info-pane.open{transform:translateY(0)}
+#info-pane h2{
+  font-size:13px;font-weight:700;color:#9966ff;
+  margin-bottom:10px;letter-spacing:0.08em;
+}
+#info-pane h3{font-size:11px;font-weight:700;color:#9966ff;margin:10px 0 4px}
+#info-pane p{font-size:11px;color:#888;line-height:1.75;max-width:780px;margin-bottom:7px}
+#info-pane strong{color:#00e8d6}
+#pane-close{
+  position:absolute;top:10px;right:14px;
+  background:none;border:none;color:#444;font-size:16px;cursor:pointer;
+}
+#pane-close:hover{color:#aaa}
+</style>
+</head>
+<body>
+
+<div id="main">
+  <div id="canvas-wrap"><canvas id="c"></canvas></div>
+  <div id="sidebar">
+    <div>
+      <h3>SmoothLife Rule</h3>
+      <div id="rule-text">
+        <p>Each cell computes two neighborhood averages:</p>
+        <p><em>n</em> — inner disk r &lt; 3<br>
+        <em>m</em> — outer annulus 3 &lt; r &lt; 6</p>
+        <p>A sigmoid birth/survival function maps (<em>n</em>, <em>m</em>) to [0,1], producing continuous-state organisms.</p>
+      </div>
+    </div>
+    <hr class="divider"/>
+    <div>
+      <h3>State</h3>
+      <div class="stat-row"><span>Frame</span><span class="stat-val" id="st-frame">0</span></div>
+      <div class="stat-row"><span>Mean</span><span class="stat-val" id="st-mean">0.000</span></div>
+      <div class="stat-row"><span>Max</span><span class="stat-val" id="st-max">0.000</span></div>
+      <div class="stat-row"><span>Grid</span><span class="stat-val" id="st-grid">–</span></div>
+    </div>
+    <hr class="divider"/>
+    <div>
+      <h3>Color Map</h3>
+      <canvas id="lut-bar" width="160" height="14" style="width:160px;height:14px;border-radius:2px;display:block"></canvas>
+      <div style="display:flex;justify-content:space-between;font-size:9px;color:#444;margin-top:2px">
+        <span>0 dead</span><span>0.5 violet</span><span>1 alive</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="controls">
+  <div id="btn-row">
+    <button class="ctrl-btn active" id="btn-play">Pause</button>
+    <button class="ctrl-btn" id="btn-step">Step</button>
+    <button class="ctrl-btn" id="btn-reset">Reset</button>
+    <button class="ctrl-btn" id="btn-splash">Splash</button>
+    <button class="ctrl-btn" id="btn-about">About</button>
+  </div>
+  <div class="param">
+    <label>Speed</label>
+    <input type="range" id="sl-speed" min="1" max="20" value="8" step="1">
+    <span class="val" id="vspeed">8</span>
+  </div>
+  <div class="param">
+    <label>Zoom</label>
+    <input type="range" id="sl-zoom" min="2" max="8" value="4" step="1">
+    <span class="val" id="vzoom">4×</span>
+  </div>
+</div>
+
+<div id="info-pane">
+  <button id="pane-close">&#x2715;</button>
+  <h2>Smooth Life — The Creature That Has No Name</h2>
+  <h3>Lenia and SmoothLife</h3>
+  <p>SmoothLife, introduced by Stephan Rafler in 2011, is a continuous-space and continuous-state generalization of Conway's Game of Life. Where Life operates on a discrete grid with binary cell states, SmoothLife uses <strong>floating-point states in [0,1]</strong> spread across a continuous toroidal plane. The result is an ecology of slow, undulating forms — creatures that have no name, drifting and dividing like organisms filmed through a microscope.</p>
+  <h3>The Neighborhood Rule</h3>
+  <p>For each cell position, two averages are computed: <strong>n</strong> (inner density, disk of radius r<sub>i</sub> = 3) and <strong>m</strong> (outer density, annulus r<sub>i</sub> &lt; r &lt; r<sub>o</sub> = 6). The birth/survival function σ₂(n, birth_lo, birth_hi) maps these to a target state, implemented as a logistic sigmoid — giving the rule the same qualitative life/death character as Conway's rules, but infinitely smooth rather than hard-threshold.</p>
+  <h3>Logistic Sigmoid Transition</h3>
+  <p>The transition steepness α controls how sharp the birth/death boundary is. The four parameters (b₁ = 0.278, b₂ = 0.365, d₁ = 0.267, d₂ = 0.445) were found by Rafler to produce self-organising, traveling structures. The final state update <code>next = clamp(2s − 1 + 0.9 × cur, 0, 1)</code> adds damping so structures decay and re-form rather than instantly going dark or fully lit.</p>
+  <h3>Color Mapping</h3>
+  <p>State 0 maps to <strong>near-black (#050508)</strong>, state 0.5 to <strong>deep violet (#7b3fff)</strong>, and state 1.0 to <strong>bright cyan/white (#00e8d6 blending to white)</strong>. A 256-entry LUT is precomputed once and applied per-pixel to minimize per-frame cost.</p>
+  <h3>Performance</h3>
+  <p>The simulation runs a naive O(W×H×r²) convolution over a small grid (default 128×128), scaled up by CSS <code>image-rendering: pixelated</code> to fill the canvas at ~4× zoom. This is sufficient for 8–20 steps/second on any modern device without WebGL.</p>
+</div>
+
+<script>
+// ── SmoothLife parameters (Rafler 2011) ──────────────────────────────────────
+const RI = 3;   // inner disk radius
+const RO = 6;   // outer annulus outer radius
+const B1 = 0.278, B2 = 0.365; // birth interval bounds
+const D1 = 0.267, D2 = 0.445; // death interval bounds
+const ALPHA_N = 0.028;  // state transition steepness
+const ALPHA_M = 0.147;  // neighborhood transition steepness
+
+// ── logistic sigmoid helpers ──────────────────────────────────────────────────
+
+/**
+ * σ₁: logistic sigmoid centered at a with steepness controlled by alpha.
+ * Returns a smooth 0→1 transition as x crosses a.
+ */
+function sigma1(x, a, alpha) {
+  return 1.0 / (1.0 + Math.exp(-4.0 / alpha * (x - a)));
+}
+
+/**
+ * σ₂: smooth indicator for x ∈ (a, b), using two σ₁ calls.
+ * Returns near-1 inside the interval, near-0 outside.
+ */
+function sigma2(x, a, b, alpha) {
+  return sigma1(x, a, alpha) * (1.0 - sigma1(x, b, alpha));
+}
+
+/**
+ * Interpolate between birth threshold x and death threshold y
+ * based on outer density m.  When m ≈ 0 (sparse outer) the threshold
+ * approaches the birth value; when m ≈ 1 (dense outer) it approaches
+ * the death value.  This is the "sigmaM" mix from Rafler 2011.
+ */
+function sigmaM(x, y, m) {
+  const mix = sigma1(m, 0.5, ALPHA_M);
+  return x + (y - x) * mix;
+}
+
+/**
+ * SmoothLife transition function (Rafler 2011).
+ * n: inner neighborhood average (disk r≤RI), m: outer neighborhood average.
+ * Computes adaptive lower/upper thresholds for n by interpolating birth ↔ death
+ * based on m, then evaluates whether n falls within the survival window.
+ * Returns target state s ∈ [0,1].
+ */
+function smoothTransition(n, m) {
+  const lo = sigmaM(B1, D1, m);
+  const hi = sigmaM(B2, D2, m);
+  return sigma2(n, lo, hi, ALPHA_N);
+}
+
+// ── grid state ────────────────────────────────────────────────────────────────
+
+let GW = 128, GH = 128;   // logical grid dimensions (updated at init)
+let cur, nxt;              // Float32Array buffers (size GW*GH)
+
+// Precomputed kernel offsets with weights for inner (disk) and outer (annulus)
+// neighborhoods. Rebuilt whenever GW/GH or RI/RO changes (fixed here).
+let innerKernel = [];  // [{dx, dy, w}] for |r| <= RI
+let outerKernel = [];  // [{dx, dy, w}] for RI < |r| <= RO
+let innerArea = 0;     // total weight of inner kernel
+let outerArea = 0;     // total weight of outer kernel
+
+/**
+ * Precompute the flat list of (dx, dy) offsets for inner and outer kernels.
+ * Uses a uniform (unweighted) disk mask — each cell in the disk contributes
+ * weight 1.  Separating the two kernels avoids recomputing membership per step.
+ */
+function buildKernels() {
+  innerKernel = [];
+  outerKernel = [];
+  innerArea = 0;
+  outerArea = 0;
+  const ri2 = RI * RI;
+  const ro2 = RO * RO;
+  for (let dy = -RO; dy <= RO; dy++) {
+    for (let dx = -RO; dx <= RO; dx++) {
+      const r2 = dx * dx + dy * dy;
+      if (r2 <= ri2) {
+        innerKernel.push(dx, dy);
+        innerArea++;
+      } else if (r2 <= ro2) {
+        outerKernel.push(dx, dy);
+        outerArea++;
+      }
+    }
+  }
+}
+
+function initBuffers(w, h) {
+  GW = w; GH = h;
+  cur = new Float32Array(GW * GH);
+  nxt = new Float32Array(GW * GH);
+  buildKernels();
+}
+
+/**
+ * Seed a small random patch near the center in [vMin, vMax].
+ * The rest of the grid is zero (dark background).
+ */
+function seed(patchW, patchH, vMin, vMax) {
+  cur.fill(0);
+  const ox = Math.floor((GW - patchW) / 2);
+  const oy = Math.floor((GH - patchH) / 2);
+  for (let py = 0; py < patchH; py++) {
+    for (let px = 0; px < patchW; px++) {
+      cur[(oy + py) * GW + (ox + px)] = vMin + Math.random() * (vMax - vMin);
+    }
+  }
+}
+
+/**
+ * Add several random splashes across the grid — useful for re-seeding after
+ * patterns fade out or for user-triggered "splash" action.
+ */
+function splash() {
+  const count = 4 + Math.floor(Math.random() * 4);
+  for (let k = 0; k < count; k++) {
+    const pw = 8 + Math.floor(Math.random() * 14);
+    const ph = 8 + Math.floor(Math.random() * 14);
+    const ox = Math.floor(Math.random() * (GW - pw));
+    const oy = Math.floor(Math.random() * (GH - ph));
+    for (let py = 0; py < ph; py++) {
+      for (let px = 0; px < pw; px++) {
+        cur[(oy + py) * GW + (ox + px)] = 0.1 + Math.random() * 0.4;
+      }
+    }
+  }
+}
+
+/**
+ * Advance one SmoothLife generation.
+ * For each cell, computes inner (n) and outer (m) neighborhood averages using
+ * the precomputed flat kernel arrays, then applies the sigmoid transition and
+ * damping.  Boundary conditions are toroidal (periodic wrap).
+ */
+function step() {
+  const iLen = innerKernel.length;
+  const oLen = outerKernel.length;
+  for (let cy = 0; cy < GH; cy++) {
+    for (let cx = 0; cx < GW; cx++) {
+      let n = 0, m = 0;
+
+      for (let k = 0; k < iLen; k += 2) {
+        const nx = (cx + innerKernel[k]     + GW) % GW;
+        const ny = (cy + innerKernel[k + 1] + GH) % GH;
+        n += cur[ny * GW + nx];
+      }
+      n /= innerArea;
+
+      for (let k = 0; k < oLen; k += 2) {
+        const nx = (cx + outerKernel[k]     + GW) % GW;
+        const ny = (cy + outerKernel[k + 1] + GH) % GH;
+        m += cur[ny * GW + nx];
+      }
+      m /= outerArea;
+
+      const s = smoothTransition(n, m);
+      // Damping: blend toward target state rather than hard-setting,
+      // which lets structures persist and travel rather than dying instantly.
+      let v = 2.0 * s - 1.0 + 0.9 * cur[cy * GW + cx];
+      nxt[cy * GW + cx] = v < 0 ? 0 : (v > 1 ? 1 : v);
+    }
+  }
+  // swap buffers
+  const tmp = cur; cur = nxt; nxt = tmp;
+}
+
+// ── color LUT ─────────────────────────────────────────────────────────────────
+
+/**
+ * Precomputed 256-entry RGBA LUT mapping state ∈ [0,1] to pixel color.
+ * Palette:
+ *   0   → near-black  (#050508)
+ *   0.5 → deep violet (#7b3fff)
+ *   1.0 → bright cyan (#00e8d6) blending toward white
+ * Uses two piecewise linear segments with smooth interpolation.
+ */
+const LUT_SIZE = 256;
+const LUT = new Uint8ClampedArray(LUT_SIZE * 4);
+
+(function buildLUT() {
+  for (let i = 0; i < LUT_SIZE; i++) {
+    const t = i / (LUT_SIZE - 1); // [0,1]
+    let r, g, b;
+    if (t < 0.5) {
+      // near-black → deep violet
+      const u = t * 2;
+      r = Math.round(5   + (123 - 5)   * u);
+      g = Math.round(5   + (63  - 5)   * u);
+      b = Math.round(8   + (255 - 8)   * u);
+    } else {
+      // deep violet → bright cyan / white
+      const u = (t - 0.5) * 2;
+      r = Math.round(123 + (255 - 123) * u);
+      g = Math.round(63  + (255 - 63)  * u);
+      b = Math.round(255 + (255 - 255) * u);
+    }
+    LUT[i * 4]     = r;
+    LUT[i * 4 + 1] = g;
+    LUT[i * 4 + 2] = b;
+    LUT[i * 4 + 3] = 255;
+  }
+})();
+
+// Draw LUT preview bar in sidebar
+(function drawLUTBar() {
+  const bar = document.getElementById('lut-bar');
+  const bctx = bar.getContext('2d');
+  const id = bctx.createImageData(160, 14);
+  const d = id.data;
+  for (let x = 0; x < 160; x++) {
+    const li = Math.floor(x / 160 * LUT_SIZE) * 4;
+    for (let y = 0; y < 14; y++) {
+      const off = (y * 160 + x) * 4;
+      d[off]   = LUT[li];
+      d[off+1] = LUT[li+1];
+      d[off+2] = LUT[li+2];
+      d[off+3] = 255;
+    }
+  }
+  bctx.putImageData(id, 0, 0);
+})();
+
+// ── canvas & rendering ────────────────────────────────────────────────────────
+
+const canvas = document.getElementById('c');
+const ctx    = canvas.getContext('2d', {willReadFrequently: false});
+
+let zoom = 4;         // CSS pixels per grid cell
+let imgBuf = null;    // ImageData matching GW*GH
+
+function computeGridSize() {
+  const wrap = canvas.parentElement;
+  const w = Math.max(64, Math.floor(wrap.clientWidth  / zoom));
+  const h = Math.max(64, Math.floor(wrap.clientHeight / zoom));
+  return [w, h];
+}
+
+function resize(keepState) {
+  const wrap = canvas.parentElement;
+  const [gw, gh] = computeGridSize();
+  canvas.width  = gw * zoom;
+  canvas.height = gh * zoom;
+  canvas.style.width  = (gw * zoom) + 'px';
+  canvas.style.height = (gh * zoom) + 'px';
+  if (!keepState || gw !== GW || gh !== GH) {
+    initBuffers(gw, gh);
+    seed(20, 20, 0.1, 0.5);
+  }
+  imgBuf = ctx.createImageData(GW, GH);
+  document.getElementById('st-grid').textContent = GW + '×' + GH;
+}
+
+/**
+ * Write grid state into imgBuf pixels using the precomputed LUT, then
+ * draw imgBuf onto a temporary offscreen canvas, and scale-copy to the
+ * main canvas using drawImage for the zoom effect.
+ */
+let offscreen = null;
+let offCtx    = null;
+
+function render() {
+  if (!imgBuf) return;
+  const d = imgBuf.data;
+  let sum = 0, max = 0;
+  for (let i = 0; i < GW * GH; i++) {
+    const v = cur[i];
+    sum += v;
+    if (v > max) max = v;
+    const li = Math.floor(v * (LUT_SIZE - 1)) * 4;
+    const off = i * 4;
+    d[off]   = LUT[li];
+    d[off+1] = LUT[li+1];
+    d[off+2] = LUT[li+2];
+    d[off+3] = 255;
+  }
+
+  if (!offscreen || offscreen.width !== GW || offscreen.height !== GH) {
+    offscreen = document.createElement('canvas');
+    offscreen.width  = GW;
+    offscreen.height = GH;
+    offCtx = offscreen.getContext('2d', {willReadFrequently: false});
+  }
+  offCtx.putImageData(imgBuf, 0, 0);
+  ctx.imageSmoothingEnabled = false;
+  ctx.drawImage(offscreen, 0, 0, canvas.width, canvas.height);
+
+  document.getElementById('st-mean').textContent = (sum / (GW * GH)).toFixed(3);
+  document.getElementById('st-max').textContent  = max.toFixed(3);
+}
+
+// ── main loop ─────────────────────────────────────────────────────────────────
+
+let running    = true;
+let speed      = 8;
+let frameCount = 0;
+let lastTs     = 0;
+let accumulator = 0;
+let firstFrame  = true;
+
+function loop(ts) {
+  if (firstFrame) { lastTs = ts; firstFrame = false; }
+  if (!document.hidden && running) {
+    const dt = Math.min(ts - lastTs, 200);
+    accumulator += dt;
+    const interval = 1000 / speed;
+    let steps = 0;
+    while (accumulator >= interval && steps < 10) {
+      step();
+      frameCount++;
+      accumulator -= interval;
+      steps++;
+    }
+    if (steps > 0) {
+      render();
+      document.getElementById('st-frame').textContent = frameCount;
+    }
+  }
+  lastTs = ts;
+  requestAnimationFrame(loop);
+}
+
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden) { lastTs = performance.now(); accumulator = 0; }
+});
+
+// ── controls ──────────────────────────────────────────────────────────────────
+
+const btnPlay = document.getElementById('btn-play');
+btnPlay.addEventListener('click', () => {
+  running = !running;
+  btnPlay.textContent = running ? 'Pause' : 'Play';
+  btnPlay.classList.toggle('active', running);
+});
+
+document.getElementById('btn-step').addEventListener('click', () => {
+  running = false;
+  btnPlay.textContent = 'Play';
+  btnPlay.classList.remove('active');
+  step();
+  frameCount++;
+  render();
+  document.getElementById('st-frame').textContent = frameCount;
+});
+
+document.getElementById('btn-reset').addEventListener('click', () => {
+  frameCount = 0;
+  accumulator = 0;
+  seed(20, 20, 0.1, 0.5);
+  render();
+  document.getElementById('st-frame').textContent = 0;
+});
+
+document.getElementById('btn-splash').addEventListener('click', () => {
+  splash();
+  render();
+});
+
+document.getElementById('btn-about').addEventListener('click', () => {
+  document.getElementById('info-pane').classList.toggle('open');
+});
+document.getElementById('pane-close').addEventListener('click', () => {
+  document.getElementById('info-pane').classList.remove('open');
+});
+
+const slSpeed = document.getElementById('sl-speed');
+slSpeed.addEventListener('input', () => {
+  speed = parseInt(slSpeed.value, 10);
+  document.getElementById('vspeed').textContent = speed;
+});
+
+const slZoom = document.getElementById('sl-zoom');
+slZoom.addEventListener('input', () => {
+  zoom = parseInt(slZoom.value, 10);
+  document.getElementById('vzoom').textContent = zoom + '×';
+  resize(true);
+  render();
+});
+
+window.addEventListener('resize', () => { resize(true); render(); });
+
+// ── mouse paint ───────────────────────────────────────────────────────────────
+
+let painting = false;
+canvas.addEventListener('mousedown', e => {
+  painting = true;
+  paintAt(e);
+});
+canvas.addEventListener('mousemove', e => { if (painting) paintAt(e); });
+window.addEventListener('mouseup', () => { painting = false; });
+
+function paintAt(e) {
+  const r = canvas.getBoundingClientRect();
+  const gx = Math.floor((e.clientX - r.left) / zoom);
+  const gy = Math.floor((e.clientY - r.top)  / zoom);
+  const br = 4;
+  for (let dy = -br; dy <= br; dy++) {
+    for (let dx = -br; dx <= br; dx++) {
+      const nx = (gx + dx + GW) % GW;
+      const ny = (gy + dy + GH) % GH;
+      if (dx*dx + dy*dy <= br*br) {
+        cur[ny * GW + nx] = 0.2 + Math.random() * 0.4;
+      }
+    }
+  }
+  render();
+}
+
+// ── start ─────────────────────────────────────────────────────────────────────
+
+resize(false);
+render();
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>
