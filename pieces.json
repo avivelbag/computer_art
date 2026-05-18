@@ -958,5 +958,15 @@
         "path": "pieces/240-n-body-gravity",
         "thumbnail": "pieces/240-n-body-gravity/thumbnail.png",
         "description": "Newtonian N-body simulation integrating the softened inverse-square law F ∝ 1/(r² + ε²)^(3/2) via kick-drift-kick leapfrog at 4 sub-steps per frame. The default configuration is a solar-system analogue — one heavy central body with four lighter planets on Keplerian circular orbits — chosen because it remains visually stable for well over 30 s. A 'Figure-8' button switches to the Chenciner–Montgomery choreography and a 'Randomize' button spawns 4–6 bodies with jittered ring positions and zeroed net momentum, producing a variety of near-stable dances. Each body leaves a 300-position fading trail that is the visual centerpiece; bodies are color-coded from warm amber (heaviest) to cool violet (lightest). The system resets to a new random configuration when any body escapes the canvas or after ~30 s."
+    },
+    {
+        "id": "244-spirolaterals",
+        "title": "Spirolateral Mandalas",
+        "tagline": "32 spirolateral figures drawn stroke by stroke — integer sequences turned into rotationally symmetric geometry via turtle graphics, cycling through two 4×4 gallery sets with a seamless crossfade",
+        "year": 2026,
+        "technique": "canvas / spirolateral / integer sequence geometry / turtle graphics / rotational symmetry / requestAnimationFrame",
+        "path": "pieces/244-spirolaterals",
+        "thumbnail": "pieces/244-spirolaterals/thumbnail.svg",
+        "description": "A spirolateral is a turtle-geometry path determined by an integer sequence and a fixed turning angle: the turtle walks seq[0] units, turns right by A°, walks seq[1] units, turns, and repeats. The minimum number of passes R for the path to close satisfies R = 360 / gcd(360, n·A mod 360), connecting closure to number-theoretic divisibility. The piece shows 16 figures per gallery set (4×4 grid) drawn one stroke at a time via requestAnimationFrame, covering sequences ranging from [1,2,3] at 90° (classic square rosette) to [1,2,3,4,5,6] at 60° (hexagonal star) to Fibonacci-derived sequences. Each figure keeps one consistent color from a mint / rose / gold / violet palette on a deep navy ground. After all figures complete there is a brief pause, then a 0.9-second crossfade transitions to a second set with entirely different sequences and angles, looping seamlessly. Speed (Slow / Normal / Fast) and Skip controls are provided."
     }
 ]
