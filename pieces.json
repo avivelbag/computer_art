@@ -968,5 +968,15 @@
         "path": "pieces/244-spirolaterals",
         "thumbnail": "pieces/244-spirolaterals/thumbnail.svg",
         "description": "A spirolateral is a turtle-geometry path determined by an integer sequence and a fixed turning angle: the turtle walks seq[0] units, turns right by A°, walks seq[1] units, turns, and repeats. The minimum number of passes R for the path to close satisfies R = 360 / gcd(360, n·A mod 360), connecting closure to number-theoretic divisibility. The piece shows 16 figures per gallery set (4×4 grid) drawn one stroke at a time via requestAnimationFrame, covering sequences ranging from [1,2,3] at 90° (classic square rosette) to [1,2,3,4,5,6] at 60° (hexagonal star) to Fibonacci-derived sequences. Each figure keeps one consistent color from a mint / rose / gold / violet palette on a deep navy ground. After all figures complete there is a brief pause, then a 0.9-second crossfade transitions to a second set with entirely different sequences and angles, looping seamlessly. Speed (Slow / Normal / Fast) and Skip controls are provided."
+    },
+    {
+        "id": "247-smooth-life",
+        "title": "Smooth Life — The Creature That Has No Name",
+        "tagline": "SmoothLife: a continuous-state, continuous-space generalization of Conway's Game of Life producing slow blobby organisms that drift and self-organize on a dark canvas in deep violet and electric cyan",
+        "year": 2026,
+        "technique": "canvas / SmoothLife / continuous cellular automaton / logistic sigmoid / Float32Array / requestAnimationFrame",
+        "path": "pieces/247-smooth-life",
+        "thumbnail": "pieces/247-smooth-life/thumbnail.svg",
+        "description": "SmoothLife (Rafler 2011) generalizes Conway's Life to continuous state values in [0,1] and circular neighborhood kernels: for each cell, an inner disk average n and outer annulus average m are combined via logistic sigmoid birth/survival functions σ₂ — the same qualitative life/death rule as Conway's but infinitely smooth rather than threshold-hard. A 20×20 random seed placed at center self-organizes within ~50 frames into traveling blobs, rings, and branching filaments that fill the canvas. Two Float32Array buffers are swapped each frame; precomputed flat kernel arrays make the toroidal convolution efficient. Color maps 0 → near-black (#050508), 0.5 → deep violet (#7b3fff), 1.0 → bright cyan-white (#00e8d6), via a 256-entry LUT. The grid is rendered at 4× zoom with image-rendering:pixelated, giving the organism-under-microscope aesthetic."
     }
 ]

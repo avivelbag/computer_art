@@ -1,0 +1,54 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 150" width="200" height="150">
+  <defs>
+    <radialGradient id="g0" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#00e8d6"/>
+      <stop offset="40%" stop-color="#7b3fff"/>
+      <stop offset="100%" stop-color="#050508"/>
+    </radialGradient>
+    <radialGradient id="g1" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#c0f0ff"/>
+      <stop offset="35%" stop-color="#9966ff"/>
+      <stop offset="100%" stop-color="#050508"/>
+    </radialGradient>
+    <radialGradient id="g2" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#00e8d6"/>
+      <stop offset="50%" stop-color="#5533cc"/>
+      <stop offset="100%" stop-color="#050508"/>
+    </radialGradient>
+  </defs>
+  <!-- background -->
+  <rect width="200" height="150" fill="#050508"/>
+  <!-- grid of colored cells simulating mid-run SmoothLife state -->
+  <!-- row 0: sparse cells near-black -->
+  <rect x="0"   y="0"   width="4" height="4" fill="#050508"/>
+  <rect x="4"   y="0"   width="4" height="4" fill="#0a0a14"/>
+  <rect x="8"   y="0"   width="4" height="4" fill="#050508"/>
+  <rect x="12"  y="0"   width="4" height="4" fill="#100818"/>
+  <!-- organism blob 1 — center-left -->
+  <ellipse cx="52" cy="58" rx="22" ry="16" fill="url(#g0)" opacity="0.95"/>
+  <ellipse cx="52" cy="58" rx="10" ry="7"  fill="#00e8d6" opacity="0.6"/>
+  <!-- organism blob 2 — top-right -->
+  <ellipse cx="148" cy="38" rx="18" ry="13" fill="url(#g1)" opacity="0.9"/>
+  <ellipse cx="148" cy="38" rx="8"  ry="6"  fill="#c0f0ff" opacity="0.5"/>
+  <!-- organism blob 3 — bottom-center -->
+  <ellipse cx="100" cy="112" rx="26" ry="18" fill="url(#g2)" opacity="0.92"/>
+  <ellipse cx="100" cy="112" rx="11" ry="8"  fill="#00e8d6" opacity="0.55"/>
+  <!-- trailing tendrils -->
+  <ellipse cx="78"  cy="72"  rx="6"  ry="4"  fill="#7b3fff" opacity="0.7"/>
+  <ellipse cx="36"  cy="44"  rx="4"  ry="3"  fill="#5533cc" opacity="0.65"/>
+  <ellipse cx="165" cy="55"  rx="5"  ry="4"  fill="#9966ff" opacity="0.7"/>
+  <ellipse cx="122" cy="28"  rx="4"  ry="3"  fill="#6644dd" opacity="0.6"/>
+  <ellipse cx="132" cy="98"  rx="5"  ry="4"  fill="#7b3fff" opacity="0.65"/>
+  <ellipse cx="68"  cy="98"  rx="4"  ry="3"  fill="#5533cc" opacity="0.6"/>
+  <ellipse cx="116" cy="130" rx="5"  ry="3"  fill="#6644dd" opacity="0.6"/>
+  <ellipse cx="84"  cy="130" rx="4"  ry="3"  fill="#5533cc" opacity="0.55"/>
+  <!-- scattered violet noise -->
+  <rect x="16"  y="24"  width="4" height="4" fill="#2a1050" opacity="0.8"/>
+  <rect x="172" y="16"  width="4" height="4" fill="#1e0844" opacity="0.7"/>
+  <rect x="180" y="80"  width="4" height="4" fill="#2a1050" opacity="0.75"/>
+  <rect x="20"  y="116" width="4" height="4" fill="#1e0844" opacity="0.7"/>
+  <rect x="180" y="120" width="4" height="4" fill="#2a1050" opacity="0.65"/>
+  <rect x="60"  y="130" width="4" height="4" fill="#1e0844" opacity="0.6"/>
+  <!-- label -->
+  <text x="4" y="146" font-family="system-ui,sans-serif" font-size="9" fill="#444" letter-spacing="0.05em">SMOOTH LIFE · CONTINUOUS CA</text>
+</svg>
