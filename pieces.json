@@ -1008,5 +1008,15 @@
         "path": "pieces/257-billiard-chaos",
         "thumbnail": "pieces/257-billiard-chaos/thumbnail.svg",
         "description": "Two billiard tables drawn side by side: a square (integrable) and a Bunimovich stadium (chaotic). Ten particles per table launch from a shared seed point at evenly spaced angles, each coloured by launch angle using HSL 0–300°. Trails accumulate with low alpha so density builds over the 15-second cycle, after which all trails clear and a fresh cluster spawns from a new random seed. The square builds geometric star patterns because its motion is constrained to low-dimensional tori in phase space; the stadium fills space uniformly because curved caps mix the angle components, producing provably ergodic chaos."
+    },
+    {
+        "id": "259-pursuit-curves",
+        "title": "Pursuit Curves — The Spider and the Fly",
+        "tagline": "Six pursuit swarms (n=3–8) spiral inward simultaneously — each n-gon chases its neighbour, tracing rotationally symmetric logarithmic spirals in amber, teal, rose, lime, violet, and coral on near-black",
+        "year": 2026,
+        "technique": "canvas / pursuit curves / logarithmic spiral / n-body pursuit / simultaneous update / trail fade / requestAnimationFrame",
+        "path": "pieces/259-pursuit-curves",
+        "thumbnail": "pieces/259-pursuit-curves/thumbnail.svg",
+        "description": "Six concurrent pursuit swarms — triangles through octagons — are superimposed at the canvas centre, each running the classic n-agent pursuit algorithm: every agent moves 1.5% of the distance toward its clockwise neighbour each frame. The simultaneous update preserves n-fold rotational symmetry, and the path of each agent is provably a logarithmic spiral. Distinct radii keep the six spiral families visually separated: the triangle (n=3) sweeps the outermost ring in amber while the octagon (n=8) traces tight coral spirals at the core. A 1.2%-opacity background fade creates a trail half-life of about 1 second, so roughly one full spiral cycle of accumulation is always visible. When a swarm converges to within 3 px of centre it respawns with its initial angle offset by π/n, depositing each new spiral between the previous one's traces and building a dense mandala over time."
     }
 ]
