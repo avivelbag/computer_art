@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>268 — Laminar Drift</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { background: #1c1c1e; display: flex; align-items: center; justify-content: center; min-height: 100vh; overflow: hidden; }
+    canvas { display: block; width: min(100vw, calc(100vh * 4/3)); height: min(calc(100vw * 3/4), 100vh); }
+  </style>
+</head>
+<body>
+  <canvas id="c" width="800" height="600"></canvas>
+  <script>
+    const W = 800, H = 600, N = 4000;
+    const NOISE_SCALE = 0.003;
+    const TIME_SCALE = 0.0005;
+    const SPEED = 1.5;
+    const LIFETIME = 300;
+    const TAU = Math.PI * 2;
+
+    const canvas = document.getElementById('c');
+    const ctx = canvas.getContext('2d');
+
+    // Three-octave sinusoidal noise — no external library.
+    // Matches the angle field used by the Python thumbnail generator.
+    function noise(x, y, t) {
+      let v = 0, amp = 1, freq = 1;
+      for (let i = 0; i < 3; i++) {
+        v += amp * Math.sin(freq * x + t) * Math.cos(freq * y + t * 0.7 + i);
+        amp *= 0.5;
+        freq *= 2.1;
+      }
+      return v;
+    }
+
+    // Map heading angle to a 3-stop gradient: deep teal → gold → warm white.
+    function angleColor(angle) {
+      const t = ((angle % TAU) + TAU) % TAU / TAU;
+      let r, g, b;
+      if (t < 0.5) {
+        const s = t * 2;
+        r = 13  + s * (212 - 13);
+        g = 115 + s * (168 - 115);
+        b = 119 + s * (67  - 119);
+      } else {
+        const s = (t - 0.5) * 2;
+        r = 212 + s * (255 - 212);
+        g = 168 + s * (245 - 168);
+        b = 67  + s * (230 - 67);
+      }
+      return `rgb(${r|0},${g|0},${b|0})`;
+    }
+
+    const px = new Float32Array(N);
+    const py = new Float32Array(N);
+    const ox = new Float32Array(N);
+    const oy = new Float32Array(N);
+    const age = new Uint16Array(N);
+
+    for (let i = 0; i < N; i++) {
+      px[i] = Math.random() * W;
+      py[i] = Math.random() * H;
+      ox[i] = px[i];
+      oy[i] = py[i];
+      // Stagger initial ages so respawns don't all happen in the same frame.
+      age[i] = Math.floor(Math.random() * LIFETIME);
+    }
+
+    let frameCount = 0;
+    ctx.fillStyle = '#1c1c1e';
+    ctx.fillRect(0, 0, W, H);
+    ctx.lineWidth = 0.9;
+
+    function tick() {
+      // Low-alpha fill dims old marks each frame — trails accumulate then fade
+      // over roughly 100 frames, never fully clearing the canvas.
+      ctx.fillStyle = 'rgba(28,28,30,0.03)';
+      ctx.fillRect(0, 0, W, H);
+
+      const t = frameCount * TIME_SCALE;
+
+      for (let i = 0; i < N; i++) {
+        if (age[i] >= LIFETIME) {
+          px[i] = Math.random() * W;
+          py[i] = Math.random() * H;
+          ox[i] = px[i];
+          oy[i] = py[i];
+          age[i] = 0;
+          continue;
+        }
+
+        const angle = noise(px[i] * NOISE_SCALE, py[i] * NOISE_SCALE, t) * TAU;
+
+        ox[i] = px[i];
+        oy[i] = py[i];
+
+        px[i] += Math.cos(angle) * SPEED;
+        py[i] += Math.sin(angle) * SPEED;
+
+        px[i] = ((px[i] % W) + W) % W;
+        py[i] = ((py[i] % H) + H) % H;
+
+        if (Math.abs(px[i] - ox[i]) > W * 0.4 || Math.abs(py[i] - oy[i]) > H * 0.4) {
+          age[i]++;
+          continue;
+        }
+
+        ctx.strokeStyle = angleColor(angle);
+        ctx.beginPath();
+        ctx.moveTo(ox[i], oy[i]);
+        ctx.lineTo(px[i], py[i]);
+        ctx.stroke();
+
+        age[i]++;
+      }
+
+      frameCount++;
+      requestAnimationFrame(tick);
+    }
+
+    requestAnimationFrame(tick);
+  </script>
+</body>
+</html>
