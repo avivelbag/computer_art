@@ -1038,5 +1038,15 @@
         "path": "pieces/266-mondrian-recursion",
         "thumbnail": "pieces/266-mondrian-recursion/thumbnail.svg",
         "description": "Binary space partitioning recursively divides an 800×800 SVG canvas: at each step a rectangle is split by a vertical or horizontal line at a ratio drawn from 0.5 ± 0.2, with the axis biased toward the longer dimension to avoid flat slivers. Splitting continues until a maximum depth of 6 or a minimum cell size of 40 px is reached, after which each leaf receives a colour from a five-colour palette (dusty rose, slate blue, ochre, off-white, sage green) chosen to differ from its sibling. The composition assembles itself breadth-first — largest rectangles first — at 80 ms per split so the viewer watches the structure emerge from coarse to fine. After the final leaf appears the piece holds for 4 seconds, then fades to off-white and redraws with a wholly new set of random splits. Thin near-black borders separate every cell, referencing the bold lines of Mondrian's rectangular compositions while the palette departs from his primary triad toward softer, more contemporary tones."
+    },
+    {
+        "id": "267-differential-growth",
+        "title": "Differential Growth: Coral Maze",
+        "tagline": "A closed curve crinkles into coral-like folds as edge-subdivision, short-range repulsion, and smoothing springs compete — 3 000 nodes of deep-teal bioluminescence on near-black, fading and restarting at 60 fps",
+        "year": 2026,
+        "technique": "canvas / differential growth / spatial-hash repulsion / spring-mass curve / requestAnimationFrame",
+        "path": "pieces/267-differential-growth",
+        "thumbnail": "pieces/267-differential-growth/thumbnail.svg",
+        "description": "A closed curve of initially 16 nodes grows by inserting midpoints on any edge longer than 10 px. A short-range repulsion force (resolved in O(n) time via a flat spatial-hash grid) prevents nodes from overlapping, while a mild spring pulls each node toward the midpoint of its two neighbours for smoothness. Confined by a soft boundary circle of radius 360 px, the curve cannot expand freely and instead crinkles into dense, space-filling folds reminiscent of coral polyp edges, brain-coral furrows, and lettuce leaf ruffles — all surfaces where differential growth causes a boundary to grow faster than the area it encloses. The simulation runs until 3 000 nodes are reached, then fades to near-black over 80 frames and restarts from a fresh jittered polygon so no two cycles are identical. Palette: near-black teal ground (#050d14), translucent deep-teal fill, and a bright cyan-teal stroke (#00c8a0) that suggests deep-ocean bioluminescence."
     }
 ]

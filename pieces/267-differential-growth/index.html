@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Differential Growth — Coral Maze</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: #050d14;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      overflow: hidden;
+    }
+    canvas {
+      display: block;
+      width: 100vmin;
+      height: 100vmin;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="c" width="800" height="800"></canvas>
+  <script>
+    const W = 800, H = 800, CX = W >> 1, CY = H >> 1;
+
+    const MAX_EDGE    = 10;   // px: insert midpoint when edge exceeds this
+    const MIN_DIST    = 24;   // px: repulsion-zone diameter
+    const MAX_NODES   = 3000; // restart when curve reaches this many nodes
+    const SPRING_K    = 0.35; // smoothing-spring coefficient
+    const REPULSION_K = 0.55; // repulsion-force coefficient
+    const BOUNDARY_R  = 360;  // soft-boundary circle radius in px
+    const BOUNDARY_K  = 0.9;  // soft-boundary spring coefficient
+    const FADE_FRAMES = 80;   // rAF frames for fade-to-black transition
+
+    // Flat spatial grid for O(n) nearest-node lookups.
+    const CELL = MIN_DIST;
+    const GW   = Math.ceil(W / CELL) + 2;
+    const GH   = Math.ceil(H / CELL) + 2;
+    const grid = new Array(GW * GH).fill(null);
+    const used = [];  // cells written this frame — cleared at next buildGrid call
+
+    let nodes     = [];
+    let fadingOut = false;
+    let fadeCount = 0;
+
+    /**
+     * Reset nodes to a slightly-jittered regular 16-gon centred on the canvas.
+     * Small random perturbations break perfect symmetry so growth is organic
+     * rather than mirrored.
+     */
+    function initCurve() {
+      const N = 16, R = 90;
+      nodes = [];
+      for (let i = 0; i < N; i++) {
+        const a = (2 * Math.PI * i) / N;
+        nodes.push({
+          x: CX + R * Math.cos(a) + (Math.random() - 0.5) * 4,
+          y: CY + R * Math.sin(a) + (Math.random() - 0.5) * 4,
+        });
+      }
+    }
+
+    /**
+     * Populate the spatial grid from the current node array.
+     * Only cells written in the previous frame are cleared, so the operation
+     * touches O(n) cells rather than the full grid.
+     */
+    function buildGrid() {
+      for (const k of used) grid[k] = null;
+      used.length = 0;
+      for (let i = 0; i < nodes.length; i++) {
+        const cx = (nodes[i].x / CELL) | 0;
+        const cy = (nodes[i].y / CELL) | 0;
+        if (cx >= 0 && cx < GW && cy >= 0 && cy < GH) {
+          const k = cy * GW + cx;
+          if (!grid[k]) { grid[k] = []; used.push(k); }
+          grid[k].push(i);
+        }
+      }
+    }
+
+    /**
+     * Advance the differential-growth simulation by one frame.
+     *
+     * Three sub-steps run in order:
+     *   1. Edge subdivision  — midpoints inserted on over-stretched edges.
+     *   2. Repulsion forces  — nearby non-adjacent nodes push apart.
+     *   3. Spring smoothing  — each node is pulled toward its neighbours' midpoint.
+     *
+     * Forces are accumulated into typed arrays then applied with a soft-boundary
+     * correction that prevents nodes from straying beyond BOUNDARY_R.
+     */
+    function step() {
+      const n = nodes.length;
+
+      // --- 1. Edge subdivision ---
+      if (n < MAX_NODES) {
+        const next = [];
+        const md2  = MAX_EDGE * MAX_EDGE;
+        for (let i = 0; i < n; i++) {
+          next.push(nodes[i]);
+          const j  = (i + 1) % n;
+          const dx = nodes[j].x - nodes[i].x;
+          const dy = nodes[j].y - nodes[i].y;
+          if (dx * dx + dy * dy > md2 && next.length < MAX_NODES) {
+            next.push({
+              x: (nodes[i].x + nodes[j].x) * 0.5,
+              y: (nodes[i].y + nodes[j].y) * 0.5,
+            });
+          }
+        }
+        nodes = next;
+      }
+
+      const m  = nodes.length;
+      const fx = new Float32Array(m);
+      const fy = new Float32Array(m);
+
+      // --- 2. Repulsion via spatial grid ---
+      buildGrid();
+      const rd2 = MIN_DIST * MIN_DIST;
+      for (let i = 0; i < m; i++) {
+        const xi = nodes[i].x, yi = nodes[i].y;
+        const cx = (xi / CELL) | 0, cy = (yi / CELL) | 0;
+        for (let dx = -1; dx <= 1; dx++) {
+          for (let dy = -1; dy <= 1; dy++) {
+            const nx = cx + dx, ny = cy + dy;
+            if (nx < 0 || nx >= GW || ny < 0 || ny >= GH) continue;
+            const cell = grid[ny * GW + nx];
+            if (!cell) continue;
+            for (const j of cell) {
+              if (j === i) continue;
+              // Skip immediate curve neighbours — spring handles their spacing.
+              const diff = Math.abs(j - i);
+              if (diff <= 2 || diff >= m - 2) continue;
+              const ddx = xi - nodes[j].x, ddy = yi - nodes[j].y;
+              const d2  = ddx * ddx + ddy * ddy;
+              if (d2 < rd2 && d2 > 0.01) {
+                const d = Math.sqrt(d2);
+                const f = Math.min(REPULSION_K * (MIN_DIST - d) / d, 4);
+                fx[i] += f * ddx;
+                fy[i] += f * ddy;
+              }
+            }
+          }
+        }
+      }
+
+      // --- 3. Spring smoothing ---
+      for (let i = 0; i < m; i++) {
+        const p = (i - 1 + m) % m, q = (i + 1) % m;
+        fx[i] += SPRING_K * ((nodes[p].x + nodes[q].x) * 0.5 - nodes[i].x);
+        fy[i] += SPRING_K * ((nodes[p].y + nodes[q].y) * 0.5 - nodes[i].y);
+      }
+
+      // --- Apply forces + soft boundary ---
+      for (let i = 0; i < m; i++) {
+        let nx = nodes[i].x + fx[i];
+        let ny = nodes[i].y + fy[i];
+        const bx = nx - CX, by = ny - CY;
+        const bd = Math.sqrt(bx * bx + by * by);
+        if (bd > BOUNDARY_R) {
+          // Spring proportional to excess distance — strongly resists escape.
+          const excess = bd - BOUNDARY_R;
+          nx -= BOUNDARY_K * excess * bx / bd;
+          ny -= BOUNDARY_K * excess * by / bd;
+        }
+        nodes[i].x = nx;
+        nodes[i].y = ny;
+      }
+    }
+
+    const canvas = document.getElementById('c');
+    const ctx    = canvas.getContext('2d');
+
+    /**
+     * Clear the canvas to the background colour and render the current curve
+     * as a filled closed path with a wide glow stroke and a crisp thin stroke.
+     */
+    function render() {
+      ctx.fillStyle = '#050d14';
+      ctx.fillRect(0, 0, W, H);
+      if (nodes.length < 3) return;
+
+      ctx.beginPath();
+      ctx.moveTo(nodes[0].x, nodes[0].y);
+      for (let i = 1; i < nodes.length; i++) ctx.lineTo(nodes[i].x, nodes[i].y);
+      ctx.closePath();
+
+      ctx.fillStyle   = 'rgba(0, 80, 60, 0.22)';
+      ctx.fill();
+      ctx.lineWidth   = 5;
+      ctx.strokeStyle = 'rgba(0, 210, 165, 0.20)';
+      ctx.stroke();
+      ctx.lineWidth   = 1.3;
+      ctx.strokeStyle = '#00c8a0';
+      ctx.stroke();
+    }
+
+    /**
+     * Main animation loop.  When the curve reaches MAX_NODES the piece
+     * crossfades to black over FADE_FRAMES frames and then restarts with a
+     * fresh initial polygon, giving the piece a natural breath cycle.
+     */
+    function frame() {
+      if (fadingOut) {
+        // Accumulate a semi-transparent black overlay until the canvas is dark.
+        ctx.fillStyle = 'rgba(5, 13, 20, 0.055)';
+        ctx.fillRect(0, 0, W, H);
+        if (++fadeCount >= FADE_FRAMES) {
+          fadingOut = false;
+          ctx.fillStyle = '#050d14';
+          ctx.fillRect(0, 0, W, H);
+          initCurve();
+        }
+      } else {
+        step();
+        render();
+        if (nodes.length >= MAX_NODES) {
+          fadingOut = true;
+          fadeCount = 0;
+        }
+      }
+      requestAnimationFrame(frame);
+    }
+
+    initCurve();
+    requestAnimationFrame(frame);
+  </script>
+</body>
+</html>
