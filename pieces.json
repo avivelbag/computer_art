@@ -1028,5 +1028,15 @@
         "path": "pieces/261-sdf-raymarching",
         "thumbnail": "pieces/261-sdf-raymarching/thumbnail.svg",
         "description": "A fullscreen WebGL fragment shader fires one ray per pixel through a scene defined entirely by signed-distance functions. The domain fold applies abs() across all three axes then sorts the components, collapsing the infinite space into 48 mirror-equivalent octants before tiling with mod() — a kaleidoscopic IFS that is categorically different from plain translational repetition. Inside each tile, a sphere and a rounded box are blended via the polynomial smooth-minimum (smin) whose blend radius oscillates with a slow sin(time), continuously morphing the silhouette. Lighting uses single-direction Phong diffuse and specular, five-tap ambient occlusion, an electric-cyan rim light, and exponential depth fog into the near-black teal void. The palette — neon crimson surfaces on absolute darkness — contrasts sharply with the warm gold-on-indigo scheme of other raymarched pieces in this gallery."
+    },
+    {
+        "id": "266-mondrian-recursion",
+        "title": "Mondrian Recursion: The Rectangle That Cannot Stop",
+        "tagline": "A canvas recursively subdivided by binary space partitioning assembles itself split-by-split in dusty rose, slate blue, ochre, off-white, and sage — then fades and starts over",
+        "year": 2026,
+        "technique": "SVG / binary space partitioning / recursive subdivision / BFS animation / requestAnimationFrame",
+        "path": "pieces/266-mondrian-recursion",
+        "thumbnail": "pieces/266-mondrian-recursion/thumbnail.svg",
+        "description": "Binary space partitioning recursively divides an 800×800 SVG canvas: at each step a rectangle is split by a vertical or horizontal line at a ratio drawn from 0.5 ± 0.2, with the axis biased toward the longer dimension to avoid flat slivers. Splitting continues until a maximum depth of 6 or a minimum cell size of 40 px is reached, after which each leaf receives a colour from a five-colour palette (dusty rose, slate blue, ochre, off-white, sage green) chosen to differ from its sibling. The composition assembles itself breadth-first — largest rectangles first — at 80 ms per split so the viewer watches the structure emerge from coarse to fine. After the final leaf appears the piece holds for 4 seconds, then fades to off-white and redraws with a wholly new set of random splits. Thin near-black borders separate every cell, referencing the bold lines of Mondrian's rectangular compositions while the palette departs from his primary triad toward softer, more contemporary tones."
     }
 ]
