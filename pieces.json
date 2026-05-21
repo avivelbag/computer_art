@@ -1048,5 +1048,15 @@
         "path": "pieces/267-differential-growth",
         "thumbnail": "pieces/267-differential-growth/thumbnail.svg",
         "description": "A closed curve of initially 16 nodes grows by inserting midpoints on any edge longer than 10 px. A short-range repulsion force (resolved in O(n) time via a flat spatial-hash grid) prevents nodes from overlapping, while a mild spring pulls each node toward the midpoint of its two neighbours for smoothness. Confined by a soft boundary circle of radius 360 px, the curve cannot expand freely and instead crinkles into dense, space-filling folds reminiscent of coral polyp edges, brain-coral furrows, and lettuce leaf ruffles — all surfaces where differential growth causes a boundary to grow faster than the area it encloses. The simulation runs until 3 000 nodes are reached, then fades to near-black over 80 frames and restarts from a fresh jittered polygon so no two cycles are identical. Palette: near-black teal ground (#050d14), translucent deep-teal fill, and a bright cyan-teal stroke (#00c8a0) that suggests deep-ocean bioluminescence."
+    },
+    {
+        "id": "268-laminar-drift",
+        "title": "Laminar Drift",
+        "tagline": "4 000 particles thread a time-animated sinusoidal flow field, coloring by heading angle through deep teal, gold, and warm white on dark charcoal — trails accumulate and decay without full canvas clears",
+        "year": 2026,
+        "technique": "canvas / flow-field / sinusoidal noise / particle trails / requestAnimationFrame",
+        "path": "pieces/268-laminar-drift",
+        "thumbnail": "pieces/268-laminar-drift/thumbnail.svg",
+        "description": "4 000 particles navigate a time-evolving angle field derived from three octaves of sin/cos sinusoidal noise — no external library, no simplex, no value-noise lookup table. The field is sampled at each particle's position scaled by 0.003, multiplied by 2π to obtain a heading, and the time parameter advances 0.0005 per frame so the flow shifts continuously without jump cuts. Particles wrap at all four canvas edges and respawn at a random position after ~300 frames, producing perpetual renewal that builds density without periodic resets. Each frame a low-alpha dark fill (rgba 0.03) dims old marks, creating trails that fade over roughly 100 frames. Color is mapped from the particle's current heading angle through a three-stop gradient — deep teal #0d7377 at angle 0, gold #d4a843 at π, warm white #fff5e6 at 2π — on a dark charcoal #1c1c1e ground. The piece shares the flow-field genre with 115 (simplex noise, periodic canvas clear, pen-plotter palette on cream) and 238 (curl noise, divergence-free velocity, speed-based color on deep purple), but diverges in noise construction, background, color scheme, and particle lifecycle."
     }
 ]
