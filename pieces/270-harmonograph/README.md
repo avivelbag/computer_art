@@ -2,9 +2,15 @@
 
 A two-pendulum harmonograph whose coupled oscillations decay slowly to stillness, tracing a dense spiralling figure on warm cream paper in deep indigo ink.
 
-## How it differs from 80 — Harmonograph
+## How it differs from other harmonograph pieces
 
-Piece 80 cycles through five distinct Lissajous presets with a dark background and variable stroke weight that follows the damping envelope. This piece uses a single, carefully tuned parameter set with a warm cream paper ground (`#f5f0e8`), flat stroke weight, and a pen-plotter opacity model where overlapping strokes build up density rather than being explicitly weighted — the visual accumulation of ink.
+The gallery contains three prior harmonograph pieces, each distinct in approach:
+
+**03 — Still Oscillating** uses two pendulums with a violet palette on a dark background. Its decay produces wider, sparser loops — the emphasis is on the opening sweep as energy dissipates. This piece runs four oscillators on a light paper ground, producing a denser, more interwoven figure before settling.
+
+**80 — Harmonograph** cycles through five distinct Lissajous presets with a dark background and variable stroke weight that explicitly follows the damping envelope. This piece uses a single carefully tuned parameter set with flat stroke opacity; visual weight builds through translucent overlap rather than explicit tracking.
+
+**138 — Four Pendulums, One Stroke** is the conceptually closest: it also uses four-oscillator parametric decay rendered as a continuous path. The difference is aesthetic — 138 uses a dark background with a saturated accent color; this piece uses a warm cream paper ground (`#f5f0e8`) with a deep indigo ink (`#1a1a2e`), prioritising the pen-plotter accumulation model where overlapping strokes darken naturally through opacity rather than any computed weight.
 
 ## Technique
 

@@ -6,10 +6,10 @@ pendulum parameters as index.html.  Run once; the output is committed.
 import math
 import pathlib
 
-A1, f1, p1, d1 = 350, 2.001, 0.0,         0.0025
-A2, f2, p2, d2 = 350, 3.0,   math.pi / 2, 0.0025
-A3, f3, p3, d3 = 350, 3.0,   math.pi / 4, 0.0025
-A4, f4, p4, d4 = 350, 2.0,   0.0,         0.0025
+A1, f1, p1, d1 = 190, 2.001, 0.0,         0.0025
+A2, f2, p2, d2 = 190, 3.0,   math.pi / 2, 0.0025
+A3, f3, p3, d3 = 190, 3.0,   math.pi / 4, 0.0025
+A4, f4, p4, d4 = 190, 2.0,   0.0,         0.0025
 
 T_MAX = 4000
 STEPS = 4000          # fewer points in SVG thumbnail keeps file size small
