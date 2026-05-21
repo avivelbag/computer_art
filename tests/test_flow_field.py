@@ -47,6 +47,11 @@ class TestFileStructure:
     def test_thumbnail_nonempty(self):
         assert THUMBNAIL.stat().st_size > 100
 
+    def test_thumbnail_under_500kb(self):
+        assert THUMBNAIL.stat().st_size < 500 * 1024, (
+            f"thumbnail.svg is {THUMBNAIL.stat().st_size / 1024:.1f} KB; must be under 500 KB"
+        )
+
 
 # ---------------------------------------------------------------------------
 # pieces.json entry
@@ -158,7 +163,9 @@ class TestThumbnail:
 
     def test_thumbnail_contains_lines(self):
         text = THUMBNAIL.read_text()
-        assert "<line" in text, "Expected streamline segments rendered as <line> elements"
+        assert "<polyline" in text or "<line" in text, (
+            "Expected streamline segments rendered as <polyline> or <line> elements"
+        )
 
 
 # ---------------------------------------------------------------------------

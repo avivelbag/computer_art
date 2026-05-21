@@ -2,8 +2,12 @@
 """Generate thumbnail.svg for Piece 268 — Laminar Drift.
 
 Traces flow-field streamlines using the same sinusoidal noise function as
-the browser animation and renders them as SVG line segments. Deterministic
-via a fixed random seed. Uses only the Python standard library.
+the browser animation and renders them as SVG polylines — one per streamline,
+one stroke color per streamline derived from its starting angle. Using polylines
+instead of per-segment <line> elements reduces file size from ~2.7 MB to ~40 KB
+while still representing the flow-field structure faithfully.
+
+Uses only the Python standard library. Deterministic via a fixed random seed.
 """
 import math
 import pathlib
@@ -14,8 +18,8 @@ TAU = math.tau
 NOISE_SCALE = 0.003
 TIME = 0.3
 SPEED = 1.5
-STEPS = 200
-N_LINES = 120
+STEPS = 80
+N_LINES = 60
 
 
 def noise(x: float, y: float, t: float) -> float:
@@ -44,54 +48,57 @@ def angle_to_rgb(angle: float) -> tuple[int, int, int]:
     return r, g, b
 
 
-def trace_streamline(x0: float, y0: float) -> list[tuple[float, float, tuple[int, int, int]]]:
-    """Follow the flow field from (x0, y0) for STEPS steps.
+def trace_streamline(x0: float, y0: float) -> list[str]:
+    """Follow the flow field from (x0, y0) for up to STEPS steps.
 
-    Returns a list of (x, y, rgb) tuples where rgb is the color at that point
-    derived from the heading angle.
+    Returns a list of 'x,y' coordinate strings for the polyline points
+    attribute. Stops early if the particle drifts far outside the canvas
+    (no torus wrapping here — SVG clips to viewBox). The starting angle
+    is also returned for coloring.
     """
-    pts = []
     x, y = x0, y0
+    pts = [f"{x:.0f},{y:.0f}"]
     for _ in range(STEPS):
         angle = noise(x * NOISE_SCALE, y * NOISE_SCALE, TIME) * TAU
-        pts.append((x, y, angle_to_rgb(angle)))
         x += math.cos(angle) * SPEED
         y += math.sin(angle) * SPEED
-        x = x % W
-        y = y % H
+        if x < -W * 0.5 or x > W * 1.5 or y < -H * 0.5 or y > H * 1.5:
+            break
+        pts.append(f"{x:.0f},{y:.0f}")
     return pts
 
 
 def make_svg() -> str:
     """Return the full SVG markup for the flow-field thumbnail."""
     rng = random.Random(42)
-    lines: list[str] = []
+    polylines: list[str] = []
 
     for _ in range(N_LINES):
         x0 = rng.uniform(0, W)
         y0 = rng.uniform(0, H)
+
+        start_angle = noise(x0 * NOISE_SCALE, y0 * NOISE_SCALE, TIME) * TAU
+        r, g, b = angle_to_rgb(start_angle)
+
         pts = trace_streamline(x0, y0)
+        if len(pts) < 2:
+            continue
 
-        for i in range(len(pts) - 1):
-            x1, y1, col = pts[i]
-            x2, y2, _ = pts[i + 1]
-            if abs(x2 - x1) > W * 0.4 or abs(y2 - y1) > H * 0.4:
-                continue
-            r, g, b = col
-            lines.append(
-                f'<line x1="{x1:.1f}" y1="{y1:.1f}" x2="{x2:.1f}" y2="{y2:.1f}" '
-                f'stroke="rgb({r},{g},{b})" stroke-opacity="0.6" stroke-width="0.8"/>'
-            )
+        polylines.append(
+            f'<polyline points="{" ".join(pts)}" fill="none" '
+            f'stroke="rgb({r},{g},{b})" stroke-opacity="0.6" stroke-width="1"/>'
+        )
 
-    body = '\n  '.join(lines)
-    return f'<svg width="400" height="400" viewBox="0 0 400 400"\n' \
-           f'     xmlns="http://www.w3.org/2000/svg">\n' \
-           f'  <rect width="400" height="400" fill="#1c1c1e"/>\n' \
-           f'  {body}\n' \
-           f'</svg>'
+    body = '\n  '.join(polylines)
+    return (f'<svg width="400" height="400" viewBox="0 0 400 400"\n'
+            f'     xmlns="http://www.w3.org/2000/svg">\n'
+            f'  <rect width="400" height="400" fill="#1c1c1e"/>\n'
+            f'  {body}\n'
+            f'</svg>')
 
 
 if __name__ == '__main__':
     out = pathlib.Path(__file__).parent / 'thumbnail.svg'
     out.write_text(make_svg())
-    print(f'Written {out}')
+    size_kb = out.stat().st_size / 1024
+    print(f'Written {out} ({size_kb:.1f} KB)')
