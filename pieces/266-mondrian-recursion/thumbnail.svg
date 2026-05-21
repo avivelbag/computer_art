@@ -1,0 +1,32 @@
+<svg width="400" height="400" viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background / border fill -->
+  <rect width="400" height="400" fill="#1a1a1a"/>
+
+  <!-- Leaf cells from a fixed BSP layout -->
+  <!-- Left column (x 0-160), top cell -->
+  <rect x="0" y="0" width="160" height="276" fill="#c4888a"/>
+  <!-- Left column, bottom cell -->
+  <rect x="0" y="276" width="160" height="124" fill="#c8a84b"/>
+  <!-- Top-right cell -->
+  <rect x="160" y="0" width="240" height="110" fill="#5f8fa8"/>
+  <!-- Middle-right, left sub-cell -->
+  <rect x="160" y="110" width="140" height="290" fill="#f2ede0"/>
+  <!-- Bottom-right, upper sub-cell -->
+  <rect x="300" y="110" width="100" height="162" fill="#8aaf96"/>
+  <!-- Bottom-right, lower sub-cell -->
+  <rect x="300" y="272" width="100" height="128" fill="#c4888a"/>
+
+  <!-- Borders: split lines on top of fills -->
+  <!-- Outer border -->
+  <rect x="1" y="1" width="398" height="398" fill="none" stroke="#1a1a1a" stroke-width="2"/>
+  <!-- Vertical split at x=160 -->
+  <line x1="160" y1="0" x2="160" y2="400" stroke="#1a1a1a" stroke-width="2"/>
+  <!-- Left column horizontal split at y=276 -->
+  <line x1="0" y1="276" x2="160" y2="276" stroke="#1a1a1a" stroke-width="2"/>
+  <!-- Right column horizontal split at y=110 -->
+  <line x1="160" y1="110" x2="400" y2="110" stroke="#1a1a1a" stroke-width="2"/>
+  <!-- Right-bottom vertical split at x=300 -->
+  <line x1="300" y1="110" x2="300" y2="400" stroke="#1a1a1a" stroke-width="2"/>
+  <!-- Far-right horizontal split at y=272 -->
+  <line x1="300" y1="272" x2="400" y2="272" stroke="#1a1a1a" stroke-width="2"/>
+</svg>
