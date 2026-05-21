@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>270 — Harmonograph: Where the Pendulums Rest</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { background: #f5f0e8; display: flex; align-items: center; justify-content: center; min-height: 100vh; overflow: hidden; }
+    canvas { display: block; width: min(100vw, 100vh); height: min(100vw, 100vh); }
+  </style>
+</head>
+<body>
+  <canvas id="c" width="800" height="800"></canvas>
+  <script>
+    const W = 800, H = 800, CX = W / 2, CY = H / 2;
+
+    // Pendulum parameters chosen for a dense, spiralling rose-like figure
+    // with irrational f1 perturbation to prevent early closure.
+    const A1 = 190, f1 = 2.001, p1 = 0,            d1 = 0.0025;
+    const A2 = 190, f2 = 3.0,   p2 = Math.PI / 2,  d2 = 0.0025;
+    const A3 = 190, f3 = 3.0,   p3 = Math.PI / 4,  d3 = 0.0025;
+    const A4 = 190, f4 = 2.0,   p4 = 0,             d4 = 0.0025;
+
+    const T_MAX = 4000;
+    const STEPS = 80000;        // pre-sampled points along t ∈ [0, T_MAX]
+    const PTS_PER_FRAME = 80;   // stroke-by-stroke drawing speed
+    const INK = '#1a1a2e';      // deep indigo
+    const STROKE_ALPHA = 0.6;
+    const STROKE_WIDTH = 0.6;
+    const PAPER = '#f5f0e8';    // warm cream
+
+    // Pre-compute all curve points once so animation just reads from arrays.
+    const xs = new Float32Array(STEPS);
+    const ys = new Float32Array(STEPS);
+    for (let i = 0; i < STEPS; i++) {
+      const t = (i / STEPS) * T_MAX;
+      xs[i] = CX + (A1 * Math.sin(f1 * t + p1) * Math.exp(-d1 * t)
+                  + A2 * Math.sin(f2 * t + p2) * Math.exp(-d2 * t));
+      ys[i] = CY + (A3 * Math.sin(f3 * t + p3) * Math.exp(-d3 * t)
+                  + A4 * Math.sin(f4 * t + p4) * Math.exp(-d4 * t));
+    }
+
+    const canvas = document.getElementById('c');
+    const ctx = canvas.getContext('2d');
+
+    ctx.strokeStyle = INK;
+    ctx.globalAlpha = STROKE_ALPHA;
+    ctx.lineWidth = STROKE_WIDTH;
+    ctx.lineJoin = 'round';
+    ctx.lineCap = 'round';
+
+    let cursor = 0;
+
+    function clear() {
+      ctx.globalAlpha = 1.0;
+      ctx.fillStyle = PAPER;
+      ctx.fillRect(0, 0, W, H);
+      ctx.globalAlpha = STROKE_ALPHA;
+    }
+
+    // Fade the canvas back to background color over ~60 frames, then restart.
+    let holdFrames = 0;
+    let fadingFrames = 0;
+    const HOLD_FRAMES = 120;
+    const FADE_FRAMES = 60;
+
+    function tick() {
+      if (holdFrames > 0) {
+        holdFrames--;
+        requestAnimationFrame(tick);
+        return;
+      }
+
+      if (fadingFrames > 0) {
+        const alpha = fadingFrames / FADE_FRAMES;
+        ctx.globalAlpha = alpha;
+        ctx.fillStyle = PAPER;
+        ctx.fillRect(0, 0, W, H);
+        fadingFrames--;
+        if (fadingFrames === 0) {
+          clear();
+          cursor = 0;
+        }
+        requestAnimationFrame(tick);
+        return;
+      }
+
+      ctx.globalAlpha = STROKE_ALPHA;
+      ctx.strokeStyle = INK;
+
+      const end = Math.min(cursor + PTS_PER_FRAME, STEPS);
+
+      ctx.beginPath();
+      ctx.moveTo(xs[cursor], ys[cursor]);
+      for (let i = cursor + 1; i < end; i++) {
+        ctx.lineTo(xs[i], ys[i]);
+      }
+      ctx.stroke();
+
+      cursor = end;
+
+      if (cursor >= STEPS) {
+        holdFrames = HOLD_FRAMES;
+        fadingFrames = FADE_FRAMES;
+      }
+
+      requestAnimationFrame(tick);
+    }
+
+    clear();
+    requestAnimationFrame(tick);
+  </script>
+</body>
+</html>

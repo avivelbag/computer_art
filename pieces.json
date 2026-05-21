@@ -1058,5 +1058,15 @@
         "path": "pieces/268-laminar-drift",
         "thumbnail": "pieces/268-laminar-drift/thumbnail.svg",
         "description": "4 000 particles navigate a time-evolving angle field derived from three octaves of sin/cos sinusoidal noise — no external library, no simplex, no value-noise lookup table. The field is sampled at each particle's position scaled by 0.003, multiplied by 2π to obtain a heading, and the time parameter advances 0.0005 per frame so the flow shifts continuously without jump cuts. Particles wrap at all four canvas edges and respawn at a random position after ~300 frames, producing perpetual renewal that builds density without periodic resets. Each frame a low-alpha dark fill (rgba 0.03) dims old marks, creating trails that fade over roughly 100 frames. Color is mapped from the particle's current heading angle through a three-stop gradient — deep teal #0d7377 at angle 0, gold #d4a843 at π, warm white #fff5e6 at 2π — on a dark charcoal #1c1c1e ground. The piece shares the flow-field genre with 115 (simplex noise, periodic canvas clear, pen-plotter palette on cream) and 238 (curl noise, divergence-free velocity, speed-based color on deep purple), but diverges in noise construction, background, color scheme, and particle lifecycle."
+    },
+    {
+        "id": "270-harmonograph",
+        "title": "Harmonograph: Where the Pendulums Rest",
+        "tagline": "Two coupled pendulums decay across warm cream paper in deep indigo ink, tracing a spiralling Lissajous figure that fades to stillness and restarts from blank",
+        "year": 2026,
+        "technique": "canvas / harmonograph / parametric decay / pen-plotter opacity / requestAnimationFrame",
+        "path": "pieces/270-harmonograph",
+        "thumbnail": "pieces/270-harmonograph/thumbnail.svg",
+        "description": "A four-oscillator harmonograph with frequency ratio 2.001:3 on x and 3:2 on y, all sharing a decay constant of 0.0025, run over t ∈ [0, 4000]. The irrational f1=2.001 prevents the figure from closing too early, spreading strokes across the canvas before the pendulums settle. 80 000 points are pre-computed; each animation frame draws 80 as a single canvas path segment, giving a visible stroke-by-stroke drawing effect. Stroke opacity is fixed at 0.6 — overlapping strokes darken naturally through translucency, producing pen-plotter density without explicit weight tracking. After the curve completes, a 60-frame fade returns the canvas to the paper color and the loop restarts from blank. Palette is strictly duotone: warm cream #f5f0e8 paper, deep indigo #1a1a2e ink. Piece 80 also uses harmonograph equations but cycles through five dark-background presets with variable stroke weight following the damping envelope; this piece uses a single carefully tuned parameter set with a light paper ground and flat opacity."
     }
 ]
