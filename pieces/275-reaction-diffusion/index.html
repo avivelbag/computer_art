@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>The Labyrinth Writes Itself — Gray-Scott Maze (WebGL)</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { background: #0e0b08; display: flex; align-items: center; justify-content: center; min-height: 100vh; overflow: hidden; }
+    canvas { display: block; width: 100vmin; height: 100vmin; }
+  </style>
+</head>
+<body>
+<canvas id="c"></canvas>
+
+<!-- Full-screen quad vertex shader — shared by both render passes -->
+<script id="vs" type="x-shader/x-vertex">#version 300 es
+layout(location=0) in vec2 a_pos;
+out vec2 v_uv;
+void main() {
+  v_uv = a_pos * 0.5 + 0.5;
+  gl_Position = vec4(a_pos, 0.0, 1.0);
+}
+</script>
+
+<!-- Gray-Scott simulation fragment shader — runs on GPU, writes to ping-pong FBO -->
+<script id="fs-sim" type="x-shader/x-fragment">#version 300 es
+precision highp float;
+
+uniform sampler2D u_tex;
+uniform vec2 u_px;   // 1.0 / textureSize; texel step for neighbor sampling
+in vec2 v_uv;
+out vec4 out_color;
+
+// Maze regime: F=0.029, K=0.057 produces labyrinthine, connected corridors.
+// Distinct from piece 17/96 (coral F=0.0545 K=0.062) and piece 180 (mitosis F=0.0367 K=0.0649).
+const float F  = 0.029;
+const float K  = 0.057;
+const float DU = 0.2097;
+const float DV = 0.1050;
+
+void main() {
+  vec2 uv = v_uv;
+  vec2 c  = texture(u_tex, uv).rg;
+
+  // 9-point isotropic Laplacian (axis-aligned weight 0.20, diagonal weight 0.05, center -1.0).
+  // GL_REPEAT sampler wrapping handles toroidal boundary conditions automatically.
+  vec2 lap =
+    0.20 * (texture(u_tex, uv + vec2( u_px.x, 0.0     )).rg +
+            texture(u_tex, uv + vec2(-u_px.x, 0.0     )).rg +
+            texture(u_tex, uv + vec2( 0.0,    u_px.y  )).rg +
+            texture(u_tex, uv + vec2( 0.0,   -u_px.y  )).rg) +
+    0.05 * (texture(u_tex, uv + vec2( u_px.x,  u_px.y)).rg +
+            texture(u_tex, uv + vec2(-u_px.x,  u_px.y)).rg +
+            texture(u_tex, uv + vec2(-u_px.x, -u_px.y)).rg +
+            texture(u_tex, uv + vec2( u_px.x, -u_px.y)).rg)
+    - c;
+
+  float uvv = c.r * c.g * c.g;
+
+  // Explicit Euler integration, dt=1.0 absorbed into the diffusion constants.
+  float U = clamp(c.r + DU * lap.r - uvv + F * (1.0 - c.r), 0.0, 1.0);
+  float V = clamp(c.g + DV * lap.g + uvv - (F + K) * c.g,   0.0, 1.0);
+
+  out_color = vec4(U, V, 0.0, 1.0);
+}
+</script>
+
+<!-- Coloring fragment shader — maps V concentration to the 3-stop earthy palette -->
+<script id="fs-render" type="x-shader/x-fragment">#version 300 es
+precision highp float;
+
+uniform sampler2D u_tex;
+in vec2 v_uv;
+out vec4 out_color;
+
+// 3-stop gradient: near-black (#0e0b08) → dark sienna (#7b3f00) → warm parchment (#f0e8d0).
+// Earthy warmth contrasts with piece 96 (amber/ivory) and piece 180 (indigo/cyan).
+// Channels (V≈0) are near-black; maze walls (V≈1) glow warm parchment.
+vec3 palette(float t) {
+  const vec3 c0 = vec3(0.055, 0.043, 0.031); // #0e0b08 — near-black
+  const vec3 c1 = vec3(0.482, 0.247, 0.000); // #7b3f00 — dark sienna
+  const vec3 c2 = vec3(0.941, 0.910, 0.816); // #f0e8d0 — warm parchment
+  return t < 0.5
+    ? mix(c0, c1, t * 2.0)
+    : mix(c1, c2, (t - 0.5) * 2.0);
+}
+
+void main() {
+  float v = texture(u_tex, v_uv).g;
+  out_color = vec4(palette(v), 1.0);
+}
+</script>
+
+<script>
+const SZ = 512;
+const canvas = document.getElementById('c');
+canvas.width = canvas.height = SZ;
+
+const gl = canvas.getContext('webgl2');
+if (!gl) {
+  document.body.innerHTML =
+    '<p style="color:#f0e8d0;font-family:monospace;padding:2em">WebGL 2 is required to run this piece.</p>';
+  throw new Error('WebGL2 unavailable');
+}
+
+// EXT_color_buffer_float enables rendering to RGBA32F framebuffers in WebGL2.
+gl.getExtension('EXT_color_buffer_float');
+
+function compileShader(type, id) {
+  const s = gl.createShader(type);
+  gl.shaderSource(s, document.getElementById(id).text.trim());
+  gl.compileShader(s);
+  if (!gl.getShaderParameter(s, gl.COMPILE_STATUS))
+    throw new Error('Shader compile error (' + id + '): ' + gl.getShaderInfoLog(s));
+  return s;
+}
+
+function linkProgram(vsId, fsId) {
+  const p = gl.createProgram();
+  gl.attachShader(p, compileShader(gl.VERTEX_SHADER,   vsId));
+  gl.attachShader(p, compileShader(gl.FRAGMENT_SHADER, fsId));
+  gl.linkProgram(p);
+  if (!gl.getProgramParameter(p, gl.LINK_STATUS))
+    throw new Error('Program link error: ' + gl.getProgramInfoLog(p));
+  return p;
+}
+
+const progSim    = linkProgram('vs', 'fs-sim');
+const progRender = linkProgram('vs', 'fs-render');
+
+// Single VAO — both programs bind a_pos at layout location 0, so one VAO serves both.
+const vao = gl.createVertexArray();
+gl.bindVertexArray(vao);
+const quadBuf = gl.createBuffer();
+gl.bindBuffer(gl.ARRAY_BUFFER, quadBuf);
+gl.bufferData(gl.ARRAY_BUFFER,
+  new Float32Array([-1,-1, 1,-1, -1,1, 1,-1, 1,1, -1,1]),
+  gl.STATIC_DRAW);
+gl.enableVertexAttribArray(0);
+gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 0, 0);
+gl.bindVertexArray(null);
+
+/**
+ * Create an RGBA32F texture and a framebuffer with that texture attached.
+ * GL_REPEAT wrap mode provides the toroidal (torus) boundary condition for free.
+ */
+function makeTarget() {
+  const tex = gl.createTexture();
+  gl.bindTexture(gl.TEXTURE_2D, tex);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.REPEAT);
+  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA32F, SZ, SZ, 0, gl.RGBA, gl.FLOAT, null);
+
+  const fbo = gl.createFramebuffer();
+  gl.bindFramebuffer(gl.FRAMEBUFFER, fbo);
+  gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, tex, 0);
+  gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+  return { tex, fbo };
+}
+
+let ping = makeTarget();
+let pong = makeTarget();
+
+// Seed initial state: U=1 everywhere, V=0 everywhere.
+// Five scattered square patches are seeded with U≈0.5, V≈0.25 (+ jitter) so that
+// multiple growth fronts collide and weave the labyrinthine network uniformly.
+const initData = new Float32Array(SZ * SZ * 4);
+for (let i = 0; i < SZ * SZ; i++) {
+  initData[i * 4 + 0] = 1.0;
+  initData[i * 4 + 1] = 0.0;
+  initData[i * 4 + 2] = 0.0;
+  initData[i * 4 + 3] = 1.0;
+}
+
+const seeds = [
+  [SZ / 2,     SZ / 2,     14],
+  [SZ / 4,     SZ / 4,      9],
+  [3 * SZ / 4, SZ / 4,      9],
+  [SZ / 4,     3 * SZ / 4,  9],
+  [3 * SZ / 4, 3 * SZ / 4,  9],
+];
+
+for (const [cx, cy, r] of seeds) {
+  for (let dy = -r; dy < r; dy++) {
+    for (let dx = -r; dx < r; dx++) {
+      const x = (cx + dx) | 0;
+      const y = (cy + dy) | 0;
+      if (x < 0 || x >= SZ || y < 0 || y >= SZ) continue;
+      const i = y * SZ + x;
+      initData[i * 4 + 0] = 0.50 + 0.10 * (Math.random() - 0.5);
+      initData[i * 4 + 1] = 0.25 + 0.05 * (Math.random() - 0.5);
+    }
+  }
+}
+
+gl.bindTexture(gl.TEXTURE_2D, ping.tex);
+gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA32F, SZ, SZ, 0, gl.RGBA, gl.FLOAT, initData);
+gl.bindTexture(gl.TEXTURE_2D, null);
+
+const uTexSim    = gl.getUniformLocation(progSim,    'u_tex');
+const uPxSim     = gl.getUniformLocation(progSim,    'u_px');
+const uTexRender = gl.getUniformLocation(progRender, 'u_tex');
+
+let frameCount = 0;
+
+function loop() {
+  // Run 20 simulation steps per rendered frame for the first 500 frames so the
+  // labyrinthine pattern develops quickly on first load (≈10 000 steps, well past
+  // stabilisation).  After that, 2 steps/frame keeps the pattern gently alive.
+  const stepsPerFrame = frameCount < 500 ? 20 : 2;
+
+  for (let s = 0; s < stepsPerFrame; s++) {
+    gl.bindFramebuffer(gl.FRAMEBUFFER, pong.fbo);
+    gl.viewport(0, 0, SZ, SZ);
+    gl.useProgram(progSim);
+    gl.activeTexture(gl.TEXTURE0);
+    gl.bindTexture(gl.TEXTURE_2D, ping.tex);
+    gl.uniform1i(uTexSim, 0);
+    gl.uniform2f(uPxSim, 1.0 / SZ, 1.0 / SZ);
+    gl.bindVertexArray(vao);
+    gl.drawArrays(gl.TRIANGLES, 0, 6);
+
+    // Swap ping ↔ pong so the next step reads the freshly computed state.
+    const tmp = ping; ping = pong; pong = tmp;
+  }
+
+  // Colorize and display
+  gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+  gl.viewport(0, 0, SZ, SZ);
+  gl.useProgram(progRender);
+  gl.activeTexture(gl.TEXTURE0);
+  gl.bindTexture(gl.TEXTURE_2D, ping.tex);
+  gl.uniform1i(uTexRender, 0);
+  gl.bindVertexArray(vao);
+  gl.drawArrays(gl.TRIANGLES, 0, 6);
+
+  frameCount++;
+  requestAnimationFrame(loop);
+}
+
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>
