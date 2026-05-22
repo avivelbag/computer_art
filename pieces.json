@@ -1108,5 +1108,15 @@
     "path": "pieces/274-recursive-maze",
     "thumbnail": "pieces/274-recursive-maze/thumbnail.svg",
     "description": "An iterative depth-first search carves a perfect 40×40 maze cell by cell, with the DFS tip glowing terracotta against cream passages on deep charcoal; when carving completes a breadth-first wave fans out in amber until it reaches the bottom-right corner, then traces the single solution path back to the start in gold before fading to black and restarting with a fresh random maze."
+  },
+  {
+    "id": "275-reaction-diffusion",
+    "title": "The Labyrinth Writes Itself",
+    "tagline": "Gray-Scott reaction-diffusion in the maze regime (F=0.029 K=0.057) runs entirely on the GPU via two WebGL2 ping-pong RGBA32F framebuffers — channels crystallise from five scattered seeds into a labyrinthine network at 60 fps, mapped through an earthy near-black to warm-parchment gradient",
+    "year": 2026,
+    "technique": "WebGL2 / Gray-Scott reaction-diffusion / maze regime / RGBA32F ping-pong FBO / 9-point Laplacian / requestAnimationFrame",
+    "path": "pieces/275-reaction-diffusion",
+    "thumbnail": "pieces/275-reaction-diffusion/thumbnail.svg",
+    "description": "Two chemical species U and V self-organise on a 512×512 toroidal GPU grid via the Gray-Scott equations at F=0.029 and K=0.057, the maze regime where V forms a connected labyrinthine network of narrow corridors rather than the coral branches (pieces 17/96) or self-replicating spots (piece 180) produced by other parameter regimes. The simulation runs 20 GPU steps per display frame during warm-up so the full pattern emerges within seconds, then drops to 2 steps per frame at steady state. A three-stop palette maps V concentration from near-black channels through dark sienna to warm parchment walls, evoking carved stone illuminated from within."
   }
 ]

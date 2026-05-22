@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" width="400" height="400">
+  <defs>
+    <!--
+      Approximate the Gray-Scott maze pattern (F=0.029 K=0.057) using SVG filters.
+      feTurbulence at low frequency creates blob-like noise; a steep feColorMatrix
+      threshold sharpens it into narrow labyrinthine channels; feComponentTransfer
+      then maps the binary output to the three-stop earthy palette
+      (#0e0b08 → #7b3f00 → #f0e8d0).
+    -->
+    <filter id="maze-rd" x="0" y="0" width="1" height="1"
+            color-interpolation-filters="linearRGB">
+      <!-- Base turbulence at a frequency that yields corridor-scale features -->
+      <feTurbulence type="turbulence" baseFrequency="0.038 0.038"
+                    numOctaves="1" seed="275" result="t"/>
+      <!-- Collapse to a single greyscale channel -->
+      <feColorMatrix type="matrix"
+        values="0.333 0.333 0.334 0 0
+                0.333 0.333 0.334 0 0
+                0.333 0.333 0.334 0 0
+                0     0     0     0 1"
+        in="t" result="grey"/>
+      <!-- Sharpen: multiply×7 then subtract 3 to create crisp bright channels on dark ground -->
+      <feColorMatrix type="matrix"
+        values="7 0 0 0 -3
+                7 0 0 0 -3
+                7 0 0 0 -3
+                0 0 0 0  1"
+        in="grey" result="sharp"/>
+      <!-- Three-stop colour mapping via piecewise-linear component transfer:
+           input 0.0 → #0e0b08 (near-black)
+           input 0.5 → #7b3f00 (dark sienna)
+           input 1.0 → #f0e8d0 (warm parchment) -->
+      <feComponentTransfer in="sharp">
+        <feFuncR type="table" tableValues="0.055 0.482 0.941"/>
+        <feFuncG type="table" tableValues="0.043 0.247 0.910"/>
+        <feFuncB type="table" tableValues="0.031 0.000 0.816"/>
+      </feComponentTransfer>
+    </filter>
+  </defs>
+
+  <!-- Dark background in case the filter leaves transparent pixels -->
+  <rect width="400" height="400" fill="#0e0b08"/>
+  <!-- Apply the maze reaction-diffusion filter over the full canvas -->
+  <rect width="400" height="400" filter="url(#maze-rd)"/>
+</svg>
