@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>The Loom Remembers</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: #110a05;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      overflow: hidden;
+    }
+    canvas { display: block; }
+  </style>
+</head>
+<body>
+  <canvas id="c"></canvas>
+  <script>
+    const N = 60;
+    const M = 60;
+
+    // Threading drafts encoded as flat integer arrays (row-major).
+    // 1 = warp over weft, 0 = weft over warp.
+    // size = number of columns in one repeat; rows = number of rows in one repeat.
+
+    const PLAIN = {
+      cells: [
+        1,0,
+        0,1,
+      ],
+      size: 2, rows: 2,
+      label: 'Plain Weave',
+    };
+
+    const TWILL = {
+      cells: [
+        1,1,0,0,
+        0,1,1,0,
+        0,0,1,1,
+        1,0,0,1,
+      ],
+      size: 4, rows: 4,
+      label: '2/2 Twill',
+    };
+
+    // 4/1 satin: warp over 4 picks, under 1, step=3 to avoid twill diagonals.
+    // down-position for row r = (r * 3) % 5; all other columns are warp-over.
+    const SATIN = {
+      cells: [
+        0,1,1,1,1,
+        1,1,1,0,1,
+        1,0,1,1,1,
+        1,1,1,1,0,
+        1,1,0,1,1,
+      ],
+      size: 5, rows: 5,
+      label: '4/1 Satin',
+    };
+
+    // Herringbone: 2/2 twill that reverses direction every 4 columns.
+    // Columns 0-3 run forward (+1 per row), columns 4-7 run reversed (-1 per row).
+    const HERRINGBONE = {
+      cells: [
+        1,1,0,0, 0,0,1,1,
+        0,1,1,0, 0,1,1,0,
+        0,0,1,1, 1,1,0,0,
+        1,0,0,1, 1,0,0,1,
+      ],
+      size: 8, rows: 4,
+      label: 'Herringbone',
+    };
+
+    const DRAFTS = [PLAIN, TWILL, SATIN, HERRINGBONE];
+
+    function warpOver(draft, r, c) {
+      const ri = r % draft.rows;
+      const ci = c % draft.size;
+      return draft.cells[ri * draft.size + ci] === 1;
+    }
+
+    // Warm warp palette: terracotta → ochre → cream
+    const WARP_PAL = [[194,113,79], [201,154,58], [240,224,192]];
+    // Cool weft palette: indigo → slate → sky
+    const WEFT_PAL = [[59,48,120], [107,123,164], [168,196,212]];
+
+    function lerp(a, b, t) { return a + (b - a) * t; }
+
+    function samplePalette(pal, t) {
+      t = Math.max(0, Math.min(1, t));
+      const n = pal.length - 1;
+      const i = Math.min(n - 1, Math.floor(t * n));
+      const f = t * n - i;
+      return [
+        lerp(pal[i][0], pal[i+1][0], f),
+        lerp(pal[i][1], pal[i+1][1], f),
+        lerp(pal[i][2], pal[i+1][2], f),
+      ];
+    }
+
+    const cv = document.getElementById('c');
+    const ctx = cv.getContext('2d');
+    let SIZE = 0;
+
+    function resize() {
+      SIZE = Math.min(window.innerWidth, window.innerHeight, 900);
+      cv.width = SIZE;
+      cv.height = SIZE;
+    }
+
+    const CYCLE = 20;         // seconds per weave type
+    const DRIFT_PERIOD = 60;  // seconds per full color-palette oscillation
+
+    let prevStateKey = null;
+
+    function drawFrame(t) {
+      const draftIdx = Math.floor(t / CYCLE) % DRAFTS.length;
+      const draft = DRAFTS[draftIdx];
+      const drift = (Math.sin(t * 2 * Math.PI / DRIFT_PERIOD) + 1) / 2;
+
+      // Quantize to avoid unnecessary redraws between slow color ticks
+      const stateKey = draftIdx + '|' + (drift * 400 | 0);
+      if (stateKey === prevStateKey) return;
+      prevStateKey = stateKey;
+
+      const CELL = SIZE / N;
+      const THREAD = CELL - 1;
+
+      ctx.fillStyle = '#110a05';
+      ctx.fillRect(0, 0, SIZE, SIZE);
+
+      for (let r = 0; r < M; r++) {
+        const y = r * CELL + 0.5;
+        const t_r = ((r / (M - 1)) + drift * 0.4) % 1.0;
+        const wc = samplePalette(WEFT_PAL, t_r);
+        const weftRGB = `rgb(${wc[0]|0},${wc[1]|0},${wc[2]|0})`;
+
+        for (let c = 0; c < N; c++) {
+          const x = c * CELL + 0.5;
+          const over = warpOver(draft, r, c);
+
+          if (over) {
+            const t_c = ((c / (N - 1)) + drift * 0.4) % 1.0;
+            const wp = samplePalette(WARP_PAL, t_c);
+            ctx.fillStyle = `rgb(${wp[0]|0},${wp[1]|0},${wp[2]|0})`;
+          } else {
+            ctx.fillStyle = weftRGB;
+          }
+          ctx.fillRect(x, y, THREAD, THREAD);
+
+          // Highlight the top-left corner of raised (warp-over) cells to suggest lift.
+          if (over) {
+            ctx.fillStyle = 'rgba(255,255,255,0.10)';
+            ctx.fillRect(x, y, THREAD, 2);
+            ctx.fillRect(x, y, 2, THREAD);
+          }
+        }
+      }
+    }
+
+    let t0 = null;
+    function frame(ts) {
+      if (!t0) t0 = ts;
+      drawFrame((ts - t0) / 1000);
+      requestAnimationFrame(frame);
+    }
+
+    window.addEventListener('resize', () => { resize(); prevStateKey = null; });
+    resize();
+    requestAnimationFrame(frame);
+  </script>
+</body>
+</html>

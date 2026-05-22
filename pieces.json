@@ -1118,5 +1118,15 @@
     "path": "pieces/275-reaction-diffusion",
     "thumbnail": "pieces/275-reaction-diffusion/thumbnail.svg",
     "description": "Two chemical species U and V self-organise on a 512×512 toroidal GPU grid via the Gray-Scott equations at F=0.029 and K=0.057, the maze regime where V forms a connected labyrinthine network of narrow corridors rather than the coral branches (pieces 17/96) or self-replicating spots (piece 180) produced by other parameter regimes. The simulation runs 20 GPU steps per display frame during warm-up so the full pattern emerges within seconds, then drops to 2 steps per frame at steady state. A three-stop palette maps V concentration from near-black channels through dark sienna to warm parchment walls, evoking carved stone illuminated from within."
+  },
+  {
+    "id": "278-loom-weave",
+    "title": "The Loom Remembers",
+    "tagline": "60×60 threads interlace through four threading drafts — plain, twill, satin, and herringbone — warm terracotta warp meets cool indigo weft as the palette drifts over a 60-second cycle",
+    "year": 2026,
+    "technique": "SVG / generative weave / threading draft / interlace clip masking / over-under rendering",
+    "path": "pieces/278-loom-weave",
+    "thumbnail": "pieces/278-loom-weave/thumbnail.svg",
+    "description": "A digital loom simulation where 60 warp threads and 60 weft threads interlace following four threading drafts — plain weave (1:1 alternation), 2/2 twill (diagonal rib), 4/1 satin (smooth warp-faced float), and herringbone (reversing twill V-pattern) — each cycling every 20 seconds. Each draft is encoded as a flat integer array read by a single warpOver(draft, r, c) function that indexes by (r % rows, c % size). Warm terracotta-to-cream warp threads run vertically, cool indigo-to-sky weft threads horizontally; a sinusoidal drift shifts both color gradients across the cloth over 60 seconds. A subtle highlight along the top and left edges of raised warp-over cells reinforces the three-dimensional over/under illusion on a near-black canvas."
   }
 ]
