@@ -1078,5 +1078,15 @@
     "path": "pieces/271-pixel-sort",
     "thumbnail": "pieces/271-pixel-sort/thumbnail.svg",
     "description": "Three sinusoidal waves create a spatially varying interference field across an 800×800 canvas, mapping brightness to a three-stop palette: deep navy (#0a0a14), electric violet (#7c3aed), and amber gold (#fbbf24). A sort front sweeps left-to-right at 4 columns per frame, each column independently sorted descending by brightness — the canonical pixel-sort operation — dragging bright pixels to the top and dark ones to the bottom in a liquid-gravity collapse. The sorted state holds for 90 frames, then an unsort front sweeps through in the same direction, restoring columns to their original interference pattern; a second hold follows before the cycle repeats. Unlike the glitch-art piece (31), which simulates digital corruption via scanline displacement and chromatic aberration, this piece performs a deterministic brightness sort that reveals the latent structure of the wave field under an imaginary gravitational force."
+  },
+  {
+    "id": "272-pendulum-wave",
+    "title": "Pendulum Wave",
+    "tagline": "20 pendulums with tuned lengths sync and desync in waves, braids, and spirals — pure physics producing complex interference patterns that fully realign every 60 seconds",
+    "year": 2026,
+    "technique": "canvas / pendulum wave / simple harmonic motion / tuned-period coupling / requestAnimationFrame",
+    "path": "pieces/272-pendulum-wave",
+    "thumbnail": "pieces/272-pendulum-wave/thumbnail.svg",
+    "description": "Twenty pendulums hang side by side, each given a length so it completes exactly N full oscillations in 60 seconds, where N runs from 40 to 59. At t=0 all bobs are aligned at rest; within seconds the braid pattern unravels into travelling waves, figure-of-eight knots, and apparent spirals as the different periods drift in and out of phase. At precisely 60 seconds every pendulum is again at rest simultaneously, and the loop restarts seamlessly — no transition cut, no fade, just a consequence of the integer-ratio constraint. The bobs are colour-mapped along a cool-to-warm gradient from indigo through cyan to amber gold on a near-black background; strings are rendered at low opacity to keep visual weight on the bobs. All motion is computed in closed-form simple harmonic motion with no damping, so the loop is mathematically exact."
   }
 ]

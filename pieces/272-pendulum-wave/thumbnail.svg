@@ -1,0 +1,83 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 800" width="800" height="800">
+  <defs>
+    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="6" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+  <rect width="800" height="800" fill="#0d0d12"/>
+  <!-- pivot bar -->
+  <rect x="48" y="51" width="704" height="8" fill="#1a1a2e" rx="2"/>
+  <!-- strings -->
+  <g stroke="rgba(255,255,255,0.10)" stroke-width="1">
+    <line x1="60.0" y1="55" x2="60.0" y2="676.2"/>
+    <line x1="95.8" y1="55" x2="95.8" y2="584.1"/>
+    <line x1="131.6" y1="55" x2="131.6" y2="472.7"/>
+    <line x1="167.4" y1="55" x2="167.4" y2="415.7"/>
+    <line x1="203.2" y1="55" x2="203.2" y2="451.0"/>
+    <line x1="238.9" y1="55" x2="238.9" y2="555.0"/>
+    <line x1="274.7" y1="55" x2="274.7" y2="659.0"/>
+    <line x1="310.5" y1="55" x2="310.5" y2="694.3"/>
+    <line x1="346.3" y1="55" x2="346.3" y2="637.3"/>
+    <line x1="382.1" y1="55" x2="382.1" y2="525.9"/>
+    <line x1="417.9" y1="55" x2="417.9" y2="433.8"/>
+    <line x1="453.7" y1="55" x2="453.7" y2="421.9"/>
+    <line x1="489.5" y1="55" x2="489.5" y2="498.0"/>
+    <line x1="525.3" y1="55" x2="525.3" y2="612.0"/>
+    <line x1="561.1" y1="55" x2="561.1" y2="688.1"/>
+    <line x1="596.8" y1="55" x2="596.8" y2="676.2"/>
+    <line x1="632.6" y1="55" x2="632.6" y2="584.1"/>
+    <line x1="668.4" y1="55" x2="668.4" y2="472.7"/>
+    <line x1="704.2" y1="55" x2="704.2" y2="415.7"/>
+    <line x1="740.0" y1="55" x2="740.0" y2="451.0"/>
+  </g>
+  <!-- wave curve through bobs -->
+  <polyline fill="none" stroke="rgba(255,255,255,0.07)" stroke-width="1.5"
+    points="60.0,676.2 95.8,584.1 131.6,472.7 167.4,415.7 203.2,451.0 238.9,555.0 274.7,659.0 310.5,694.3 346.3,637.3 382.1,525.9 417.9,433.8 453.7,421.9 489.5,498.0 525.3,612.0 561.1,688.1 596.8,676.2 632.6,584.1 668.4,472.7 704.2,415.7 740.0,451.0"/>
+  <!-- bobs with glow -->
+  <g filter="url(#glow)">
+    <circle cx="60.0"  cy="676.2" r="9" fill="hsl(260,80%,62%)"/>
+    <circle cx="95.8"  cy="584.1" r="9" fill="hsl(252,80%,62%)"/>
+    <circle cx="131.6" cy="472.7" r="9" fill="hsl(244,80%,62%)"/>
+    <circle cx="167.4" cy="415.7" r="9" fill="hsl(236,80%,62%)"/>
+    <circle cx="203.2" cy="451.0" r="9" fill="hsl(228,80%,62%)"/>
+    <circle cx="238.9" cy="555.0" r="9" fill="hsl(221,80%,62%)"/>
+    <circle cx="274.7" cy="659.0" r="9" fill="hsl(213,80%,62%)"/>
+    <circle cx="310.5" cy="694.3" r="9" fill="hsl(205,80%,62%)"/>
+    <circle cx="346.3" cy="637.3" r="9" fill="hsl(197,80%,62%)"/>
+    <circle cx="382.1" cy="525.9" r="9" fill="hsl(189,80%,62%)"/>
+    <circle cx="417.9" cy="433.8" r="9" fill="hsl(177,80%,62%)"/>
+    <circle cx="453.7" cy="421.9" r="9" fill="hsl(162,80%,62%)"/>
+    <circle cx="489.5" cy="498.0" r="9" fill="hsl(146,80%,62%)"/>
+    <circle cx="525.3" cy="612.0" r="9" fill="hsl(131,80%,62%)"/>
+    <circle cx="561.1" cy="688.1" r="9" fill="hsl(115,80%,62%)"/>
+    <circle cx="596.8" cy="676.2" r="9" fill="hsl(100,80%,62%)"/>
+    <circle cx="632.6" cy="584.1" r="9" fill="hsl(84,80%,62%)"/>
+    <circle cx="668.4" cy="472.7" r="9" fill="hsl(69,80%,62%)"/>
+    <circle cx="704.2" cy="415.7" r="9" fill="hsl(54,80%,62%)"/>
+    <circle cx="740.0" cy="451.0" r="9" fill="hsl(38,80%,62%)"/>
+  </g>
+  <!-- pivot dots -->
+  <g fill="#2a2a44">
+    <circle cx="60.0"  cy="55" r="3"/>
+    <circle cx="95.8"  cy="55" r="3"/>
+    <circle cx="131.6" cy="55" r="3"/>
+    <circle cx="167.4" cy="55" r="3"/>
+    <circle cx="203.2" cy="55" r="3"/>
+    <circle cx="238.9" cy="55" r="3"/>
+    <circle cx="274.7" cy="55" r="3"/>
+    <circle cx="310.5" cy="55" r="3"/>
+    <circle cx="346.3" cy="55" r="3"/>
+    <circle cx="382.1" cy="55" r="3"/>
+    <circle cx="417.9" cy="55" r="3"/>
+    <circle cx="453.7" cy="55" r="3"/>
+    <circle cx="489.5" cy="55" r="3"/>
+    <circle cx="525.3" cy="55" r="3"/>
+    <circle cx="561.1" cy="55" r="3"/>
+    <circle cx="596.8" cy="55" r="3"/>
+    <circle cx="632.6" cy="55" r="3"/>
+    <circle cx="668.4" cy="55" r="3"/>
+    <circle cx="704.2" cy="55" r="3"/>
+    <circle cx="740.0" cy="55" r="3"/>
+  </g>
+</svg>
