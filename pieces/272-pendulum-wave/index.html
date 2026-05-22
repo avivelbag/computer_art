@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>272 — Pendulum Wave</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { background: #0d0d12; display: flex; align-items: center; justify-content: center; min-height: 100vh; overflow: hidden; }
+    canvas { display: block; width: min(100vw, 100vh); height: min(100vw, 100vh); }
+  </style>
+</head>
+<body>
+  <canvas id="c" width="800" height="800"></canvas>
+  <script>
+    const W = 800, H = 800;
+    const N = 20;
+    const T_GALLERY = 60;
+    const N_MIN = 40;
+
+    // T_i = T_GALLERY / (N_MIN + i) so pendulum i completes exactly (N_MIN+i)
+    // full oscillations in T_GALLERY seconds, guaranteeing a seamless loop.
+    const periods = Array.from({length: N}, (_, i) => T_GALLERY / (N_MIN + i));
+
+    const PIVOT_Y = 55;
+    const STRING_VIS = 500;
+    const REST_Y = PIVOT_Y + STRING_VIS;
+    const AMPLITUDE = 140;
+    const MARGIN_X = 60;
+    const SPACING = (W - 2 * MARGIN_X) / (N - 1);
+
+    function pivotX(i) { return MARGIN_X + i * SPACING; }
+
+    function bobColor(i) {
+      const t = i / (N - 1);
+      const h = t < 0.5
+        ? 260 - t * 2 * 75
+        : 185 - (t * 2 - 1) * 147;
+      return `hsl(${h.toFixed(1)},80%,62%)`;
+    }
+
+    const canvas = document.getElementById('c');
+    const ctx = canvas.getContext('2d');
+
+    const BG = '#0d0d12';
+    const STRING_COLOR = 'rgba(255,255,255,0.10)';
+    const PIVOT_BAR_COLOR = '#1a1a2e';
+    const PIVOT_DOT_COLOR = '#2a2a44';
+    const BOB_RADIUS = 9;
+
+    let startTime = null;
+
+    function tick(ts) {
+      if (startTime === null) startTime = ts;
+      const t = ((ts - startTime) * 0.001) % T_GALLERY;
+
+      ctx.fillStyle = BG;
+      ctx.fillRect(0, 0, W, H);
+
+      const disps = periods.map(T => AMPLITUDE * Math.sin(2 * Math.PI * t / T));
+
+      ctx.fillStyle = PIVOT_BAR_COLOR;
+      ctx.fillRect(MARGIN_X - 12, PIVOT_Y - 4, W - 2 * (MARGIN_X - 12), 8);
+
+      ctx.strokeStyle = STRING_COLOR;
+      ctx.lineWidth = 1;
+      for (let i = 0; i < N; i++) {
+        ctx.beginPath();
+        ctx.moveTo(pivotX(i), PIVOT_Y);
+        ctx.lineTo(pivotX(i), REST_Y + disps[i]);
+        ctx.stroke();
+      }
+
+      ctx.beginPath();
+      ctx.moveTo(pivotX(0), REST_Y + disps[0]);
+      for (let i = 1; i < N - 1; i++) {
+        const mx = (pivotX(i) + pivotX(i + 1)) / 2;
+        const my = (REST_Y + disps[i] + REST_Y + disps[i + 1]) / 2;
+        ctx.quadraticCurveTo(pivotX(i), REST_Y + disps[i], mx, my);
+      }
+      ctx.lineTo(pivotX(N - 1), REST_Y + disps[N - 1]);
+      ctx.strokeStyle = 'rgba(255,255,255,0.07)';
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+
+      for (let i = 0; i < N; i++) {
+        const bx = pivotX(i);
+        const by = REST_Y + disps[i];
+        const color = bobColor(i);
+
+        ctx.shadowColor = color;
+        ctx.shadowBlur = 14;
+        ctx.beginPath();
+        ctx.arc(bx, by, BOB_RADIUS, 0, 2 * Math.PI);
+        ctx.fillStyle = color;
+        ctx.fill();
+        ctx.shadowBlur = 0;
+      }
+
+      ctx.fillStyle = PIVOT_DOT_COLOR;
+      for (let i = 0; i < N; i++) {
+        ctx.beginPath();
+        ctx.arc(pivotX(i), PIVOT_Y, 3, 0, 2 * Math.PI);
+        ctx.fill();
+      }
+
+      requestAnimationFrame(tick);
+    }
+
+    requestAnimationFrame(tick);
+  </script>
+</body>
+</html>
