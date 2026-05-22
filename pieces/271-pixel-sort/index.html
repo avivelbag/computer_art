@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>271 — Sorted Light</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { background: #0a0a14; display: flex; align-items: center; justify-content: center; min-height: 100vh; overflow: hidden; }
+    canvas { display: block; width: min(100vw, 100vh); height: min(100vw, 100vh); }
+  </style>
+</head>
+<body>
+  <canvas id="c" width="800" height="800"></canvas>
+  <script>
+    const W = 800, H = 800;
+
+    const C_DARK   = [10, 10, 20];    // #0a0a14 — deep navy
+    const C_MID    = [124, 58, 237];  // #7c3aed — electric violet
+    const C_BRIGHT = [251, 191, 36];  // #fbbf24 — amber gold
+
+    function lerp3(a, b, t) {
+      return [a[0] + (b[0]-a[0])*t | 0, a[1] + (b[1]-a[1])*t | 0, a[2] + (b[2]-a[2])*t | 0];
+    }
+
+    function valueToColor(v) {
+      if (v < 0.5) return lerp3(C_DARK, C_MID, v * 2);
+      return lerp3(C_MID, C_BRIGHT, (v - 0.5) * 2);
+    }
+
+    // Three-wave sinusoidal interference field. The arguments are mutually
+    // incommensurable so no two waves share a period ratio, producing a
+    // spatially varied pattern without obvious tiling.
+    function sourceValue(x, y) {
+      const nx = x / W, ny = y / H;
+      const v = Math.sin(nx * Math.PI * 8) * Math.cos(ny * Math.PI * 5) * 0.40
+              + Math.sin((nx + ny) * Math.PI * 6) * 0.35
+              + Math.cos((nx - ny) * Math.PI * 9) * 0.25;
+      return (v + 1.0) * 0.5;
+    }
+
+    // Pre-compute source values and column-sorted counterparts once so the
+    // animation loop only reads from typed arrays.
+    const srcCols    = new Array(W);
+    const sortedCols = new Array(W);
+    for (let x = 0; x < W; x++) {
+      const col = new Float32Array(H);
+      for (let y = 0; y < H; y++) col[y] = sourceValue(x, y);
+      srcCols[x]    = col;
+      sortedCols[x] = col.slice().sort((a, b) => b - a); // descending: bright at top
+    }
+
+    const canvas = document.getElementById('c');
+    const ctx    = canvas.getContext('2d');
+    const imgData = ctx.createImageData(W, H);
+    const px      = imgData.data;
+
+    function writeColumn(x, col) {
+      for (let y = 0; y < H; y++) {
+        const [r, g, b] = valueToColor(col[y]);
+        const i = (y * W + x) * 4;
+        px[i] = r; px[i+1] = g; px[i+2] = b; px[i+3] = 255;
+      }
+    }
+
+    // Draw source image as the initial state.
+    for (let x = 0; x < W; x++) writeColumn(x, srcCols[x]);
+    ctx.putImageData(imgData, 0, 0);
+
+    const SWEEP_SPEED = 4;  // columns per frame during sweep
+    const HOLD_FRAMES = 90; // pause at fully sorted / fully restored extremes
+
+    let phase = 'hold-source';
+    let front = 0;
+    let hold  = HOLD_FRAMES;
+
+    function tick() {
+      if (phase === 'hold-source' || phase === 'hold-sorted') {
+        if (--hold <= 0) {
+          hold  = 0;
+          phase = phase === 'hold-source' ? 'sorting' : 'unsorting';
+          front = 0;
+        }
+      } else if (phase === 'sorting') {
+        for (let i = 0; i < SWEEP_SPEED && front < W; i++, front++) {
+          writeColumn(front, sortedCols[front]);
+        }
+        ctx.putImageData(imgData, 0, 0);
+        if (front >= W) { phase = 'hold-sorted'; hold = HOLD_FRAMES; }
+      } else {
+        for (let i = 0; i < SWEEP_SPEED && front < W; i++, front++) {
+          writeColumn(front, srcCols[front]);
+        }
+        ctx.putImageData(imgData, 0, 0);
+        if (front >= W) { phase = 'hold-source'; hold = HOLD_FRAMES; }
+      }
+      requestAnimationFrame(tick);
+    }
+
+    requestAnimationFrame(tick);
+  </script>
+</body>
+</html>

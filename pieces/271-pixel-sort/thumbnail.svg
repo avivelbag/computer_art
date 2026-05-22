@@ -1,0 +1,405 @@
+<svg xmlns="http://www.w3.org/2000/svg"
+     width="400" height="400">
+<defs>
+  <linearGradient id="g0" x1="0" y1="0" x2="0" y2="1" gradientUnits="objectBoundingBox">
+    <stop offset="0%" stop-color="rgb(200,138,116)"/>
+    <stop offset="25%" stop-color="rgb(162,98,177)"/>
+    <stop offset="50%" stop-color="rgb(118,56,226)"/>
+    <stop offset="75%" stop-color="rgb(99,48,190)"/>
+    <stop offset="100%" stop-color="rgb(46,25,88)"/>
+  </linearGradient>
+  <linearGradient id="g1" x1="0" y1="0" x2="0" y2="1" gradientUnits="objectBoundingBox">
+    <stop offset="0%" stop-color="rgb(227,166,74)"/>
+    <stop offset="25%" stop-color="rgb(174,111,158)"/>
+    <stop offset="50%" stop-color="rgb(118,55,225)"/>
+    <stop offset="75%" stop-color="rgb(95,46,182)"/>
+    <stop offset="100%" stop-color="rgb(31,19,60)"/>
+  </linearGradient>
+  <linearGradient id="g2" x1="0" y1="0" x2="0" y2="1" gradientUnits="objectBoundingBox">
+    <stop offset="0%" stop-color="rgb(239,178,56)"/>
+    <stop offset="25%" stop-color="rgb(179,115,150)"/>
+    <stop offset="50%" stop-color="rgb(120,56,230)"/>
+    <stop offset="75%" stop-color="rgb(92,45,177)"/>
+    <stop offset="100%" stop-color="rgb(21,15,41)"/>
+  </linearGradient>
+  <linearGradient id="g3" x1="0" y1="0" x2="0" y2="1" gradientUnits="objectBoundingBox">
+    <stop offset="0%" stop-color="rgb(225,164,78)"/>
+    <stop offset="25%" stop-color="rgb(178,115,151)"/>
+    <stop offset="50%" stop-color="rgb(129,64,228)"/>
+    <stop offset="75%" stop-color="rgb(87,42,167)"/>
+    <stop offset="100%" stop-color="rgb(12,11,25)"/>
+  </linearGradient>
+  <linearGradient id="g4" x1="0" y1="0" x2="0" y2="1" gradientUnits="objectBoundingBox">
+    <stop offset="0%" stop-color="rgb(214,152,95)"/>
+    <stop offset="25%" stop-color="rgb(164,100,174)"/>
+    <stop offset="50%" stop-color="rgb(119,56,228)"/>
+    <stop offset="75%" stop-color="rgb(98,47,188)"/>
+    <stop offset="100%" stop-color="rgb(28,18,55)"/>
+  </linearGradient>
+  <linearGradient id="g5" x1="0" y1="0" x2="0" y2="1" gradientUnits="objectBoundingBox">
+    <stop offset="0%" stop-color="rgb(204,142,110)"/>
+    <stop offset="25%" stop-color="rgb(143,78,206)"/>
+    <stop offset="50%" stop-color="rgb(127,61,232)"/>
+    <stop offset="75%" stop-color="rgb(99,48,190)"/>
+    <stop offset="100%" stop-color="rgb(66,33,126)"/>
+  </linearGradient>
+  <linearGradient id="g6" x1="0" y1="0" x2="0" y2="1" gradientUnits="objectBoundingBox">
+    <stop offset="0%" stop-color="rgb(197,134,122)"/>
+    <stop offset="25%" stop-color="rgb(152,88,192)"/>
+    <stop offset="50%" stop-color="rgb(116,55,222)"/>
+    <stop offset="75%" stop-color="rgb(102,49,194)"/>
+    <stop offset="100%" stop-color="rgb(53,28,101)"/>
+  </linearGradient>
+  <linearGradient id="g7" x1="0" y1="0" x2="0" y2="1" gradientUnits="objectBoundingBox">
+    <stop offset="0%" stop-color="rgb(230,169,69)"/>
+    <stop offset="25%" stop-color="rgb(160,96,180)"/>
+    <stop offset="50%" stop-color="rgb(127,61,232)"/>
+    <stop offset="75%" stop-color="rgb(79,39,152)"/>
+    <stop offset="100%" stop-color="rgb(50,27,96)"/>
+  </linearGradient>
+  <linearGradient id="g8" x1="0" y1="0" x2="0" y2="1" gradientUnits="objectBoundingBox">
+    <stop offset="0%" stop-color="rgb(240,180,53)"/>
+    <stop offset="25%" stop-color="rgb(163,99,175)"/>
+    <stop offset="50%" stop-color="rgb(121,57,231)"/>
+    <stop offset="75%" stop-color="rgb(71,36,136)"/>
+    <stop offset="100%" stop-color="rgb(33,20,64)"/>
+  </linearGradient>
+  <linearGradient id="g9" x1="0" y1="0" x2="0" y2="1" gradientUnits="objectBoundingBox">
+    <stop offset="0%" stop-color="rgb(244,184,47)"/>
+    <stop offset="25%" stop-color="rgb(176,113,154)"/>
+    <stop offset="50%" stop-color="rgb(123,58,235)"/>
+    <stop offset="75%" stop-color="rgb(67,34,129)"/>
+    <stop offset="100%" stop-color="rgb(27,17,53)"/>
+  </linearGradient>
+  <linearGradient id="g10" x1="0" y1="0" x2="0" y2="1" gradientUnits="objectBoundingBox">
+    <stop offset="0%" stop-color="rgb(243,182,49)"/>
+    <stop offset="25%" stop-color="rgb(173,109,160)"/>
+    <stop offset="50%" stop-color="rgb(127,61,232)"/>
+    <stop offset="75%" stop-color="rgb(71,36,137)"/>
+    <stop offset="100%" stop-color="rgb(41,23,79)"/>
+  </linearGradient>
+  <linearGradient id="g11" x1="0" y1="0" x2="0" y2="1" gradientUnits="objectBoundingBox">
+    <stop offset="0%" stop-color="rgb(215,154,93)"/>
+    <stop offset="25%" stop-color="rgb(162,97,177)"/>
+    <stop offset="50%" stop-color="rgb(129,63,230)"/>
+    <stop offset="75%" stop-color="rgb(90,44,172)"/>
+    <stop offset="100%" stop-color="rgb(41,23,79)"/>
+  </linearGradient>
+  <linearGradient id="g12" x1="0" y1="0" x2="0" y2="1" gradientUnits="objectBoundingBox">
+    <stop offset="0%" stop-color="rgb(196,134,122)"/>
+    <stop offset="25%" stop-color="rgb(153,88,191)"/>
+    <stop offset="50%" stop-color="rgb(124,58,236)"/>
+    <stop offset="75%" stop-color="rgb(105,50,201)"/>
+    <stop offset="100%" stop-color="rgb(59,31,113)"/>
+  </linearGradient>
+  <linearGradient id="g13" x1="0" y1="0" x2="0" y2="1" gradientUnits="objectBoundingBox">
+    <stop offset="0%" stop-color="rgb(206,144,107)"/>
+    <stop offset="25%" stop-color="rgb(159,95,182)"/>
+    <stop offset="50%" stop-color="rgb(126,60,234)"/>
+    <stop offset="75%" stop-color="rgb(103,49,197)"/>
+    <stop offset="100%" stop-color="rgb(43,24,82)"/>
+  </linearGradient>
+  <linearGradient id="g14" x1="0" y1="0" x2="0" y2="1" gradientUnits="objectBoundingBox">
+    <stop offset="0%" stop-color="rgb(220,158,86)"/>
+    <stop offset="25%" stop-color="rgb(176,112,155)"/>
+    <stop offset="50%" stop-color="rgb(127,62,232)"/>
+    <stop offset="75%" stop-color="rgb(86,42,165)"/>
+    <stop offset="100%" stop-color="rgb(19,14,38)"/>
+  </linearGradient>
+  <linearGradient id="g15" x1="0" y1="0" x2="0" y2="1" gradientUnits="objectBoundingBox">
+    <stop offset="0%" stop-color="rgb(242,182,50)"/>
+    <stop offset="25%" stop-color="rgb(180,117,148)"/>
+    <stop offset="50%" stop-color="rgb(133,68,222)"/>
+    <stop offset="75%" stop-color="rgb(74,37,143)"/>
+    <stop offset="100%" stop-color="rgb(19,14,38)"/>
+  </linearGradient>
+  <linearGradient id="g16" x1="0" y1="0" x2="0" y2="1" gradientUnits="objectBoundingBox">
+    <stop offset="0%" stop-color="rgb(239,178,55)"/>
+    <stop offset="25%" stop-color="rgb(184,121,142)"/>
+    <stop offset="50%" stop-color="rgb(126,61,233)"/>
+    <stop offset="75%" stop-color="rgb(70,35,134)"/>
+    <stop offset="100%" stop-color="rgb(23,16,46)"/>
+  </linearGradient>
+  <linearGradient id="g17" x1="0" y1="0" x2="0" y2="1" gradientUnits="objectBoundingBox">
+    <stop offset="0%" stop-color="rgb(215,154,92)"/>
+    <stop offset="25%" stop-color="rgb(172,108,161)"/>
+    <stop offset="50%" stop-color="rgb(118,56,227)"/>
+    <stop offset="75%" stop-color="rgb(86,42,165)"/>
+    <stop offset="100%" stop-color="rgb(33,20,63)"/>
+  </linearGradient>
+  <linearGradient id="g18" x1="0" y1="0" x2="0" y2="1" gradientUnits="objectBoundingBox">
+    <stop offset="0%" stop-color="rgb(206,143,108)"/>
+    <stop offset="25%" stop-color="rgb(149,84,197)"/>
+    <stop offset="50%" stop-color="rgb(133,67,223)"/>
+    <stop offset="75%" stop-color="rgb(90,44,172)"/>
+    <stop offset="100%" stop-color="rgb(60,31,115)"/>
+  </linearGradient>
+  <linearGradient id="g19" x1="0" y1="0" x2="0" y2="1" gradientUnits="objectBoundingBox">
+    <stop offset="0%" stop-color="rgb(186,122,140)"/>
+    <stop offset="25%" stop-color="rgb(141,76,210)"/>
+    <stop offset="50%" stop-color="rgb(120,56,229)"/>
+    <stop offset="75%" stop-color="rgb(102,49,195)"/>
+    <stop offset="100%" stop-color="rgb(60,31,116)"/>
+  </linearGradient>
+  <linearGradient id="g20" x1="0" y1="0" x2="0" y2="1" gradientUnits="objectBoundingBox">
+    <stop offset="0%" stop-color="rgb(223,161,81)"/>
+    <stop offset="25%" stop-color="rgb(144,79,205)"/>
+    <stop offset="50%" stop-color="rgb(125,59,235)"/>
+    <stop offset="75%" stop-color="rgb(94,45,180)"/>
+    <stop offset="100%" stop-color="rgb(59,30,113)"/>
+  </linearGradient>
+  <linearGradient id="g21" x1="0" y1="0" x2="0" y2="1" gradientUnits="objectBoundingBox">
+    <stop offset="0%" stop-color="rgb(237,177,58)"/>
+    <stop offset="25%" stop-color="rgb(170,106,164)"/>
+    <stop offset="50%" stop-color="rgb(117,55,224)"/>
+    <stop offset="75%" stop-color="rgb(85,42,163)"/>
+    <stop offset="100%" stop-color="rgb(25,16,49)"/>
+  </linearGradient>
+  <linearGradient id="g22" x1="0" y1="0" x2="0" y2="1" gradientUnits="objectBoundingBox">
+    <stop offset="0%" stop-color="rgb(227,166,74)"/>
+    <stop offset="25%" stop-color="rgb(184,121,142)"/>
+    <stop offset="50%" stop-color="rgb(118,56,226)"/>
+    <stop offset="75%" stop-color="rgb(80,40,154)"/>
+    <stop offset="100%" stop-color="rgb(14,12,27)"/>
+  </linearGradient>
+  <linearGradient id="g23" x1="0" y1="0" x2="0" y2="1" gradientUnits="objectBoundingBox">
+    <stop offset="0%" stop-color="rgb(218,156,89)"/>
+    <stop offset="25%" stop-color="rgb(178,114,152)"/>
+    <stop offset="50%" stop-color="rgb(128,62,231)"/>
+    <stop offset="75%" stop-color="rgb(79,39,152)"/>
+    <stop offset="100%" stop-color="rgb(27,17,52)"/>
+  </linearGradient>
+  <linearGradient id="g24" x1="0" y1="0" x2="0" y2="1" gradientUnits="objectBoundingBox">
+    <stop offset="0%" stop-color="rgb(207,145,106)"/>
+    <stop offset="25%" stop-color="rgb(157,92,185)"/>
+    <stop offset="50%" stop-color="rgb(129,63,230)"/>
+    <stop offset="75%" stop-color="rgb(89,43,171)"/>
+    <stop offset="100%" stop-color="rgb(54,29,104)"/>
+  </linearGradient>
+  <linearGradient id="g25" x1="0" y1="0" x2="0" y2="1" gradientUnits="objectBoundingBox">
+    <stop offset="0%" stop-color="rgb(184,121,142)"/>
+    <stop offset="25%" stop-color="rgb(155,90,189)"/>
+    <stop offset="50%" stop-color="rgb(119,56,228)"/>
+    <stop offset="75%" stop-color="rgb(107,51,205)"/>
+    <stop offset="100%" stop-color="rgb(67,34,129)"/>
+  </linearGradient>
+  <linearGradient id="g26" x1="0" y1="0" x2="0" y2="1" gradientUnits="objectBoundingBox">
+    <stop offset="0%" stop-color="rgb(180,117,148)"/>
+    <stop offset="25%" stop-color="rgb(151,86,194)"/>
+    <stop offset="50%" stop-color="rgb(126,60,234)"/>
+    <stop offset="75%" stop-color="rgb(105,50,200)"/>
+    <stop offset="100%" stop-color="rgb(64,33,123)"/>
+  </linearGradient>
+  <linearGradient id="g27" x1="0" y1="0" x2="0" y2="1" gradientUnits="objectBoundingBox">
+    <stop offset="0%" stop-color="rgb(209,147,103)"/>
+    <stop offset="25%" stop-color="rgb(143,78,206)"/>
+    <stop offset="50%" stop-color="rgb(125,59,235)"/>
+    <stop offset="75%" stop-color="rgb(103,49,198)"/>
+    <stop offset="100%" stop-color="rgb(41,23,79)"/>
+  </linearGradient>
+  <linearGradient id="g28" x1="0" y1="0" x2="0" y2="1" gradientUnits="objectBoundingBox">
+    <stop offset="0%" stop-color="rgb(235,175,61)"/>
+    <stop offset="25%" stop-color="rgb(154,89,190)"/>
+    <stop offset="50%" stop-color="rgb(130,64,228)"/>
+    <stop offset="75%" stop-color="rgb(88,43,169)"/>
+    <stop offset="100%" stop-color="rgb(37,21,71)"/>
+  </linearGradient>
+  <linearGradient id="g29" x1="0" y1="0" x2="0" y2="1" gradientUnits="objectBoundingBox">
+    <stop offset="0%" stop-color="rgb(237,176,58)"/>
+    <stop offset="25%" stop-color="rgb(162,97,178)"/>
+    <stop offset="50%" stop-color="rgb(124,59,236)"/>
+    <stop offset="75%" stop-color="rgb(82,40,157)"/>
+    <stop offset="100%" stop-color="rgb(49,26,94)"/>
+  </linearGradient>
+  <linearGradient id="g30" x1="0" y1="0" x2="0" y2="1" gradientUnits="objectBoundingBox">
+    <stop offset="0%" stop-color="rgb(215,153,93)"/>
+    <stop offset="25%" stop-color="rgb(164,100,173)"/>
+    <stop offset="50%" stop-color="rgb(115,54,220)"/>
+    <stop offset="75%" stop-color="rgb(90,44,172)"/>
+    <stop offset="100%" stop-color="rgb(46,25,89)"/>
+  </linearGradient>
+  <linearGradient id="g31" x1="0" y1="0" x2="0" y2="1" gradientUnits="objectBoundingBox">
+    <stop offset="0%" stop-color="rgb(185,122,140)"/>
+    <stop offset="25%" stop-color="rgb(156,92,186)"/>
+    <stop offset="50%" stop-color="rgb(117,55,224)"/>
+    <stop offset="75%" stop-color="rgb(104,49,198)"/>
+    <stop offset="100%" stop-color="rgb(57,30,109)"/>
+  </linearGradient>
+  <linearGradient id="g32" x1="0" y1="0" x2="0" y2="1" gradientUnits="objectBoundingBox">
+    <stop offset="0%" stop-color="rgb(179,116,150)"/>
+    <stop offset="25%" stop-color="rgb(146,81,202)"/>
+    <stop offset="50%" stop-color="rgb(121,57,232)"/>
+    <stop offset="75%" stop-color="rgb(104,50,199)"/>
+    <stop offset="100%" stop-color="rgb(64,33,124)"/>
+  </linearGradient>
+  <linearGradient id="g33" x1="0" y1="0" x2="0" y2="1" gradientUnits="objectBoundingBox">
+    <stop offset="0%" stop-color="rgb(183,119,144)"/>
+    <stop offset="25%" stop-color="rgb(147,82,201)"/>
+    <stop offset="50%" stop-color="rgb(126,60,234)"/>
+    <stop offset="75%" stop-color="rgb(101,48,193)"/>
+    <stop offset="100%" stop-color="rgb(77,38,148)"/>
+  </linearGradient>
+  <linearGradient id="g34" x1="0" y1="0" x2="0" y2="1" gradientUnits="objectBoundingBox">
+    <stop offset="0%" stop-color="rgb(199,136,119)"/>
+    <stop offset="25%" stop-color="rgb(150,85,196)"/>
+    <stop offset="50%" stop-color="rgb(130,64,228)"/>
+    <stop offset="75%" stop-color="rgb(103,49,197)"/>
+    <stop offset="100%" stop-color="rgb(49,26,93)"/>
+  </linearGradient>
+  <linearGradient id="g35" x1="0" y1="0" x2="0" y2="1" gradientUnits="objectBoundingBox">
+    <stop offset="0%" stop-color="rgb(200,137,117)"/>
+    <stop offset="25%" stop-color="rgb(157,92,185)"/>
+    <stop offset="50%" stop-color="rgb(123,57,235)"/>
+    <stop offset="75%" stop-color="rgb(105,50,202)"/>
+    <stop offset="100%" stop-color="rgb(35,20,67)"/>
+  </linearGradient>
+  <linearGradient id="g36" x1="0" y1="0" x2="0" y2="1" gradientUnits="objectBoundingBox">
+    <stop offset="0%" stop-color="rgb(202,140,113)"/>
+    <stop offset="25%" stop-color="rgb(164,100,174)"/>
+    <stop offset="50%" stop-color="rgb(122,57,232)"/>
+    <stop offset="75%" stop-color="rgb(98,47,188)"/>
+    <stop offset="100%" stop-color="rgb(39,22,75)"/>
+  </linearGradient>
+  <linearGradient id="g37" x1="0" y1="0" x2="0" y2="1" gradientUnits="objectBoundingBox">
+    <stop offset="0%" stop-color="rgb(196,134,122)"/>
+    <stop offset="25%" stop-color="rgb(161,97,178)"/>
+    <stop offset="50%" stop-color="rgb(125,59,236)"/>
+    <stop offset="75%" stop-color="rgb(93,45,178)"/>
+    <stop offset="100%" stop-color="rgb(59,31,113)"/>
+  </linearGradient>
+  <linearGradient id="g38" x1="0" y1="0" x2="0" y2="1" gradientUnits="objectBoundingBox">
+    <stop offset="0%" stop-color="rgb(209,147,103)"/>
+    <stop offset="25%" stop-color="rgb(151,86,195)"/>
+    <stop offset="50%" stop-color="rgb(127,61,233)"/>
+    <stop offset="75%" stop-color="rgb(97,47,185)"/>
+    <stop offset="100%" stop-color="rgb(53,28,102)"/>
+  </linearGradient>
+  <linearGradient id="g39" x1="0" y1="0" x2="0" y2="1" gradientUnits="objectBoundingBox">
+    <stop offset="0%" stop-color="rgb(209,147,103)"/>
+    <stop offset="25%" stop-color="rgb(143,78,207)"/>
+    <stop offset="50%" stop-color="rgb(123,58,235)"/>
+    <stop offset="75%" stop-color="rgb(105,50,201)"/>
+    <stop offset="100%" stop-color="rgb(62,32,119)"/>
+  </linearGradient>
+  <linearGradient id="g40" x1="0" y1="0" x2="0" y2="1" gradientUnits="objectBoundingBox">
+    <stop offset="0%" stop-color="rgb(194,132,126)"/>
+    <stop offset="25%" stop-color="rgb(147,82,200)"/>
+    <stop offset="50%" stop-color="rgb(115,54,220)"/>
+    <stop offset="75%" stop-color="rgb(94,45,180)"/>
+    <stop offset="100%" stop-color="rgb(80,40,154)"/>
+  </linearGradient>
+  <linearGradient id="g41" x1="0" y1="0" x2="0" y2="1" gradientUnits="objectBoundingBox">
+    <stop offset="0%" stop-color="rgb(195,132,125)"/>
+    <stop offset="25%" stop-color="rgb(148,83,199)"/>
+    <stop offset="50%" stop-color="rgb(118,55,225)"/>
+    <stop offset="75%" stop-color="rgb(97,47,186)"/>
+    <stop offset="100%" stop-color="rgb(75,38,144)"/>
+  </linearGradient>
+  <linearGradient id="g42" x1="0" y1="0" x2="0" y2="1" gradientUnits="objectBoundingBox">
+    <stop offset="0%" stop-color="rgb(204,142,110)"/>
+    <stop offset="25%" stop-color="rgb(144,79,206)"/>
+    <stop offset="50%" stop-color="rgb(123,57,234)"/>
+    <stop offset="75%" stop-color="rgb(102,49,196)"/>
+    <stop offset="100%" stop-color="rgb(66,34,126)"/>
+  </linearGradient>
+  <linearGradient id="g43" x1="0" y1="0" x2="0" y2="1" gradientUnits="objectBoundingBox">
+    <stop offset="0%" stop-color="rgb(202,140,113)"/>
+    <stop offset="25%" stop-color="rgb(147,82,201)"/>
+    <stop offset="50%" stop-color="rgb(129,63,229)"/>
+    <stop offset="75%" stop-color="rgb(89,43,170)"/>
+    <stop offset="100%" stop-color="rgb(67,34,128)"/>
+  </linearGradient>
+  <linearGradient id="g44" x1="0" y1="0" x2="0" y2="1" gradientUnits="objectBoundingBox">
+    <stop offset="0%" stop-color="rgb(214,153,94)"/>
+    <stop offset="25%" stop-color="rgb(159,94,182)"/>
+    <stop offset="50%" stop-color="rgb(129,63,230)"/>
+    <stop offset="75%" stop-color="rgb(88,43,168)"/>
+    <stop offset="100%" stop-color="rgb(47,26,91)"/>
+  </linearGradient>
+  <linearGradient id="g45" x1="0" y1="0" x2="0" y2="1" gradientUnits="objectBoundingBox">
+    <stop offset="0%" stop-color="rgb(216,154,92)"/>
+    <stop offset="25%" stop-color="rgb(163,99,175)"/>
+    <stop offset="50%" stop-color="rgb(126,61,233)"/>
+    <stop offset="75%" stop-color="rgb(94,45,180)"/>
+    <stop offset="100%" stop-color="rgb(30,19,59)"/>
+  </linearGradient>
+  <linearGradient id="g46" x1="0" y1="0" x2="0" y2="1" gradientUnits="objectBoundingBox">
+    <stop offset="0%" stop-color="rgb(197,134,122)"/>
+    <stop offset="25%" stop-color="rgb(157,92,185)"/>
+    <stop offset="50%" stop-color="rgb(126,60,234)"/>
+    <stop offset="75%" stop-color="rgb(102,49,196)"/>
+    <stop offset="100%" stop-color="rgb(32,19,62)"/>
+  </linearGradient>
+  <linearGradient id="g47" x1="0" y1="0" x2="0" y2="1" gradientUnits="objectBoundingBox">
+    <stop offset="0%" stop-color="rgb(193,131,127)"/>
+    <stop offset="25%" stop-color="rgb(157,92,185)"/>
+    <stop offset="50%" stop-color="rgb(132,66,225)"/>
+    <stop offset="75%" stop-color="rgb(99,47,189)"/>
+    <stop offset="100%" stop-color="rgb(44,24,85)"/>
+  </linearGradient>
+  <linearGradient id="g48" x1="0" y1="0" x2="0" y2="1" gradientUnits="objectBoundingBox">
+    <stop offset="0%" stop-color="rgb(196,133,124)"/>
+    <stop offset="25%" stop-color="rgb(155,90,189)"/>
+    <stop offset="50%" stop-color="rgb(119,56,227)"/>
+    <stop offset="75%" stop-color="rgb(100,48,191)"/>
+    <stop offset="100%" stop-color="rgb(53,28,101)"/>
+  </linearGradient>
+  <linearGradient id="g49" x1="0" y1="0" x2="0" y2="1" gradientUnits="objectBoundingBox">
+    <stop offset="0%" stop-color="rgb(200,138,117)"/>
+    <stop offset="25%" stop-color="rgb(144,78,206)"/>
+    <stop offset="50%" stop-color="rgb(128,62,231)"/>
+    <stop offset="75%" stop-color="rgb(95,46,182)"/>
+    <stop offset="100%" stop-color="rgb(64,33,123)"/>
+  </linearGradient>
+</defs>
+<rect x="0" y="0" width="8" height="400" fill="url(#g0)"/>
+<rect x="8" y="0" width="8" height="400" fill="url(#g1)"/>
+<rect x="16" y="0" width="8" height="400" fill="url(#g2)"/>
+<rect x="24" y="0" width="8" height="400" fill="url(#g3)"/>
+<rect x="32" y="0" width="8" height="400" fill="url(#g4)"/>
+<rect x="40" y="0" width="8" height="400" fill="url(#g5)"/>
+<rect x="48" y="0" width="8" height="400" fill="url(#g6)"/>
+<rect x="56" y="0" width="8" height="400" fill="url(#g7)"/>
+<rect x="64" y="0" width="8" height="400" fill="url(#g8)"/>
+<rect x="72" y="0" width="8" height="400" fill="url(#g9)"/>
+<rect x="80" y="0" width="8" height="400" fill="url(#g10)"/>
+<rect x="88" y="0" width="8" height="400" fill="url(#g11)"/>
+<rect x="96" y="0" width="8" height="400" fill="url(#g12)"/>
+<rect x="104" y="0" width="8" height="400" fill="url(#g13)"/>
+<rect x="112" y="0" width="8" height="400" fill="url(#g14)"/>
+<rect x="120" y="0" width="8" height="400" fill="url(#g15)"/>
+<rect x="128" y="0" width="8" height="400" fill="url(#g16)"/>
+<rect x="136" y="0" width="8" height="400" fill="url(#g17)"/>
+<rect x="144" y="0" width="8" height="400" fill="url(#g18)"/>
+<rect x="152" y="0" width="8" height="400" fill="url(#g19)"/>
+<rect x="160" y="0" width="8" height="400" fill="url(#g20)"/>
+<rect x="168" y="0" width="8" height="400" fill="url(#g21)"/>
+<rect x="176" y="0" width="8" height="400" fill="url(#g22)"/>
+<rect x="184" y="0" width="8" height="400" fill="url(#g23)"/>
+<rect x="192" y="0" width="8" height="400" fill="url(#g24)"/>
+<rect x="200" y="0" width="8" height="400" fill="url(#g25)"/>
+<rect x="208" y="0" width="8" height="400" fill="url(#g26)"/>
+<rect x="216" y="0" width="8" height="400" fill="url(#g27)"/>
+<rect x="224" y="0" width="8" height="400" fill="url(#g28)"/>
+<rect x="232" y="0" width="8" height="400" fill="url(#g29)"/>
+<rect x="240" y="0" width="8" height="400" fill="url(#g30)"/>
+<rect x="248" y="0" width="8" height="400" fill="url(#g31)"/>
+<rect x="256" y="0" width="8" height="400" fill="url(#g32)"/>
+<rect x="264" y="0" width="8" height="400" fill="url(#g33)"/>
+<rect x="272" y="0" width="8" height="400" fill="url(#g34)"/>
+<rect x="280" y="0" width="8" height="400" fill="url(#g35)"/>
+<rect x="288" y="0" width="8" height="400" fill="url(#g36)"/>
+<rect x="296" y="0" width="8" height="400" fill="url(#g37)"/>
+<rect x="304" y="0" width="8" height="400" fill="url(#g38)"/>
+<rect x="312" y="0" width="8" height="400" fill="url(#g39)"/>
+<rect x="320" y="0" width="8" height="400" fill="url(#g40)"/>
+<rect x="328" y="0" width="8" height="400" fill="url(#g41)"/>
+<rect x="336" y="0" width="8" height="400" fill="url(#g42)"/>
+<rect x="344" y="0" width="8" height="400" fill="url(#g43)"/>
+<rect x="352" y="0" width="8" height="400" fill="url(#g44)"/>
+<rect x="360" y="0" width="8" height="400" fill="url(#g45)"/>
+<rect x="368" y="0" width="8" height="400" fill="url(#g46)"/>
+<rect x="376" y="0" width="8" height="400" fill="url(#g47)"/>
+<rect x="384" y="0" width="8" height="400" fill="url(#g48)"/>
+<rect x="392" y="0" width="8" height="400" fill="url(#g49)"/>
+</svg>
