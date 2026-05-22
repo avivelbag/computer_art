@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>274 — The Path Finds Itself</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { background: #131008; display: flex; align-items: center; justify-content: center; min-height: 100vh; overflow: hidden; }
+    canvas { display: block; width: min(100vw, 100vh); height: min(100vw, 100vh); }
+  </style>
+</head>
+<body>
+  <canvas id="c" width="800" height="800"></canvas>
+  <script>
+    const W = 800, H = 800;
+    const COLS = 40, ROWS = 40;
+    const CW = W / COLS, CH = H / ROWS;
+    const WALL = 2;
+
+    // Direction indices: N=0, E=1, S=2, W=3
+    const DR = [-1, 0, 1, 0];
+    const DC = [0, 1, 0, -1];
+    const OPP = [2, 3, 0, 1];
+
+    // Palette — warm terracotta / cream / charcoal
+    const C_BG     = '#131008';
+    const C_CARVED = '#ede5d0';
+    const C_FRONT  = '#d4692a';
+    const C_SOLVE  = '#e8b04a';
+    const C_PATH   = '#f5d060';
+
+    const canvas = document.getElementById('c');
+    const ctx = canvas.getContext('2d');
+
+    // walls[r][c] = 4-bit bitmask; bit i set means wall in direction i is intact
+    let walls;
+    let dfsVisited;
+    let dfsStack;
+    let bfsDist, bfsPrev, bfsQueue, bfsHead;
+    let solvePath, solveIdx;
+    let phase, holdTimer, fadeAlpha;
+
+    function shuffle(arr) {
+      for (let i = arr.length - 1; i > 0; i--) {
+        const j = (Math.random() * (i + 1)) | 0;
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+      }
+      return arr;
+    }
+
+    function fillCell(r, c, color) {
+      ctx.fillStyle = color;
+      ctx.fillRect(c * CW + WALL, r * CH + WALL, CW - 2 * WALL, CH - 2 * WALL);
+    }
+
+    // Fill the 4-pixel gap between two adjacent cells, bridging their WALL borders.
+    function fillGap(r1, c1, r2, c2, color) {
+      ctx.fillStyle = color;
+      if (r1 === r2) {
+        const left = Math.min(c1, c2);
+        ctx.fillRect((left + 1) * CW - WALL, r1 * CH + WALL, 2 * WALL, CH - 2 * WALL);
+      } else {
+        const top = Math.min(r1, r2);
+        ctx.fillRect(c1 * CW + WALL, (top + 1) * CH - WALL, CW - 2 * WALL, 2 * WALL);
+      }
+    }
+
+    function init() {
+      walls = Array.from({length: ROWS}, () => new Uint8Array(COLS).fill(0xF));
+      dfsVisited = Array.from({length: ROWS}, () => new Uint8Array(COLS));
+      dfsStack = [{r: 0, c: 0}];
+      dfsVisited[0][0] = 1;
+
+      ctx.fillStyle = C_BG;
+      ctx.fillRect(0, 0, W, H);
+      fillCell(0, 0, C_FRONT);
+
+      phase = 'carving';
+    }
+
+    function carveStep() {
+      if (!dfsStack.length) return;
+      const {r, c} = dfsStack[dfsStack.length - 1];
+      const dirs = shuffle([0, 1, 2, 3]);
+
+      for (const d of dirs) {
+        const nr = r + DR[d], nc = c + DC[d];
+        if (nr >= 0 && nr < ROWS && nc >= 0 && nc < COLS && !dfsVisited[nr][nc]) {
+          dfsVisited[nr][nc] = 1;
+          walls[r][c] &= ~(1 << d);
+          walls[nr][nc] &= ~(1 << OPP[d]);
+          fillCell(r, c, C_CARVED);
+          fillGap(r, c, nr, nc, C_CARVED);
+          fillCell(nr, nc, C_FRONT);
+          dfsStack.push({r: nr, c: nc});
+          return;
+        }
+      }
+
+      fillCell(r, c, C_CARVED);
+      dfsStack.pop();
+      if (dfsStack.length) {
+        const {r: pr, c: pc} = dfsStack[dfsStack.length - 1];
+        fillCell(pr, pc, C_FRONT);
+      } else {
+        initSolve();
+      }
+    }
+
+    function initSolve() {
+      bfsDist = Array.from({length: ROWS}, () => new Int32Array(COLS).fill(-1));
+      bfsPrev = Array.from({length: ROWS}, () => Array(COLS).fill(null));
+      bfsQueue = [{r: 0, c: 0}];
+      bfsHead = 0;
+      bfsDist[0][0] = 0;
+      fillCell(0, 0, C_SOLVE);
+      phase = 'solving';
+    }
+
+    function solveStep() {
+      if (bfsHead >= bfsQueue.length) {
+        traceInit();
+        return;
+      }
+      const {r, c} = bfsQueue[bfsHead++];
+      fillCell(r, c, C_SOLVE);
+      const prev = bfsPrev[r][c];
+      if (prev) fillGap(prev.r, prev.c, r, c, C_SOLVE);
+
+      if (r === ROWS - 1 && c === COLS - 1) {
+        traceInit();
+        return;
+      }
+
+      for (let d = 0; d < 4; d++) {
+        if (walls[r][c] & (1 << d)) continue;
+        const nr = r + DR[d], nc = c + DC[d];
+        if (nr >= 0 && nr < ROWS && nc >= 0 && nc < COLS && bfsDist[nr][nc] === -1) {
+          bfsDist[nr][nc] = bfsDist[r][c] + 1;
+          bfsPrev[nr][nc] = {r, c};
+          bfsQueue.push({r: nr, c: nc});
+        }
+      }
+    }
+
+    function traceInit() {
+      solvePath = [];
+      let cur = {r: ROWS - 1, c: COLS - 1};
+      while (cur) {
+        solvePath.unshift(cur);
+        cur = bfsPrev[cur.r][cur.c];
+      }
+      solveIdx = 0;
+      phase = 'tracing';
+    }
+
+    function traceStep() {
+      if (solveIdx >= solvePath.length) {
+        holdTimer = 90;
+        phase = 'holding';
+        return;
+      }
+      const {r, c} = solvePath[solveIdx];
+      fillCell(r, c, C_PATH);
+      if (solveIdx > 0) {
+        const p = solvePath[solveIdx - 1];
+        fillGap(p.r, p.c, r, c, C_PATH);
+      }
+      solveIdx++;
+    }
+
+    function frame() {
+      if (phase === 'carving') {
+        for (let i = 0; i < 4 && phase === 'carving'; i++) carveStep();
+      } else if (phase === 'solving') {
+        for (let i = 0; i < 6 && phase === 'solving'; i++) solveStep();
+      } else if (phase === 'tracing') {
+        for (let i = 0; i < 2 && phase === 'tracing'; i++) traceStep();
+      } else if (phase === 'holding') {
+        if (--holdTimer <= 0) {
+          fadeAlpha = 0;
+          phase = 'fading';
+        }
+      } else if (phase === 'fading') {
+        fadeAlpha += 0.025;
+        ctx.fillStyle = `rgba(19,16,8,${Math.min(fadeAlpha, 1)})`;
+        ctx.fillRect(0, 0, W, H);
+        if (fadeAlpha >= 1) init();
+      }
+      requestAnimationFrame(frame);
+    }
+
+    init();
+    requestAnimationFrame(frame);
+  </script>
+</body>
+</html>
