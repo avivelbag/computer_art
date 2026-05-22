@@ -1098,5 +1098,15 @@
     "path": "pieces/273-bayer-dither",
     "thumbnail": "pieces/273-bayer-dither/thumbnail.png",
     "description": "An animated plasma field from four cosine waves — horizontal, vertical, diagonal, and radial — is thresholded each frame by the 8×8 Bayer ordered-dithering matrix, producing a two-tone halftone image that continuously breathes and morphs on a near-black ground with sand-gold grain. The Bayer matrix supplies spatially structured (not random) thresholds, so the resulting dots form diagonal stripes that self-organise into grid patterns at mid-densities, making visible the same structured discretisation that once gave early computer graphics their distinctive texture."
+  },
+  {
+    "id": "274-recursive-maze",
+    "title": "The Path Finds Itself",
+    "tagline": "A recursive-backtracking DFS carves a perfect 40×40 maze cell by cell; a BFS wave then traces the single solution in gold — warm cream on deep charcoal, seamlessly looping at 60 fps",
+    "year": 2026,
+    "technique": "canvas / recursive maze / DFS backtracking / BFS solving / requestAnimationFrame",
+    "path": "pieces/274-recursive-maze",
+    "thumbnail": "pieces/274-recursive-maze/thumbnail.svg",
+    "description": "An iterative depth-first search carves a perfect 40×40 maze cell by cell, with the DFS tip glowing terracotta against cream passages on deep charcoal; when carving completes a breadth-first wave fans out in amber until it reaches the bottom-right corner, then traces the single solution path back to the start in gold before fading to black and restarting with a fresh random maze."
   }
 ]
