@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Modular Bloom — Times-Table Cardioids</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { background: #0a0a0f; display: flex; align-items: center; justify-content: center; height: 100vh; overflow: hidden; }
+    canvas { display: block; }
+  </style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<script>
+const N     = 200;
+const SIZE  = 700;
+const R     = 310;
+const CX    = SIZE / 2;
+const CY    = SIZE / 2;
+const SPEED = 3;
+
+const pts = new Float32Array(N * 2);
+for (let i = 0; i < N; i++) {
+  const a = 2 * Math.PI * i / N;
+  pts[i * 2]     = CX + R * Math.cos(a);
+  pts[i * 2 + 1] = CY + R * Math.sin(a);
+}
+
+const canvas = document.getElementById('c');
+const ctx    = canvas.getContext('2d');
+canvas.width = canvas.height = SIZE;
+
+function draw(t) {
+  ctx.fillStyle = '#0a0a0f';
+  ctx.fillRect(0, 0, SIZE, SIZE);
+
+  // K sweeps 2..50 continuously; each integer K envelopes a (K-1)-cusped epicycloid
+  const K   = 2 + (t * SPEED) % 48;
+  const hue = (K - 2) / 48 * 360;
+
+  ctx.strokeStyle = `hsla(${hue | 0}, 80%, 65%, 0.15)`;
+  ctx.lineWidth   = 0.7;
+
+  ctx.beginPath();
+  for (let i = 0; i < N; i++) {
+    const j = Math.round(i * K) % N;
+    ctx.moveTo(pts[i * 2],     pts[i * 2 + 1]);
+    ctx.lineTo(pts[j * 2],     pts[j * 2 + 1]);
+  }
+  ctx.stroke();
+}
+
+let startTime = null;
+function frame(ts) {
+  if (startTime === null) startTime = ts;
+  draw((ts - startTime) / 1000);
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>

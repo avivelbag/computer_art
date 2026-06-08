@@ -1218,5 +1218,15 @@
     "path": "pieces/287-galactic-spiral",
     "thumbnail": "pieces/287-galactic-spiral/thumbnail.svg",
     "description": "5,500 star particles orbit at constant tangential speed (flat rotation curve), each with angular velocity ω = V_c/r so inner stars lap outer stars. Three logarithmic spiral arms follow r = A·e^(B·θ) and rotate at a slower pattern speed Ω_p, acting as density waves: each star's brightness is modulated by a Gaussian proximity kernel so stars at the arm centre glow brightest and dim to 15% between arms. A warm amber radial gradient represents the nuclear bulge; faint wide strokes trace the rotating arm spines in ionised-gas teal and blue-white. All 5,500 star positions are stored in TypedArrays and rendered into an 800×800 ImageData buffer with additive per-pixel blending for a natural luminosity accumulation."
+  },
+  {
+    "id": "288-modular-bloom",
+    "title": "Modular Bloom",
+    "tagline": "200 points on a circle connected by times-table chords — as the multiplier K sweeps 2→50 the 200 lines envelope an exact cardioid, nephroid, and every higher epicycloid, cycling through the full rainbow",
+    "year": 2026,
+    "technique": "canvas 2D / modular arithmetic / epicycloid envelopes / times-table chord diagram / requestAnimationFrame",
+    "path": "pieces/288-modular-bloom",
+    "thumbnail": "pieces/288-modular-bloom/thumbnail.svg",
+    "description": "Each of 200 equally-spaced points on a circle is connected by a chord to the point at index (i×K mod 200). As K advances continuously from 2 to 50 the envelope of the 200 chords sweeps through every epicycloid family: a cardioid at K=2, a nephroid at K=3, and an n-cusped form for each integer K up to 49. The stroke colour tracks K through the full rainbow spectrum at 15% opacity so overlapping chords build luminous density at the cusps. The canvas is cleared completely each frame — no trail accumulation — so each moment shows a clean instantaneous snapshot of the current multiplier value."
   }
 ]
