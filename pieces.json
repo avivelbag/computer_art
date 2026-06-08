@@ -1208,5 +1208,15 @@
     "path": "pieces/286-hat-monotile",
     "thumbnail": "pieces/286-hat-monotile/thumbnail.svg",
     "description": "The Hat monotile (Smith, Myers, Kaplan & Goodman-Strauss 2023) is the first single shape proven to tile the plane aperiodically using only itself and its mirror image. Starting from one large Hat, 4 levels of the substitution rule recursively replace each tile with 5 children (scaled by 1/(1+√3)), building a patch of hundreds of interlocking 13-sided polyhexes. Each leaf tile is colored by its substitution role — terracotta (H), sandy (T), slate (F), or cream (P) — so the self-similar hierarchical structure is legible in color. A gentle Lissajous-phase viewport drift over 40 seconds reveals additional aperiodic structure. All geometry is computed from first principles: Hat vertices in triangular-grid coordinates converted to Cartesian, child placements tracked as composed affine transforms through the recursion tree."
+  },
+  {
+    "id": "287-galactic-spiral",
+    "title": "Density Wave",
+    "tagline": "5 500 star particles orbit a simulated galactic disk under a flat rotation curve; three logarithmic spiral arms rotate as a density wave, brightening every star that drifts through them",
+    "year": 2026,
+    "technique": "canvas 2D / logarithmic spiral / density wave / flat rotation curve / ImageData additive blending / requestAnimationFrame",
+    "path": "pieces/287-galactic-spiral",
+    "thumbnail": "pieces/287-galactic-spiral/thumbnail.svg",
+    "description": "5,500 star particles orbit at constant tangential speed (flat rotation curve), each with angular velocity ω = V_c/r so inner stars lap outer stars. Three logarithmic spiral arms follow r = A·e^(B·θ) and rotate at a slower pattern speed Ω_p, acting as density waves: each star's brightness is modulated by a Gaussian proximity kernel so stars at the arm centre glow brightest and dim to 15% between arms. A warm amber radial gradient represents the nuclear bulge; faint wide strokes trace the rotating arm spines in ionised-gas teal and blue-white. All 5,500 star positions are stored in TypedArrays and rendered into an 800×800 ImageData buffer with additive per-pixel blending for a natural luminosity accumulation."
   }
 ]
