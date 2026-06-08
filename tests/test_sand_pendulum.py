@@ -1,10 +1,8 @@
 """Tests for Piece 285 — The Sifting Hour (sand pendulum)."""
 import importlib.util
 import json
-import math
 import pathlib
 import struct
-import sys
 
 import pytest
 
