@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>The Rhumb Lines — Loxodrome Navigator</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: #060a18;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      overflow: hidden;
+    }
+    canvas { display: block; width: 100vmin; height: 100vmin; }
+  </style>
+</head>
+<body>
+<canvas id="c" width="700" height="700"></canvas>
+<script>
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+const W = 700, H = 700, CX = 350, CY = 350, R = 265;
+const BG = '#060a18';
+const N = 16, T_MIN = -4, T_MAX = 4, STEPS = 600, ROT_SPEED = 0.25;
+
+// 16 bearings from ~5.6° to ~174.4° in steps of 11.25°, avoiding 0°/90°/180°.
+const BEAR = Array.from({length: N}, (_, k) => (k + 0.5) * 11.25);
+// Starting longitudes evenly spread so curves don't all start at the same meridian.
+const L0 = Array.from({length: N}, (_, k) => k * Math.PI / N);
+
+function to3D(lat, lon) {
+  const c = Math.cos(lat);
+  return [c * Math.cos(lon), Math.sin(lat), c * Math.sin(lon)];
+}
+
+// Rotate point around Y axis; cosA/sinA pre-computed for the frame.
+function rotY(x, y, z, ca, sa) {
+  return [x * ca + z * sa, y, z * ca - x * sa];
+}
+
+function toScreen(rx, ry) {
+  return [CX + rx * R, CY - ry * R];
+}
+
+// Stroke a polyline given as [[px,py], ...]; no-op on empty input.
+function polyline(pts) {
+  if (!pts.length) return;
+  ctx.beginPath();
+  ctx.moveTo(pts[0][0], pts[0][1]);
+  for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i][0], pts[i][1]);
+  ctx.stroke();
+}
+
+function drawGrid(ca, sa) {
+  ctx.strokeStyle = '#2a3550';
+  ctx.globalAlpha = 0.15;
+  ctx.lineWidth = 0.8;
+
+  // Latitude parallels every 30°
+  for (let ld = -60; ld <= 60; ld += 30) {
+    const lat = ld * Math.PI / 180;
+    let seg = [];
+    for (let i = 0; i <= 360; i += 2) {
+      const [x, y, z] = to3D(lat, i * Math.PI / 180);
+      const [rx, ry, rz] = rotY(x, y, z, ca, sa);
+      if (rz >= 0) { seg.push(toScreen(rx, ry)); }
+      else if (seg.length) { polyline(seg); seg = []; }
+    }
+    if (seg.length) polyline(seg);
+  }
+
+  // Longitude meridians every 30°
+  for (let ld = 0; ld < 360; ld += 30) {
+    const lon = ld * Math.PI / 180;
+    let seg = [];
+    for (let latd = -88; latd <= 88; latd += 2) {
+      const [x, y, z] = to3D(latd * Math.PI / 180, lon);
+      const [rx, ry, rz] = rotY(x, y, z, ca, sa);
+      if (rz >= 0) { seg.push(toScreen(rx, ry)); }
+      else if (seg.length) { polyline(seg); seg = []; }
+    }
+    if (seg.length) polyline(seg);
+  }
+
+  // Sphere limb circle
+  ctx.globalAlpha = 0.2;
+  ctx.beginPath(); ctx.arc(CX, CY, R, 0, 2 * Math.PI); ctx.stroke();
+  ctx.globalAlpha = 1.0;
+}
+
+// Draw one loxodrome at constant compass bearing bearingDeg, starting longitude lon0.
+// Loxodrome parametrization (Mercator formula):
+//   lat(t) = 2·atan(e^t) − π/2
+//   lon(t) = lon0 + t·tan(bearingDeg)
+// Segments where the rotated z < 0 are clipped (back hemisphere).
+function drawLoxodrome(ca, sa, bearingDeg, lon0, hue) {
+  const tanB = Math.tan(bearingDeg * Math.PI / 180);
+  const dt = (T_MAX - T_MIN) / STEPS;
+  ctx.strokeStyle = `hsl(${hue}, 90%, 65%)`;
+  ctx.lineWidth = 1.5;
+  let seg = [];
+  for (let i = 0; i <= STEPS; i++) {
+    const t = T_MIN + i * dt;
+    const lat = 2 * Math.atan(Math.exp(t)) - Math.PI / 2;
+    const [x, y, z] = to3D(lat, lon0 + t * tanB);
+    const [rx, ry, rz] = rotY(x, y, z, ca, sa);
+    if (rz >= 0) { seg.push(toScreen(rx, ry)); }
+    else if (seg.length) { polyline(seg); seg = []; }
+  }
+  if (seg.length) polyline(seg);
+}
+
+let rot = 0, lastTs = null;
+
+function frame(ts) {
+  if (!lastTs) lastTs = ts;
+  const dt = Math.min((ts - lastTs) * 0.001, 0.05);
+  lastTs = ts;
+  rot += dt * ROT_SPEED;
+
+  ctx.fillStyle = BG;
+  ctx.fillRect(0, 0, W, H);
+
+  const ca = Math.cos(rot), sa = Math.sin(rot);
+  drawGrid(ca, sa);
+
+  for (let k = 0; k < N; k++) {
+    drawLoxodrome(ca, sa, BEAR[k], L0[k], (BEAR[k] * 2) % 360);
+  }
+  requestAnimationFrame(frame);
+}
+
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>

@@ -1178,5 +1178,15 @@
     "path": "pieces/283-spherical-harmonics",
     "thumbnail": "pieces/283-spherical-harmonics/thumbnail.svg",
     "description": "Each vertex of a 40×40 latitude-longitude mesh is displaced radially by SCALE·|Y_l^m(θ,φ)|, where the real spherical harmonic is computed from the associated Legendre polynomial recurrence. Positive lobes glow in warm amber (#f5a030) and negative lobes in cool teal (#30d0c0) on a deep indigo (#1a0a3a) ground. The piece cycles through eight (l, m) pairs — mixing zonal (m=0), sectoral (|m|=l), and tesseral harmonics — with smoothstep-eased lerp transitions over 3 seconds. Faces are sorted back-to-front each frame (painter’s algorithm) with back-face culling and diffuse lighting from a fixed direction."
+  },
+  {
+    "id": "284-loxodrome-navigator",
+    "title": "The Rhumb Lines",
+    "tagline": "16 loxodrome curves spiral pole-to-pole on a rotating wireframe globe — each path a constant compass bearing made visible in vivid colour",
+    "year": 2026,
+    "technique": "canvas 2D / orthographic projection / loxodrome / Mercator parametrization / requestAnimationFrame",
+    "path": "pieces/284-loxodrome-navigator",
+    "thumbnail": "pieces/284-loxodrome-navigator/thumbnail.svg",
+    "description": "A loxodrome (rhumb line) crosses every meridian at the same compass bearing, spiralling toward the poles in a curve defined by the Mercator parametrization: lat(t) = 2·atan(eᵗ) − π/2, lon(t) = lon₀ + t·tan(β). Sixteen curves at bearings from 5.6° to 174.4° are converted to 3D Cartesian coordinates on a unit sphere, rotated around the Y axis, and projected orthographically onto a 700×700 canvas. Only the front hemisphere (rotated z ≥ 0) is drawn; segments crossing to the back hemisphere are clipped, producing the characteristic arc-and-disappear rhythm as the globe turns. A lat/lon wireframe grid at 15 % opacity in dim slate provides the cartographic reference frame. Curves are coloured by bearing angle via a full-spectrum HSL sweep."
   }
 ]
