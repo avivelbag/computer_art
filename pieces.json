@@ -1138,5 +1138,15 @@
     "path": "pieces/279-magnetic-field-lines",
     "thumbnail": "pieces/279-magnetic-field-lines/thumbnail.svg",
     "description": "Two magnetic dipoles slowly rotate and drift, their combined B-field computed as a superposition of point-dipole fields B = (μ₀/4π)[3(m·r̂)r̂ − m]/r³ with a soft-core regularisation. 3,000 short iron-filing segments update orientation each frame to align with the local field direction, coloured from warm iron amber (#c8871a) at weak field to bright gold (#f5d060) near the poles where |B| is large. Optional RK4 streamlines trace closed loops connecting north to south pole, demonstrating ∇·B = 0 — every magnetic field line that exits a north pole must return to a south pole, forming the closed loops that distinguish magnetic fields from electric fields."
+  },
+  {
+    "id": "280-accretion-disk",
+    "title": "Event Horizon",
+    "tagline": "WebGL fragment shader casts one ray per pixel onto a Keplerian accretion disk — Doppler blue-shifts the approaching side to cyan/white, red-shifts the receding side to crimson/amber, and bends rays near the Schwarzschild radius via first-order gravitational lensing",
+    "year": 2026,
+    "technique": "WebGL / fragment shader / gravitational lensing / Doppler shift / FBM noise / fullscreen quad",
+    "path": "pieces/280-accretion-disk",
+    "thumbnail": "pieces/280-accretion-disk/thumbnail.svg",
+    "description": "A WebGL fragment shader fires one ray per pixel from a camera elevated 20° above the disk plane. Rays passing within ~2.5 Schwarzschild radii are deflected toward the disk plane by a first-order lensing approximation (deflection ∝ Rs / b²), reproducing the characteristic brightened photon ring around the shadow. The bent ray intersects the geometrically thin disk plane; if the hit radius falls between the ISCO (r ≈ 1.5 Rs) and the outer edge, emission is computed from a Shakura-Sunyaev radial temperature profile (T ∝ r⁻³/⁴) tinted by a relativistic Doppler factor that blue-shifts the approaching (left) half toward cyan and white and red-shifts the receding (right) half toward deep crimson and amber. FBM turbulence noise advected by orbital phase gives the plasma a swirling, filamentary texture that loops seamlessly at 60 fps. The event horizon is rendered as a pure-black circle; faint background stars show through the thin outer disk regions."
   }
 ]

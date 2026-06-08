@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Event Horizon — Accretion Disk</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { background: #000; overflow: hidden; }
+    canvas { display: block; width: 100vw; height: 100vh; }
+  </style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<script>
+const VERT = `
+attribute vec2 aPos;
+void main() { gl_Position = vec4(aPos, 0.0, 1.0); }
+`;
+
+const FRAG = `
+precision highp float;
+uniform vec2  uRes;
+uniform float uTime;
+
+// ── Perlin-style noise helpers ──────────────────────────────────────────────
+
+float hash(vec2 p) {
+  p = fract(p * vec2(127.1, 311.7));
+  p += dot(p, p + 19.19);
+  return fract(p.x * p.y);
+}
+
+float noise(vec2 p) {
+  vec2 i = floor(p);
+  vec2 f = fract(p);
+  vec2 u = f * f * (3.0 - 2.0 * f);
+  return mix(
+    mix(hash(i + vec2(0,0)), hash(i + vec2(1,0)), u.x),
+    mix(hash(i + vec2(0,1)), hash(i + vec2(1,1)), u.x),
+    u.y
+  );
+}
+
+float fbm(vec2 p) {
+  float v = 0.0, a = 0.5;
+  for (int i = 0; i < 5; i++) {
+    v += a * noise(p);
+    p  = p * 2.0 + vec2(1.7, 9.2);
+    a *= 0.5;
+  }
+  return v;
+}
+
+// ── Colour helpers ──────────────────────────────────────────────────────────
+
+vec3 blackbody(float t) {
+  // t in [0,1]: 0 = deep crimson/amber, 1 = cyan/white (Doppler blue-shift end)
+  vec3 col;
+  col.r = clamp(3.0 * t * t - 2.0 * t * t * t + 0.02, 0.0, 1.0);
+  col.g = clamp(2.5 * t - 0.5, 0.0, 1.0);
+  col.b = clamp(4.0 * t - 2.5, 0.0, 1.0);
+  return col;
+}
+
+// ── Main ────────────────────────────────────────────────────────────────────
+
+void main() {
+  vec2 uv = (gl_FragCoord.xy * 2.0 - uRes) / min(uRes.x, uRes.y);
+
+  // Schwarzschild radius in normalised screen units
+  const float Rs = 0.18;
+  // Disk inner/outer radii
+  const float rInner = 1.5 * Rs;  // ISCO approximation
+  const float rOuter = 1.2;
+
+  // ── Gravitational lensing ────────────────────────────────────────────────
+  // We model the disk as a flat ring in the equatorial plane (z=0), viewed
+  // at a slight inclination.  The camera looks roughly along the x-axis with
+  // a tilt so the disk top is visible.  Ray direction in camera space:
+  //   rd = normalize(uv.x * right + uv.y * up + fwd)
+  // For a simple first-order lensing we bend the ray in screen space:
+  // deflection angle α ≈ 2·Rs / impact_parameter (half the exact GR value).
+  // We approximate impact_parameter ≈ |uv| and bend toward the origin.
+
+  float impact = length(uv);
+  vec2 lensDir = (impact > 0.001) ? -uv / impact : vec2(0.0);
+
+  // Deflection strength: strongest near the photon sphere (~1.5 Rs)
+  float lensStrength = Rs / max(impact * impact, Rs * Rs * 0.5);
+  lensStrength = clamp(lensStrength, 0.0, 3.0);
+
+  vec2 bent = uv + lensDir * lensStrength * 0.05;
+
+  // ── Project bent ray onto disk plane ────────────────────────────────────
+  // Camera elevation above disk plane (slight inclination ~20 degrees)
+  const float sinInc = 0.342;  // sin(20°)
+  const float cosInc = 0.940;  // cos(20°)
+
+  // Disk-plane coordinates from bent screen UV:
+  // x_disk = bent.x, y_disk = bent.y / sinInc (perspective foreshortening)
+  // But we also need to account for vertical position;
+  // above/below the disk midline (bent.y * cosInc ≠ 0) shifts the z position.
+  float diskX = bent.x;
+  float diskY = bent.y / sinInc;
+
+  // Radial distance and azimuthal angle in disk plane
+  float rDisk = length(vec2(diskX, diskY));
+  float phi   = atan(diskY, diskX);  // [-π, π]
+
+  // ── Shadow (event horizon) ───────────────────────────────────────────────
+  float distFromCenter = length(bent);
+  if (distFromCenter < Rs) {
+    gl_FragColor = vec4(0.0, 0.0, 0.0, 1.0);
+    return;
+  }
+
+  // ── Disk emission ────────────────────────────────────────────────────────
+  if (rDisk < rInner || rDisk > rOuter) {
+    // Background: deep space with faint star field
+    float starNoise = hash(gl_FragCoord.xy * 0.1);
+    float star = step(0.997, starNoise) * 0.8;
+    gl_FragColor = vec4(vec3(star * 0.9, star, star), 1.0);
+    return;
+  }
+
+  // Radial temperature profile: T ∝ r^(-3/4), normalised so peak ≈ 1 at rInner
+  float tProfile = pow(rInner / rDisk, 0.75);
+
+  // Keplerian velocity: v ∝ r^(-1/2).  Camera is in the y-z plane at 20° inclination,
+  // so line-of-sight velocity ∝ cos(phi).  Negate: left (phi≈π) → blue, right (phi≈0) → red.
+  // Doppler factor d∈[0,1]: 0 = full red-shift, 1 = full blue-shift.
+  float vKep   = pow(rInner / rDisk, 0.5);  // relative velocity magnitude
+  float dopplerShift = -cos(phi) * vKep * 0.6;  // left=blue, right=red
+  float dopplerT = clamp(dopplerShift * 0.5 + 0.5, 0.0, 1.0);  // [0, 1]
+
+  // Time-varying plasma turbulence via FBM noise
+  float turbAngle = phi + uTime * 0.4;
+  vec2  noiseCoord = vec2(cos(turbAngle), sin(turbAngle)) * rDisk * 3.0;
+  float turb = fbm(noiseCoord + vec2(uTime * 0.1, 0.0));
+
+  // Combine: brightness from temperature profile × turbulence bump
+  float brightness = tProfile * (0.7 + 0.5 * turb);
+
+  // Hue: mix redshift end → blueshifted end through temperature tint
+  vec3 col = blackbody(dopplerT) * brightness;
+
+  // Fade out softly at outer rim
+  float rimFade = 1.0 - smoothstep(rOuter * 0.85, rOuter, rDisk);
+  // Glow at inner edge (ISCO heating)
+  float innerGlow = 1.0 + 2.5 * smoothstep(rInner * 1.3, rInner, rDisk);
+  col *= rimFade * innerGlow;
+
+  // Soft vertical fade: disk is thin; pixels far from disk midline are dimmer.
+  // bent.y * cosInc is the vertical offset; disk half-thickness ~ 0.04 screen units.
+  float vertOffset = abs(bent.y * cosInc);
+  float diskThick  = 0.04 + 0.03 * rDisk;
+  float vertFade   = exp(-vertOffset * vertOffset / (diskThick * diskThick));
+  col *= vertFade;
+
+  // Add background starfield through thin parts
+  float starN = hash(gl_FragCoord.xy * 0.07 + 3.7);
+  float star2  = step(0.997, starN) * (1.0 - vertFade * 0.6);
+  col += vec3(star2 * 0.7, star2 * 0.85, star2);
+
+  col = pow(clamp(col, 0.0, 1.0), vec3(0.4545));
+  gl_FragColor = vec4(col, 1.0);
+}
+`;
+
+const canvas = document.getElementById('c');
+const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+
+function mkShader(type, src) {
+  const sh = gl.createShader(type);
+  gl.shaderSource(sh, src);
+  gl.compileShader(sh);
+  if (!gl.getShaderParameter(sh, gl.COMPILE_STATUS))
+    console.error(gl.getShaderInfoLog(sh));
+  return sh;
+}
+
+const prog = gl.createProgram();
+gl.attachShader(prog, mkShader(gl.VERTEX_SHADER,   VERT));
+gl.attachShader(prog, mkShader(gl.FRAGMENT_SHADER, FRAG));
+gl.linkProgram(prog);
+gl.useProgram(prog);
+
+const buf = gl.createBuffer();
+gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+gl.bufferData(gl.ARRAY_BUFFER,
+  new Float32Array([-1,-1, 1,-1, -1,1, 1,-1, 1,1, -1,1]),
+  gl.STATIC_DRAW);
+
+const aPos  = gl.getAttribLocation(prog, 'aPos');
+gl.enableVertexAttribArray(aPos);
+gl.vertexAttribPointer(aPos, 2, gl.FLOAT, false, 0, 0);
+
+const uRes  = gl.getUniformLocation(prog, 'uRes');
+const uTime = gl.getUniformLocation(prog, 'uTime');
+
+function resize() {
+  canvas.width  = window.innerWidth;
+  canvas.height = window.innerHeight;
+  gl.viewport(0, 0, canvas.width, canvas.height);
+  gl.uniform2f(uRes, canvas.width, canvas.height);
+}
+window.addEventListener('resize', resize);
+resize();
+
+let last = null;
+const t0 = performance.now();
+
+function frame(ts) {
+  const t = (ts - t0) * 0.001;
+  gl.uniform1f(uTime, t);
+  gl.drawArrays(gl.TRIANGLES, 0, 6);
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>
