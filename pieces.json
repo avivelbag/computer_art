@@ -1188,5 +1188,15 @@
     "path": "pieces/284-loxodrome-navigator",
     "thumbnail": "pieces/284-loxodrome-navigator/thumbnail.svg",
     "description": "A loxodrome (rhumb line) crosses every meridian at the same compass bearing, spiralling toward the poles in a curve defined by the Mercator parametrization: lat(t) = 2·atan(eᵗ) − π/2, lon(t) = lon₀ + t·tan(β). Sixteen curves at bearings from 5.6° to 174.4° are converted to 3D Cartesian coordinates on a unit sphere, rotated around the Y axis, and projected orthographically onto a 700×700 canvas. Only the front hemisphere (rotated z ≥ 0) is drawn; segments crossing to the back hemisphere are clipped, producing the characteristic arc-and-disappear rhythm as the globe turns. A lat/lon wireframe grid at 15 % opacity in dim slate provides the cartographic reference frame. Curves are coloured by bearing angle via a full-spectrum HSL sweep."
+  },
+  {
+    "id": "285-sand-pendulum",
+    "title": "The Sifting Hour",
+    "tagline": "35 sand grains fall each frame around a decaying Lissajous pendulum — cream and ochre on deep umber, building a textured density trace",
+    "year": 2026,
+    "technique": "canvas 2D / Lissajous / grain accumulation / Gaussian scatter / exponential decay",
+    "path": "pieces/285-sand-pendulum",
+    "thumbnail": "pieces/285-sand-pendulum/thumbnail.png",
+    "description": "A conical sand pendulum scatters 35 grains per frame in a Gaussian cloud around its instantaneous tip position. No canvas clear is ever called, so grains accumulate into a thickening Lissajous trace — brightest and most ochre where the path passes most often, fading to dusty rose at the scattered edges. Both amplitudes decay at 0.9995 per frame; when the oscillation shrinks below 2 px a 60-frame umber veil dissolves the image before the piece resets with the next curated frequency ratio. Five ratios cycle in sequence — 3:2, 4:3, 5:4, 5:3, 7:4 — producing closed trefoil, quatrefoil, and higher-order Lissajous figures, each with a different initial phase to vary the visual orientation."
   }
 ]

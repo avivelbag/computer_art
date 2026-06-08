@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>The Sifting Hour</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { background: #1a0f06; display: flex; align-items: center; justify-content: center; min-height: 100vh; }
+    canvas { display: block; }
+  </style>
+</head>
+<body>
+<canvas id="c" width="600" height="600"></canvas>
+<script>
+const cv = document.getElementById('c'), ctx = cv.getContext('2d');
+const W = cv.width, H = cv.height, CX = W / 2, CY = H / 2;
+const BG = '#1a0f06';
+const RATIOS = [[3,2],[4,3],[5,4],[5,3],[7,4]];
+const AMP0 = 240, DECAY = 0.9995, DT = 0.04, GRAINS = 35, THRESH = 2, FADE = 60;
+
+let ax, ay, fx, fy, phaseX, t, ri = -1, fading = false, fadeN = 0;
+
+// Polar form of Box-Muller: no sin/cos needed, avoids the two-call waste of the basic form
+function gauss() {
+  let u, v, s;
+  do { u = Math.random() * 2 - 1; v = Math.random() * 2 - 1; s = u * u + v * v; }
+  while (s >= 1 || s === 0);
+  return u * Math.sqrt(-2 * Math.log(s) / s);
+}
+
+function reset() {
+  ri = (ri + 1) % RATIOS.length;
+  [fx, fy] = RATIOS[ri];
+  ax = ay = AMP0;
+  phaseX = (ri + 1) * Math.PI / 6;
+  t = 0; fading = false;
+  ctx.fillStyle = BG;
+  ctx.fillRect(0, 0, W, H);
+}
+
+function tick() {
+  if (fading) {
+    ctx.fillStyle = 'rgba(26,15,6,0.06)';
+    ctx.fillRect(0, 0, W, H);
+    if (++fadeN >= FADE) reset();
+    requestAnimationFrame(tick);
+    return;
+  }
+
+  const px = CX + ax * Math.cos(fx * t + phaseX);
+  const py = CY + ay * Math.sin(fy * t);
+
+  for (let i = 0; i < GRAINS; i++) {
+    const r = Math.abs(gauss()) * 2.2;
+    const a = Math.random() * 2 * Math.PI;
+    const gx = px + r * Math.cos(a);
+    const gy = py + r * Math.sin(a);
+    // Blend from ochre (inner) to dusty rose (outer) as grain radius increases
+    const b = Math.min(r / 5, 1);
+    const R = (245 - b * 25) | 0;
+    const G = (220 - b * 50) | 0;
+    const B = (150 + b * 15) | 0;
+    ctx.fillStyle = `rgba(${R},${G},${B},${(0.13 - b * 0.05).toFixed(2)})`;
+    ctx.fillRect(gx - 0.5, gy - 0.5, 1, 1);
+  }
+
+  ax *= DECAY; ay *= DECAY; t += DT;
+  if (ax < THRESH) { fading = true; fadeN = 0; }
+  requestAnimationFrame(tick);
+}
+
+reset();
+requestAnimationFrame(tick);
+</script>
+</body>
+</html>
