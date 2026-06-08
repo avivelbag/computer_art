@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Whorled</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { background: #0a0a0e; overflow: hidden; }
+    canvas { display: block; }
+  </style>
+</head>
+<body>
+  <canvas id="c"></canvas>
+  <script>
+    const COLORS = ['#e05080', '#d4a820', '#20b8a0', '#8060d0'];
+    const MAX_DEPTH = 14;
+    const PASSES = [{ grid: 4, alpha: 0.7 }, { grid: 2, alpha: 0.8 }, { grid: 1, alpha: 0.9 }];
+
+    const canvas = document.getElementById('c');
+    const ctx = canvas.getContext('2d');
+    let W, H, cx, cy, circles, passIdx = 0, angle = 0, lastTime = null;
+    const ROT_SPEED = 0.0003;
+
+    function makeCircles() {
+      const r = 0.46, h = r * Math.sqrt(3);
+      return [
+        { cx: -r, cy: h / 3, r },
+        { cx:  r, cy: h / 3, r },
+        { cx:  0, cy: -2 * h / 3, r },
+      ];
+    }
+
+    // z' = c + r² / conj(z - c)  (circle inversion in the real plane)
+    function invertThrough(px, py, circ) {
+      const dx = px - circ.cx, dy = py - circ.cy;
+      const d2 = dx * dx + dy * dy;
+      if (d2 < 1e-18) return null;
+      const k = circ.r * circ.r / d2;
+      return { x: circ.cx + k * dx, y: circ.cy + k * dy };
+    }
+
+    function inside(px, py, circ) {
+      const dx = px - circ.cx, dy = py - circ.cy;
+      return dx * dx + dy * dy < circ.r * circ.r;
+    }
+
+    function renderPass(circs, grid, alpha) {
+      const half = Math.min(W, H) * 0.44;
+      for (let px = 0; px < W; px += grid) {
+        for (let py = 0; py < H; py += grid) {
+          let x = (px - cx) / half, y = (py - cy) / half;
+          let lastCircle = -1, depth = 0, escaped = false;
+          while (depth < MAX_DEPTH) {
+            let found = false;
+            for (let i = 0; i < circs.length; i++) {
+              if (inside(x, y, circs[i])) {
+                const inv = invertThrough(x, y, circs[i]);
+                if (!inv) break;
+                x = inv.x; y = inv.y;
+                lastCircle = i; depth++; found = true; break;
+              }
+            }
+            if (!found) { escaped = true; break; }
+          }
+          if (escaped && lastCircle >= 0) {
+            ctx.fillStyle = COLORS[lastCircle] + Math.round(alpha * 255).toString(16).padStart(2, '0');
+            ctx.fillRect(px, py, grid, grid);
+          }
+        }
+      }
+    }
+
+    function rotatedCircles(base, a) {
+      const cos = Math.cos(a), sin = Math.sin(a);
+      return base.map(c => ({ cx: c.cx * cos - c.cy * sin, cy: c.cx * sin + c.cy * cos, r: c.r }));
+    }
+
+    function resize() {
+      W = canvas.width = window.innerWidth;
+      H = canvas.height = window.innerHeight;
+      cx = W / 2; cy = H / 2; passIdx = 0;
+    }
+
+    function frame(ts) {
+      if (!lastTime) lastTime = ts;
+      angle += ROT_SPEED * (ts - lastTime);
+      lastTime = ts;
+      if (passIdx === 0) { ctx.fillStyle = '#0a0a0e'; ctx.fillRect(0, 0, W, H); }
+      if (passIdx < PASSES.length) {
+        const p = PASSES[passIdx++];
+        renderPass(rotatedCircles(circles, angle), p.grid, p.alpha);
+        requestAnimationFrame(frame);
+      } else {
+        setTimeout(() => { passIdx = 0; requestAnimationFrame(frame); }, 6000);
+      }
+    }
+
+    resize();
+    circles = makeCircles();
+    window.addEventListener('resize', resize);
+    requestAnimationFrame(frame);
+  </script>
+</body>
+</html>

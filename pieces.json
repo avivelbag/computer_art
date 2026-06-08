@@ -1228,5 +1228,15 @@
     "path": "pieces/288-modular-bloom",
     "thumbnail": "pieces/288-modular-bloom/thumbnail.svg",
     "description": "Each of 200 equally-spaced points on a circle is connected by a chord to the point at index (i×K mod 200). As K advances continuously from 2 to 50 the envelope of the 200 chords sweeps through every epicycloid family: a cardioid at K=2, a nephroid at K=3, and an n-cusped form for each integer K up to 49. The stroke colour tracks K through the full rainbow spectrum at 15% opacity so overlapping chords build luminous density at the cusps. The canvas is cleared completely each frame — no trail accumulation — so each moment shows a clean instantaneous snapshot of the current multiplier value."
+  },
+  {
+    "id": "289-whorled",
+    "title": "Whorled",
+    "tagline": "A Kleinian group limit set grown by iterated circle inversions — three mutually-tangent Schottky circles generate infinitely nested curved arcs in rose, gold, teal, and violet on near-black",
+    "year": 2026,
+    "technique": "canvas 2D / Kleinian limit set / Schottky group / circle inversion / Möbius geometry",
+    "path": "pieces/289-whorled",
+    "thumbnail": "pieces/289-whorled/thumbnail.svg",
+    "description": "Three mutually-tangent generating circles form a Schottky group whose limit set is computed by iterating circle inversions: each canvas pixel is mapped to a complex-plane point and repeatedly reflected through whichever generating circle contains it until it escapes, then coloured by the index of the last circle that reflected it — rose, gold, or teal — with a fourth violet hue for the deepest nested regions. Up to 14 levels of recursion produce visible self-similarity at fine scales. The entire configuration rotates imperceptibly slowly (one full turn every ~35 minutes) so the fractal geometry itself is the payoff."
   }
 ]
