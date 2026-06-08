@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Through the Fourth Wall</title>
+<style>
+  body { margin: 0; background: #000; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
+  canvas { display: block; }
+</style>
+</head>
+<body>
+<canvas id="c" width="600" height="600"></canvas>
+<script>
+const W = 600, H = 600, CX = 300, CY = 300, SCALE = 168;
+const D4 = 2, D3 = 3;
+const SPEED_XW = 0.007, SPEED_YZ = 0.011;
+
+// 16 vertices: all combinations of (±1, ±1, ±1, ±1)
+const VERTS = [];
+for (const x of [-1,1]) for (const y of [-1,1]) for (const z of [-1,1]) for (const w of [-1,1])
+  VERTS.push([x, y, z, w]);
+
+// 32 edges: pairs differing in exactly one coordinate
+const EDGES = [];
+for (let i = 0; i < 16; i++) for (let j = i + 1; j < 16; j++) {
+  let d = 0;
+  for (let k = 0; k < 4; k++) if (VERTS[i][k] !== VERTS[j][k]) d++;
+  if (d === 1) EDGES.push([i, j]);
+}
+
+function rotXW(v, t) {
+  const c = Math.cos(t), s = Math.sin(t);
+  return [v[0]*c - v[3]*s, v[1], v[2], v[0]*s + v[3]*c];
+}
+
+function rotYZ(v, t) {
+  const c = Math.cos(t), s = Math.sin(t);
+  return [v[0], v[1]*c - v[2]*s, v[1]*s + v[2]*c, v[3]];
+}
+
+// 4D → 3D perspective projection via w-depth
+function proj4to3(v) {
+  const f = D4 / (D4 - v[3]);
+  return [v[0]*f, v[1]*f, v[2]*f, v[3]];
+}
+
+// 3D → 2D perspective projection via z-depth
+function proj3to2(v) {
+  const f = D3 / (D3 - v[2]);
+  return [CX + v[0]*f*SCALE, CY - v[1]*f*SCALE];
+}
+
+// Lerp indigo (#1a0050) → cyan (#00e5ff) with opacity 0.2→1.0
+function edgeStyle(t) {
+  t = Math.max(0, Math.min(1, t));
+  const r = Math.round(0x1a * (1 - t));
+  const g = Math.round(0xe5 * t);
+  const b = Math.round(0x50 * (1 - t) + 0xff * t);
+  const a = (0.2 + 0.8 * t).toFixed(2);
+  return `rgba(${r},${g},${b},${a})`;
+}
+
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+let frame = 0;
+
+function draw() {
+  ctx.fillStyle = '#000';
+  ctx.fillRect(0, 0, W, H);
+
+  const tXW = SPEED_XW * frame;
+  const tYZ = SPEED_YZ * frame;
+
+  const rotated = VERTS.map(v => rotYZ(rotXW(v, tXW), tYZ));
+  const proj3 = rotated.map(proj4to3);
+  const proj2 = proj3.map(proj3to2);
+
+  for (const [i, j] of EDGES) {
+    const wAvg = (rotated[i][3] + rotated[j][3]) / 2;
+    const t = (wAvg + 1) / 2;
+    ctx.strokeStyle = edgeStyle(t);
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(proj2[i][0], proj2[i][1]);
+    ctx.lineTo(proj2[j][0], proj2[j][1]);
+    ctx.stroke();
+  }
+
+  frame++;
+  requestAnimationFrame(draw);
+}
+
+requestAnimationFrame(draw);
+</script>
+</body>
+</html>
