@@ -1168,5 +1168,15 @@
     "path": "pieces/282-maurer-rose",
     "thumbnail": "pieces/282-maurer-rose/thumbnail.svg",
     "description": "A Maurer rose connects 360 evenly-stepped points on the rhodonea curve r = sin(n·θ), where each point advances θ by d degrees. The piece cycles through eight (n, d) pairs — (2,29), (5,97), (7,71), (3,113) and more — morphing continuously between forms by lerping both parameters so fractional values dissolve one interference geometry into another. Alpha-transparent strokes (opacity 0.15) accumulate during transitions to bloom luminous nodes at crossing points; the canvas hard-clears once the target is reached. Palette: #0a0a12 background with gold, cyan, and rose strokes on alternating forms."
+  },
+  {
+    "id": "283-spherical-harmonics",
+    "title": "Orbital Hymn",
+    "tagline": "Real spherical harmonics Y_l^m displace a 40×40 sphere mesh — amber positive lobes and teal negative lobes morph through eight orbital forms on a deep indigo ground at 60 fps",
+    "year": 2026,
+    "technique": "canvas 2D / spherical harmonics / associated Legendre polynomials / painter’s algorithm / parametric surface",
+    "path": "pieces/283-spherical-harmonics",
+    "thumbnail": "pieces/283-spherical-harmonics/thumbnail.svg",
+    "description": "Each vertex of a 40×40 latitude-longitude mesh is displaced radially by SCALE·|Y_l^m(θ,φ)|, where the real spherical harmonic is computed from the associated Legendre polynomial recurrence. Positive lobes glow in warm amber (#f5a030) and negative lobes in cool teal (#30d0c0) on a deep indigo (#1a0a3a) ground. The piece cycles through eight (l, m) pairs — mixing zonal (m=0), sectoral (|m|=l), and tesseral harmonics — with smoothstep-eased lerp transitions over 3 seconds. Faces are sorted back-to-front each frame (painter’s algorithm) with back-face culling and diffuse lighting from a fixed direction."
   }
 ]
