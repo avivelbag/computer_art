@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Celestial Veil — Emission Nebula</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { background: #000; overflow: hidden; display: flex; align-items: center; justify-content: center; min-height: 100vh; }
+    canvas { display: block; width: 100vmin; height: 100vmin; }
+  </style>
+</head>
+<body>
+<canvas id="c" width="300" height="300"></canvas>
+<script>
+const SIZE = 300;
+
+// Classic Ken Perlin permutation table
+const _P = [
+  151,160,137, 91, 90, 15,131, 13,201, 95, 96, 53,194,233,  7,225,
+  140, 36,103, 30, 69,142,  8, 99, 37,240, 21, 10, 23,190,  6,148,
+  247,120,234, 75,  0, 26,197, 62, 94,252,219,203,117, 35, 11, 32,
+   57,177, 33, 88,237,149, 56, 87,174, 20,125,136,171,168, 68,175,
+   74,165, 71,134,139, 48, 27,166, 77,146,158,231, 83,111,229,122,
+   60,211,133,230,220,105, 92, 41, 55, 46,245, 40,244,102,143, 54,
+   65, 25, 63,161,  1,216, 80, 73,209, 76,132,187,208, 89, 18,169,
+  200,196,135,130,116,188,159, 86,164,100,109,198,173,186,  3, 64,
+   52,217,226,250,124,123,  5,202, 38,147,118,126,255, 82, 85,212,
+  207,206, 59,227, 47, 16, 58, 17,182,189, 28, 42,223,183,170,213,
+  119,248,152,  2, 44,154,163, 70,221,153,101,155,167, 43,172,  9,
+  129, 22, 39,253, 19, 98,108,110, 79,113,224,232,178,185,112,104,
+  218,246, 97,228,251, 34,242,193,238,210,144, 12,191,179,162,241,
+   81, 51,145,235,249, 14,239,107, 49,192,214, 31,181,199,106,157,
+  184, 84,204,176,115,121, 50, 45,127,  4,150,254,138,236,205, 93,
+  222,114, 67, 29, 24, 72,243,141,128,195, 78, 66,215, 61,156,180
+];
+const perm = new Uint8Array(512);
+for (let i = 0; i < 512; i++) perm[i] = _P[i & 255];
+
+function fade(t) { return t * t * t * (t * (t * 6 - 15) + 10); }
+function lerp(a, b, t) { return a + t * (b - a); }
+
+/**
+ * Compute dot product of gradient vector (selected by h) with offset (x, y).
+ * Uses 4 diagonal gradient directions for a classic 2D Perlin lattice.
+ */
+function grad(h, x, y) {
+  switch (h & 3) {
+    case 0:  return  x + y;
+    case 1:  return -x + y;
+    case 2:  return  x - y;
+    default: return -x - y;
+  }
+}
+
+/**
+ * 2D Perlin noise. Returns a value in approximately [-1, 1].
+ * Uses the permutation table for reproducible, hash-based gradient selection.
+ */
+function noise(x, y) {
+  const X = Math.floor(x) & 255;
+  const Y = Math.floor(y) & 255;
+  x -= Math.floor(x);
+  y -= Math.floor(y);
+  const u = fade(x), v = fade(y);
+  const aa = perm[perm[X    ] + Y    ];
+  const ab = perm[perm[X    ] + Y + 1];
+  const ba = perm[perm[X + 1] + Y    ];
+  const bb = perm[perm[X + 1] + Y + 1];
+  return lerp(
+    lerp(grad(aa, x,   y  ), grad(ba, x-1, y  ), u),
+    lerp(grad(ab, x,   y-1), grad(bb, x-1, y-1), u),
+    v
+  );
+}
+
+/**
+ * Fractional Brownian Motion — sum `oct` noise octaves with geometric amplitude decay.
+ * Returns approximately in [-1, 1] (scales with 1 - 0.5^oct).
+ */
+function fbm(x, y, oct) {
+  let v = 0, a = 0.5, f = 1;
+  for (let i = 0; i < oct; i++, f *= 2.1, a *= 0.5)
+    v += noise(x * f, y * f) * a;
+  return v;
+}
+
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+
+// Three offscreen canvases — one per emission layer, composited additively
+const layers = [
+  { oct: 4, scale: 0.0038, r: 192, g: 16,  b: 58,  pow: 1.9, ax:  1.0, ay:  0.3 },
+  { oct: 3, scale: 0.0072, r: 10,  g: 239, b: 176, pow: 2.3, ax: -0.6, ay:  0.9 },
+  { oct: 2, scale: 0.0140, r: 160, g: 40,  b: 220, pow: 2.6, ax:  0.5, ay: -0.8 },
+];
+
+const offBufs = layers.map(() => {
+  const oc = document.createElement('canvas');
+  oc.width = SIZE;
+  oc.height = SIZE;
+  return { canvas: oc, ctx: oc.getContext('2d'), img: oc.getContext('2d').createImageData(SIZE, SIZE) };
+});
+
+let time = 0;
+let lastTs = 0;
+
+/**
+ * Fill one emission layer's ImageData buffer with noise-driven luminance,
+ * tinted by the layer colour. Noise coordinates shift with `time` at layer-
+ * specific velocity (ax, ay) to produce parallax drift between layers.
+ */
+function renderLayer(li) {
+  const L = layers[li];
+  const { img } = offBufs[li];
+  const d = img.data;
+  for (let py = 0; py < SIZE; py++) {
+    for (let px = 0; px < SIZE; px++) {
+      const nx = px * L.scale + time * L.ax * 0.0002;
+      const ny = py * L.scale + time * L.ay * 0.0002;
+      // fbm returns roughly in [-1, 1]; shift and clamp to [0, 1]
+      let v = fbm(nx, ny, L.oct) * 0.65 + 0.5;
+      if (v < 0) v = 0;
+      else if (v > 1) v = 1;
+      // Power curve: concentrates brightness into cloud cores; voids stay black
+      v = Math.pow(v, L.pow);
+      const idx = (py * SIZE + px) * 4;
+      d[idx    ] = (L.r * v + 0.5) | 0;
+      d[idx + 1] = (L.g * v + 0.5) | 0;
+      d[idx + 2] = (L.b * v + 0.5) | 0;
+      d[idx + 3] = 255;
+    }
+  }
+  offBufs[li].ctx.putImageData(img, 0, 0);
+}
+
+function frame(ts) {
+  // Cap at 60 fps
+  if (ts - lastTs < 16) { requestAnimationFrame(frame); return; }
+  lastTs = ts;
+
+  time += 1;
+
+  ctx.fillStyle = '#000';
+  ctx.fillRect(0, 0, SIZE, SIZE);
+
+  ctx.globalCompositeOperation = 'lighter';
+  for (let i = 0; i < layers.length; i++) {
+    renderLayer(i);
+    ctx.drawImage(offBufs[i].canvas, 0, 0);
+  }
+  ctx.globalCompositeOperation = 'source-over';
+
+  requestAnimationFrame(frame);
+}
+
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>

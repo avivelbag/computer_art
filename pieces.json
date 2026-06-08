@@ -1148,5 +1148,15 @@
     "path": "pieces/280-accretion-disk",
     "thumbnail": "pieces/280-accretion-disk/thumbnail.svg",
     "description": "A WebGL fragment shader fires one ray per pixel from a camera elevated 20° above the disk plane. Rays passing within ~2.5 Schwarzschild radii are deflected toward the disk plane by a first-order lensing approximation (deflection ∝ Rs / b²), reproducing the characteristic brightened photon ring around the shadow. The bent ray intersects the geometrically thin disk plane; if the hit radius falls between the ISCO (r ≈ 1.5 Rs) and the outer edge, emission is computed from a Shakura-Sunyaev radial temperature profile (T ∝ r⁻³/⁴) tinted by a relativistic Doppler factor that blue-shifts the approaching (left) half toward cyan and white and red-shifts the receding (right) half toward deep crimson and amber. FBM turbulence noise advected by orbital phase gives the plasma a swirling, filamentary texture that loops seamlessly at 60 fps. The event horizon is rendered as a pure-black circle; faint background stars show through the thin outer disk regions."
+  },
+  {
+    "id": "281-nebula-noise",
+    "title": "Celestial Veil",
+    "tagline": "Three layered Perlin-noise emission fields drift and glow with additive canvas blending",
+    "year": 2026,
+    "technique": "canvas / perlin noise / additive blending",
+    "path": "pieces/281-nebula-noise",
+    "thumbnail": "pieces/281-nebula-noise/thumbnail.svg",
+    "description": "Three independent Perlin-noise layers — ionized-hydrogen crimson, oxygen-III teal, and ultraviolet violet haze — are rendered into separate pixel buffers each frame and composited onto a black canvas with globalCompositeOperation “lighter”, so overlapping emission regions sum their colours as real nebular gas does. Slow per-layer drift at different velocities creates a parallax depth inside the luminous cloud."
   }
 ]
