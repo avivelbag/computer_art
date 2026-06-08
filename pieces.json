@@ -1128,5 +1128,15 @@
     "path": "pieces/278-loom-weave",
     "thumbnail": "pieces/278-loom-weave/thumbnail.svg",
     "description": "A digital loom simulation where 60 warp threads and 60 weft threads interlace following four threading drafts — plain weave (1:1 alternation), 2/2 twill (diagonal rib), 4/1 satin (smooth warp-faced float), and herringbone (reversing twill V-pattern) — each cycling every 20 seconds. Each draft is encoded as a flat integer array read by a single warpOver(draft, r, c) function that indexes by (r % rows, c % size). Warm terracotta-to-cream warp threads run vertically, cool indigo-to-sky weft threads horizontally; a sinusoidal drift shifts both color gradients across the cloth over 60 seconds. A subtle highlight along the top and left edges of raised warp-over cells reinforces the three-dimensional over/under illusion on a near-black canvas."
+  },
+  {
+    "id": "279-magnetic-field-lines",
+    "title": "Polarity — Magnetic Dipole Field Lines",
+    "tagline": "Two magnetic dipoles animate on charcoal — 3 000 iron-filing segments align to the live B-field while optional RK4 streamlines trace the closed loops connecting north pole to south pole",
+    "year": 2026,
+    "technique": "canvas / magnetic dipole / B-field superposition / iron-filing texture / RK4 streamlines / requestAnimationFrame",
+    "path": "pieces/279-magnetic-field-lines",
+    "thumbnail": "pieces/279-magnetic-field-lines/thumbnail.svg",
+    "description": "Two magnetic dipoles slowly rotate and drift, their combined B-field computed as a superposition of point-dipole fields B = (μ₀/4π)[3(m·r̂)r̂ − m]/r³ with a soft-core regularisation. 3,000 short iron-filing segments update orientation each frame to align with the local field direction, coloured from warm iron amber (#c8871a) at weak field to bright gold (#f5d060) near the poles where |B| is large. Optional RK4 streamlines trace closed loops connecting north to south pole, demonstrating ∇·B = 0 — every magnetic field line that exits a north pole must return to a south pole, forming the closed loops that distinguish magnetic fields from electric fields."
   }
 ]

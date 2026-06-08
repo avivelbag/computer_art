@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Piece 279 — Polarity: Magnetic Dipole Field Lines</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{
+  background:#0e0e12;
+  color:#999;
+  font:12px/1.5 system-ui,sans-serif;
+  display:flex;
+  flex-direction:column;
+  height:100vh;
+  overflow:hidden;
+  user-select:none;
+}
+#canvas-wrap{
+  flex:1 1 0;
+  position:relative;
+  min-height:0;
+}
+canvas{
+  display:block;
+  width:100%;
+  height:100%;
+}
+#controls{
+  flex:0 0 auto;
+  background:#0e0e18;
+  border-top:1px solid #1e1e28;
+  padding:8px 14px 10px;
+  display:flex;
+  align-items:center;
+  gap:14px;
+  flex-wrap:wrap;
+}
+button{
+  background:#14141e;
+  border:1px solid #28283a;
+  color:#888;
+  font:11px system-ui,sans-serif;
+  padding:4px 12px;
+  border-radius:3px;
+  cursor:pointer;
+  letter-spacing:0.04em;
+}
+button:hover{background:#1c1c2a;color:#bbb}
+#hint-bar{
+  font-size:10px;
+  color:#3a3a50;
+  flex:1;
+  text-align:right;
+}
+#info-pane{
+  position:fixed;
+  bottom:0;left:0;right:0;
+  max-height:68vh;
+  overflow-y:auto;
+  background:#0d0d18;
+  border-top:1px solid #28283a;
+  padding:16px 22px 14px;
+  transform:translateY(100%);
+  transition:transform 0.3s ease;
+  z-index:20;
+}
+#info-pane.open{transform:translateY(0)}
+#pane-close{
+  float:right;
+  background:none;border:none;
+  color:#555;font-size:18px;
+  cursor:pointer;padding:0 4px;
+  line-height:1;
+}
+#pane-close:hover{color:#bbb}
+#info-pane h2{
+  font-size:14px;font-weight:700;
+  color:#c8871a;
+  margin-bottom:10px;
+  letter-spacing:0.08em;
+}
+#info-pane h3{
+  font-size:12px;font-weight:700;
+  color:#a06818;
+  margin:12px 0 4px;
+}
+#info-pane p{
+  font-size:11px;color:#888;
+  line-height:1.65;
+  max-width:720px;
+  margin-bottom:6px;
+}
+.eq{
+  font-family:monospace;
+  font-size:11px;
+  color:#c8a060;
+  background:#0e0e20;
+  border-left:3px solid #7040a0;
+  padding:6px 10px;
+  margin:6px 0;
+  white-space:pre;
+  overflow-x:auto;
+}
+</style>
+</head>
+<body>
+<div id="canvas-wrap"><canvas id="c"></canvas></div>
+<div id="controls">
+  <button id="btn-about">About</button>
+  <button id="btn-pause">Pause</button>
+  <button id="btn-streamlines">Streamlines</button>
+  <button id="btn-filings">Hide Filings</button>
+  <span id="hint-bar">Magnetic Dipole Field Lines · Iron Filings · ∇·B = 0</span>
+</div>
+<div id="info-pane">
+  <button id="pane-close">×</button>
+  <h2>POLARITY — Magnetic Dipole Field Lines</h2>
+
+  <h3>Magnetic Dipole Field</h3>
+  <p>A magnetic dipole with moment <strong>m</strong> at position <strong>p</strong> produces a field <strong>B</strong> at point <strong>r</strong>:</p>
+  <div class="eq">B(r) = (μ₀/4π) · [3(m·r̂)r̂ − m] / |r−p|³</div>
+  <p>where <strong>r̂</strong> is the unit vector from the dipole to the field point. This piece uses a dimensionless constant K&nbsp;=&nbsp;10⁵ and adds a soft-core term r²+r₀² to avoid the singularity at the dipole centre.</p>
+
+  <h3>∇·B = 0 — No Magnetic Monopoles</h3>
+  <p>Unlike electric field lines, which start on positive charges and end on negative charges, magnetic field lines form <em>closed loops</em>. The divergence theorem applied to ∇·B&nbsp;=&nbsp;0 guarantees that every field line exiting a north pole must return to a south pole — there are no isolated magnetic monopoles.</p>
+
+  <h3>Iron-Filing Texture</h3>
+  <p>The classic iron-filing visualisation scatters N&nbsp;=&nbsp;N_FILINGS short segments across the canvas, each aligned to the local <strong>B</strong> direction at that point. Position seeds are fixed on resize; only their orientations are recomputed each frame as the dipoles move. Segments near the poles, where |<strong>B</strong>| is large, are coloured brighter gold; distant segments stay amber.</p>
+
+  <h3>RK4 Streamlines</h3>
+  <p>Optional long streamlines are traced with fourth-order Runge-Kutta integration along <strong>B</strong>/|<strong>B</strong>|, seeding at equal angular intervals around each dipole centre. Each streamline terminates when it exits the canvas or enters within POLE_RAD pixels of any dipole centre (completing its closed loop), or after MAX_STEPS steps.</p>
+
+  <h3>Animation</h3>
+  <p>Two dipoles slowly rotate their moment vectors and drift on sinusoidal orbits. The iron-filing orientations update every frame, so the pattern evolves continuously rather than jumping. Streamlines are retraced on every frame only when enabled.</p>
+
+  <h3>Colour Palette</h3>
+  <p>Background: charcoal <code>#0e0e12</code>. Field strength maps through a log scale from warm iron amber <code>#c8871a</code> at weak field to bright gold <code>#f5d060</code> at the poles.</p>
+</div>
+<script>
+// ── Constants ─────────────────────────────────────────────────────────────────
+const K          = 1e5;    // Dimensionless dipole strength (canvas-pixel units)
+const SOFT_CORE  = 900;    // r² softening (30 px²) to prevent division by zero
+const N_SEEDS    = 20;     // RK4 streamline seeds per dipole
+const MAX_STEPS  = 600;    // Max RK4 steps per streamline
+const STEP       = 2;      // RK4 step size in pixels
+const N_FILINGS  = 3000;   // Iron-filing short segments
+const FILING_LEN = 7;      // Half-length of each iron-filing segment (px)
+const POLE_RAD   = 12;     // Visual radius of north/south pole circles (px)
+const POLE_DIST  = 38;     // Distance of N/S poles from dipole centre (px)
+
+// ── Colour palette ─────────────────────────────────────────────────────────────
+// Warm iron amber at weak field → bright gold at strong field.
+const AMBER = [200, 135, 26];   // #c8871a
+const GOLD  = [245, 208, 96];   // #f5d060
+
+/**
+ * Map field magnitude to an rgb() string.
+ * Uses a log scale so mid-range field values are visible, not just extreme poles.
+ */
+function fieldColour(mag) {
+  const t = Math.min(1, Math.log1p(mag * 2e-3) / Math.log1p(200));
+  const r = Math.round(AMBER[0] + t * (GOLD[0] - AMBER[0]));
+  const g = Math.round(AMBER[1] + t * (GOLD[1] - AMBER[1]));
+  const b = Math.round(AMBER[2] + t * (GOLD[2] - AMBER[2]));
+  return { r, g, b, t, css: `rgb(${r},${g},${b})` };
+}
+
+// ── Dipole state ──────────────────────────────────────────────────────────────
+// Each dipole: { x, y, angle, strength }
+// The moment vector is m = (cos(angle), sin(angle)) * strength * K.
+// "North" pole is offset POLE_DIST in the +m direction from the centre.
+const dipoles = [
+  { x: 0, y: 0, angle: 0,         strength: 1 },
+  { x: 0, y: 0, angle: Math.PI,   strength: 1 },
+];
+
+// ── B-field computation ────────────────────────────────────────────────────────
+/**
+ * Compute the total B-field vector at canvas point (px, py) by summing
+ * contributions from all dipoles via the point-dipole formula.
+ */
+function bField(px, py) {
+  let bx = 0, by = 0;
+  for (const d of dipoles) {
+    const mx = Math.cos(d.angle) * d.strength * K;
+    const my = Math.sin(d.angle) * d.strength * K;
+    const rx = px - d.x;
+    const ry = py - d.y;
+    const r2 = rx * rx + ry * ry + SOFT_CORE;
+    const r  = Math.sqrt(r2);
+    const r3 = r * r2;
+    const ux = rx / r;
+    const uy = ry / r;
+    const mdu = mx * ux + my * uy;
+    bx += (3 * mdu * ux - mx) / r3;
+    by += (3 * mdu * uy - my) / r3;
+  }
+  return { bx, by };
+}
+
+// ── RK4 streamline integration ─────────────────────────────────────────────────
+/**
+ * Advance one RK4 step along B/|B| from (x, y).
+ * Returns the new {x, y} after STEP pixels of arc length.
+ */
+function rk4Step(x, y) {
+  function dir(px, py) {
+    const { bx, by } = bField(px, py);
+    const m = Math.sqrt(bx * bx + by * by) || 1e-15;
+    return { dx: bx / m, dy: by / m };
+  }
+  const k1 = dir(x, y);
+  const k2 = dir(x + 0.5 * STEP * k1.dx, y + 0.5 * STEP * k1.dy);
+  const k3 = dir(x + 0.5 * STEP * k2.dx, y + 0.5 * STEP * k2.dy);
+  const k4 = dir(x + STEP * k3.dx, y + STEP * k3.dy);
+  return {
+    x: x + (STEP / 6) * (k1.dx + 2 * k2.dx + 2 * k3.dx + k4.dx),
+    y: y + (STEP / 6) * (k1.dy + 2 * k2.dy + 2 * k3.dy + k4.dy),
+  };
+}
+
+/**
+ * Trace a single streamline from (sx, sy) up to MAX_STEPS, terminating early
+ * at a canvas boundary or when the path re-enters any dipole's POLE_RAD zone.
+ */
+function traceStreamline(sx, sy, W, H) {
+  const pts = [{ x: sx, y: sy }];
+  let cx = sx, cy = sy;
+  for (let s = 0; s < MAX_STEPS; s++) {
+    const nxt = rk4Step(cx, cy);
+    cx = nxt.x; cy = nxt.y;
+    if (cx < 0 || cx > W || cy < 0 || cy > H) break;
+    let near = false;
+    for (const d of dipoles) {
+      if ((cx - d.x) * (cx - d.x) + (cy - d.y) * (cy - d.y) < POLE_RAD * POLE_RAD) {
+        near = true; break;
+      }
+    }
+    pts.push({ x: cx, y: cy });
+    if (near) break;
+  }
+  return pts;
+}
+
+// ── Iron-filing positions (fixed random seeds, re-evaluated each frame) ────────
+let filingX, filingY;
+
+function initFilings(W, H) {
+  filingX = new Float32Array(N_FILINGS);
+  filingY = new Float32Array(N_FILINGS);
+  for (let i = 0; i < N_FILINGS; i++) {
+    filingX[i] = Math.random() * W;
+    filingY[i] = Math.random() * H;
+  }
+}
+
+// ── Drawing routines ──────────────────────────────────────────────────────────
+const canvas = document.getElementById('c');
+const ctx    = canvas.getContext('2d');
+
+function drawFilings(W, H) {
+  for (let i = 0; i < N_FILINGS; i++) {
+    const px = filingX[i], py = filingY[i];
+    const { bx, by } = bField(px, py);
+    const mag = Math.sqrt(bx * bx + by * by);
+    if (mag < 1e-14) continue;
+    const nx = bx / mag, ny = by / mag;
+    const col = fieldColour(mag);
+    ctx.beginPath();
+    ctx.moveTo(px - FILING_LEN * nx, py - FILING_LEN * ny);
+    ctx.lineTo(px + FILING_LEN * nx, py + FILING_LEN * ny);
+    ctx.strokeStyle = col.css;
+    ctx.lineWidth   = 0.75;
+    ctx.globalAlpha = 0.30 + 0.60 * col.t;
+    ctx.stroke();
+  }
+  ctx.globalAlpha = 1;
+}
+
+function drawStreamlines(W, H) {
+  ctx.lineWidth = 0.85;
+  for (const d of dipoles) {
+    for (let i = 0; i < N_SEEDS; i++) {
+      const sa = (2 * Math.PI * i) / N_SEEDS;
+      const sx = d.x + (POLE_RAD + 4) * Math.cos(sa);
+      const sy = d.y + (POLE_RAD + 4) * Math.sin(sa);
+      const pts = traceStreamline(sx, sy, W, H);
+      if (pts.length < 2) continue;
+      const { bx, by } = bField(sx, sy);
+      const mag = Math.sqrt(bx * bx + by * by);
+      const col = fieldColour(mag);
+      ctx.beginPath();
+      ctx.moveTo(pts[0].x, pts[0].y);
+      for (let j = 1; j < pts.length; j++) ctx.lineTo(pts[j].x, pts[j].y);
+      ctx.strokeStyle = col.css;
+      ctx.globalAlpha = 0.45 + 0.35 * col.t;
+      ctx.stroke();
+    }
+  }
+  ctx.globalAlpha = 1;
+}
+
+function drawPoles() {
+  ctx.font = 'bold 13px system-ui,sans-serif';
+  ctx.textAlign    = 'center';
+  ctx.textBaseline = 'middle';
+
+  for (const d of dipoles) {
+    const ca = Math.cos(d.angle), sa = Math.sin(d.angle);
+
+    // North pole — where B exits (along +m direction)
+    const nx = d.x + ca * POLE_DIST;
+    const ny = d.y + sa * POLE_DIST;
+
+    const gnGlow = ctx.createRadialGradient(nx, ny, 0, nx, ny, POLE_RAD * 2.2);
+    gnGlow.addColorStop(0, 'rgba(245,208,96,0.35)');
+    gnGlow.addColorStop(1, 'rgba(245,208,96,0)');
+    ctx.beginPath(); ctx.arc(nx, ny, POLE_RAD * 2.2, 0, Math.PI * 2);
+    ctx.fillStyle = gnGlow; ctx.fill();
+
+    ctx.beginPath(); ctx.arc(nx, ny, POLE_RAD, 0, Math.PI * 2);
+    ctx.fillStyle   = '#c8871a';
+    ctx.fill();
+    ctx.strokeStyle = '#f5d060';
+    ctx.lineWidth   = 1.5;
+    ctx.stroke();
+    ctx.fillStyle = '#0e0e12';
+    ctx.fillText('N', nx, ny);
+
+    // South pole — where B enters (along −m direction)
+    const spx = d.x - ca * POLE_DIST;
+    const spy = d.y - sa * POLE_DIST;
+
+    ctx.beginPath(); ctx.arc(spx, spy, POLE_RAD, 0, Math.PI * 2);
+    ctx.fillStyle   = '#2a1804';
+    ctx.fill();
+    ctx.strokeStyle = '#7a4810';
+    ctx.lineWidth   = 1.5;
+    ctx.stroke();
+    ctx.fillStyle = '#c8871a';
+    ctx.fillText('S', spx, spy);
+  }
+}
+
+// ── Render loop ───────────────────────────────────────────────────────────────
+let paused          = false;
+let showStreamlines = false;
+let showFilings     = true;
+let t0              = null;
+
+function render(ts) {
+  requestAnimationFrame(render);
+  if (t0 === null) t0 = ts;
+  if (paused) return;
+
+  const W = canvas.width, H = canvas.height;
+  const elapsed = (ts - t0) * 0.001;
+
+  // Animate: slow rotation and gentle Lissajous drift
+  dipoles[0].angle = elapsed * 0.14 + Math.sin(elapsed * 0.28) * 0.45;
+  dipoles[1].angle = elapsed * 0.14 + Math.PI + Math.sin(elapsed * 0.22 + 1.1) * 0.45;
+  dipoles[0].x = W * 0.5 + Math.cos(elapsed * 0.07) * W * 0.14;
+  dipoles[0].y = H * 0.5 + Math.sin(elapsed * 0.10) * H * 0.08;
+  dipoles[1].x = W * 0.5 - Math.cos(elapsed * 0.07) * W * 0.14;
+  dipoles[1].y = H * 0.5 - Math.sin(elapsed * 0.10) * H * 0.08;
+
+  ctx.fillStyle = '#0e0e12';
+  ctx.fillRect(0, 0, W, H);
+
+  if (showFilings)     drawFilings(W, H);
+  if (showStreamlines) drawStreamlines(W, H);
+  drawPoles();
+}
+
+// ── Resize ─────────────────────────────────────────────────────────────────────
+function resize() {
+  const wrap = document.getElementById('canvas-wrap');
+  canvas.width  = wrap.clientWidth;
+  canvas.height = wrap.clientHeight;
+  initFilings(canvas.width, canvas.height);
+}
+window.addEventListener('resize', resize);
+
+// ── Button handlers ────────────────────────────────────────────────────────────
+document.getElementById('btn-about').addEventListener('click', () => {
+  document.getElementById('info-pane').classList.toggle('open');
+});
+document.getElementById('pane-close').addEventListener('click', () => {
+  document.getElementById('info-pane').classList.remove('open');
+});
+document.getElementById('btn-pause').addEventListener('click', function () {
+  paused = !paused;
+  this.textContent = paused ? 'Resume' : 'Pause';
+});
+document.getElementById('btn-streamlines').addEventListener('click', function () {
+  showStreamlines = !showStreamlines;
+  this.textContent = showStreamlines ? 'Hide Streamlines' : 'Streamlines';
+});
+document.getElementById('btn-filings').addEventListener('click', function () {
+  showFilings = !showFilings;
+  this.textContent = showFilings ? 'Hide Filings' : 'Iron Filings';
+});
+
+// ── Init ───────────────────────────────────────────────────────────────────────
+resize();
+requestAnimationFrame(render);
+</script>
+</body>
+</html>
