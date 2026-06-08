@@ -3,7 +3,6 @@
 import importlib.util
 import math
 import pathlib
-import sys
 
 import pytest
 
@@ -90,7 +89,7 @@ def test_js_line_count_under_80():
     start = content.index("<script>") + len("<script>")
     end   = content.index("</script>")
     script = content[start:end]
-    non_empty = [l for l in script.splitlines() if l.strip()]
+    non_empty = [line for line in script.splitlines() if line.strip()]
     assert len(non_empty) < 80, f"Script has {len(non_empty)} non-empty lines"
 
 
