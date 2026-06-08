@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Interference Star — Maurer Rose</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { background: #0a0a12; display: flex; align-items: center; justify-content: center; min-height: 100vh; }
+    canvas { display: block; }
+  </style>
+</head>
+<body>
+<canvas id="canvas" width="600" height="600"></canvas>
+<script>
+  const canvas = document.getElementById('canvas');
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width;
+  const H = canvas.height;
+  const CX = W / 2;
+  const CY = H / 2;
+  const R = W * 0.47;
+
+  // Visually interesting (n, d) pairs — each produces a distinct star/lattice pattern.
+  const FORMS = [
+    { n: 2, d: 29,  color: '#e8c84a' },
+    { n: 5, d: 97,  color: '#5ecfff' },
+    { n: 7, d: 71,  color: '#e05090' },
+    { n: 3, d: 113, color: '#e8c84a' },
+    { n: 6, d: 71,  color: '#5ecfff' },
+    { n: 4, d: 67,  color: '#e05090' },
+    { n: 8, d: 137, color: '#e8c84a' },
+    { n: 5, d: 59,  color: '#5ecfff' },
+  ];
+
+  // How many frames to hold a fully-arrived form before starting the next morph.
+  const HOLD_FRAMES = 180;
+  // Lerp speed per frame for n and d.
+  const LERP_SPEED = 0.012;
+  // Low-opacity stroke to build luminous bloom where lines cross.
+  const STROKE_ALPHA = 0.15;
+  const LINE_WIDTH = 0.9;
+
+  let formIndex = 0;
+  let currentN = FORMS[0].n;
+  let currentD = FORMS[0].d;
+  let targetN   = FORMS[0].n;
+  let targetD   = FORMS[0].d;
+  let holdTimer = HOLD_FRAMES;
+  let transitioning = false;
+  let prevColor = FORMS[0].color;
+  let nextColor = FORMS[0].color;
+
+  /**
+   * Compute the 360 points of a Maurer rose for the given (n, d) parameters.
+   * k iterates 0..359; θ = k·d degrees; r = sin(n·θ).
+   */
+  function computePoints(n, d) {
+    const pts = new Array(360);
+    for (let k = 0; k < 360; k++) {
+      const theta = k * d * Math.PI / 180;
+      const r = R * Math.sin(n * theta);
+      pts[k] = [CX + r * Math.cos(theta), CY + r * Math.sin(theta)];
+    }
+    return pts;
+  }
+
+  /**
+   * Linearly interpolate a toward b by factor t, clamped to [0,1].
+   */
+  function lerp(a, b, t) {
+    return a + (b - a) * Math.min(1, Math.max(0, t));
+  }
+
+  /**
+   * Draw the Maurer rose polyline for given fractional (n, d) with the given color.
+   * Fractional n and d values produce interpolated interference patterns mid-morph.
+   */
+  function drawRose(n, d, color) {
+    const pts = computePoints(n, d);
+    ctx.beginPath();
+    ctx.strokeStyle = color;
+    ctx.lineWidth = LINE_WIDTH;
+    ctx.moveTo(pts[0][0], pts[0][1]);
+    for (let k = 1; k < 360; k++) {
+      ctx.lineTo(pts[k][0], pts[k][1]);
+    }
+    ctx.closePath();
+    ctx.stroke();
+  }
+
+  function fillBackground() {
+    ctx.fillStyle = '#0a0a12';
+    ctx.fillRect(0, 0, W, H);
+  }
+
+  // Progress in [0,1] for the current lerp step — used for smooth alpha blending.
+  let lerpT = 0;
+
+  function tick() {
+    requestAnimationFrame(tick);
+
+    if (!transitioning) {
+      // Holding the current form sharp on a clean background.
+      holdTimer--;
+      fillBackground();
+      ctx.globalAlpha = STROKE_ALPHA;
+      drawRose(currentN, currentD, prevColor);
+      ctx.globalAlpha = 1;
+
+      if (holdTimer <= 0) {
+        // Pick the next form and begin morphing.
+        formIndex = (formIndex + 1) % FORMS.length;
+        const next = FORMS[formIndex];
+        targetN = next.n;
+        targetD = next.d;
+        nextColor = next.color;
+        transitioning = true;
+        lerpT = 0;
+      }
+      return;
+    }
+
+    // During transition: accumulate alpha trails on consecutive frames,
+    // then hard-clear and draw sharp once the lerp has converged.
+    lerpT = Math.min(1, lerpT + LERP_SPEED);
+    currentN = lerp(currentN, targetN, lerpT);
+    currentD = lerp(currentD, targetD, lerpT);
+
+    // Trail frames — skip clearRect to let old lines ghost.
+    ctx.globalAlpha = STROKE_ALPHA;
+    drawRose(currentN, currentD, nextColor);
+    ctx.globalAlpha = 1;
+
+    const converged = Math.abs(currentN - targetN) < 0.01 &&
+                      Math.abs(currentD - targetD) < 0.01;
+    if (converged) {
+      currentN = targetN;
+      currentD = targetD;
+      prevColor = nextColor;
+      fillBackground();
+      ctx.globalAlpha = STROKE_ALPHA;
+      drawRose(currentN, currentD, prevColor);
+      ctx.globalAlpha = 1;
+      transitioning = false;
+      holdTimer = HOLD_FRAMES;
+    }
+  }
+
+  fillBackground();
+  requestAnimationFrame(tick);
+</script>
+</body>
+</html>

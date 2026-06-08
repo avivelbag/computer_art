@@ -1158,5 +1158,15 @@
     "path": "pieces/281-nebula-noise",
     "thumbnail": "pieces/281-nebula-noise/thumbnail.svg",
     "description": "Three independent Perlin-noise layers — ionized-hydrogen crimson, oxygen-III teal, and ultraviolet violet haze — are rendered into separate pixel buffers each frame and composited onto a black canvas with globalCompositeOperation “lighter”, so overlapping emission regions sum their colours as real nebular gas does. Slow per-layer drift at different velocities creates a parallax depth inside the luminous cloud."
+  },
+  {
+    "id": "282-maurer-rose",
+    "title": "Interference Star",
+    "tagline": "A Maurer rose morphs between eight star-burst interference patterns — gold, cyan, and rose on deep navy",
+    "year": 2026,
+    "technique": "canvas / Maurer rose / parametric / animation",
+    "path": "pieces/282-maurer-rose",
+    "thumbnail": "pieces/282-maurer-rose/thumbnail.svg",
+    "description": "A Maurer rose connects 360 evenly-stepped points on the rhodonea curve r = sin(n·θ), where each point advances θ by d degrees. The piece cycles through eight (n, d) pairs — (2,29), (5,97), (7,71), (3,113) and more — morphing continuously between forms by lerping both parameters so fractional values dissolve one interference geometry into another. Alpha-transparent strokes (opacity 0.15) accumulate during transitions to bloom luminous nodes at crossing points; the canvas hard-clears once the target is reached. Palette: #0a0a12 background with gold, cyan, and rose strokes on alternating forms."
   }
 ]
