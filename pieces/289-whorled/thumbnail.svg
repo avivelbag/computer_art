@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" width="400" height="400">
+  <rect width="400" height="400" fill="#0a0a0e"/>
+
+  <!-- Suggest the three generating circles as faint outlines -->
+  <circle cx="152" cy="230" r="92" fill="none" stroke="#e05080" stroke-width="1" opacity="0.25"/>
+  <circle cx="248" cy="230" r="92" fill="none" stroke="#d4a820" stroke-width="1" opacity="0.25"/>
+  <circle cx="200" cy="150" r="92" fill="none" stroke="#20b8a0" stroke-width="1" opacity="0.25"/>
+
+  <!-- Rose limit-set arcs (C0 family) -->
+  <path d="M 200 200 Q 155 195 140 175 Q 125 155 135 135 Q 145 115 165 120 Q 185 125 190 145 Q 195 165 180 178 Q 165 191 148 185 Q 131 179 128 162" fill="none" stroke="#e05080" stroke-width="1.5" opacity="0.85"/>
+  <path d="M 188 188 Q 170 183 160 168 Q 150 153 158 140 Q 166 127 180 130 Q 194 133 196 148 Q 198 163 187 172 Q 176 181 164 177" fill="none" stroke="#e05080" stroke-width="1" opacity="0.7"/>
+  <path d="M 178 178 Q 166 174 160 163 Q 154 152 160 143 Q 166 134 176 136 Q 186 138 187 150 Q 188 162 179 168 Q 170 174 162 171" fill="none" stroke="#e05080" stroke-width="0.8" opacity="0.55"/>
+
+  <!-- Gold limit-set arcs (C1 family) -->
+  <path d="M 200 200 Q 245 195 260 175 Q 275 155 265 135 Q 255 115 235 120 Q 215 125 210 145 Q 205 165 220 178 Q 235 191 252 185 Q 269 179 272 162" fill="none" stroke="#d4a820" stroke-width="1.5" opacity="0.85"/>
+  <path d="M 212 188 Q 230 183 240 168 Q 250 153 242 140 Q 234 127 220 130 Q 206 133 204 148 Q 202 163 213 172 Q 224 181 236 177" fill="none" stroke="#d4a820" stroke-width="1" opacity="0.7"/>
+  <path d="M 222 178 Q 234 174 240 163 Q 246 152 240 143 Q 234 134 224 136 Q 214 138 213 150 Q 212 162 221 168 Q 230 174 238 171" fill="none" stroke="#d4a820" stroke-width="0.8" opacity="0.55"/>
+
+  <!-- Teal limit-set arcs (C2 family) -->
+  <path d="M 200 200 Q 200 250 220 265 Q 240 280 260 268 Q 280 256 275 235 Q 270 214 250 210 Q 230 206 218 222 Q 206 238 215 253 Q 224 268 240 268" fill="none" stroke="#20b8a0" stroke-width="1.5" opacity="0.85"/>
+  <path d="M 200 214 Q 200 235 215 245 Q 230 255 244 247 Q 258 239 255 224 Q 252 209 238 206 Q 224 203 216 215 Q 208 227 215 238 Q 222 249 234 248" fill="none" stroke="#20b8a0" stroke-width="1" opacity="0.7"/>
+
+  <!-- Violet arcs near the gasket center — fourth hue for depth suggestion -->
+  <path d="M 200 200 Q 195 190 197 182 Q 199 174 205 172 Q 211 170 215 176 Q 219 182 216 190 Q 213 198 207 200 Q 201 202 197 197" fill="none" stroke="#8060d0" stroke-width="1.2" opacity="0.8"/>
+  <path d="M 200 196 Q 197 190 199 185 Q 201 180 205 179 Q 209 178 211 182 Q 213 186 211 191 Q 209 196 205 197 Q 201 198 199 195" fill="none" stroke="#8060d0" stroke-width="0.9" opacity="0.65"/>
+  <path d="M 200 194 Q 198 190 200 187 Q 202 184 205 183 Q 208 182 209 185 Q 210 188 209 191 Q 208 194 205 195 Q 202 196 200 194" fill="none" stroke="#8060d0" stroke-width="0.6" opacity="0.5"/>
+
+  <!-- Extra fine nested arcs to suggest self-similarity -->
+  <path d="M 170 165 Q 168 158 172 153 Q 176 148 181 150 Q 186 152 186 158 Q 186 164 182 167 Q 178 170 174 168" fill="none" stroke="#e05080" stroke-width="0.5" opacity="0.5"/>
+  <path d="M 230 165 Q 232 158 228 153 Q 224 148 219 150 Q 214 152 214 158 Q 214 164 218 167 Q 222 170 226 168" fill="none" stroke="#d4a820" stroke-width="0.5" opacity="0.5"/>
+  <path d="M 200 248 Q 206 246 210 240 Q 214 234 210 229 Q 206 224 200 225 Q 194 226 191 232 Q 188 238 192 244 Q 196 250 200 248" fill="none" stroke="#20b8a0" stroke-width="0.5" opacity="0.5"/>
+</svg>
