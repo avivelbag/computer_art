@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Orbital Hymn — Spherical Harmonics</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: #1a0a3a;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      overflow: hidden;
+    }
+    canvas { display: block; width: 100vmin; height: 100vmin; }
+  </style>
+</head>
+<body>
+<canvas id="c" width="800" height="800"></canvas>
+<script>
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+const W = 800, H = 800, CX = 400, CY = 400;
+const BG = '#1a0a3a';
+const C_POS = [245, 160, 48];   // #f5a030 amber — positive lobes
+const C_NEG = [48, 208, 192];   // #30d0c0 teal  — negative lobes
+
+// Curated sequence mixing zonal (m=0), sectoral (|m|=l), and tesseral harmonics
+const SEQ = [[1,0],[2,1],[3,2],[4,0],[4,3],[5,2],[3,-2],[2,-1]];
+
+const NT = 40;          // latitude bands
+const NP = 40;          // longitude bands
+const SCALE = 0.55;     // displacement amplitude (fraction of base radius)
+const SR = 210;         // base sphere radius in canvas pixels
+const MORPH_S = 3.0;    // seconds for one lerp transition
+const HOLD_S  = 2.0;    // seconds to hold each form before morphing
+const CAM_Z = 3.5;      // camera distance in sphere-radii units
+
+// Associated Legendre polynomial P_l^m(x) for m >= 0.
+// Uses standard upward recurrence starting from P_m^m.
+function Plm(l, m, x) {
+  let pmm = 1.0;
+  if (m > 0) {
+    const s = Math.sqrt((1 - x) * (1 + x));
+    let f = 1.0;
+    for (let i = 1; i <= m; i++) { pmm *= -f * s; f += 2.0; }
+  }
+  if (l === m) return pmm;
+  let pmmp1 = x * (2 * m + 1) * pmm;
+  if (l === m + 1) return pmmp1;
+  let pll = 0.0;
+  for (let ll = m + 2; ll <= l; ll++) {
+    pll = ((2*ll-1)*x*pmmp1 - (ll+m-1)*pmm) / (ll-m);
+    pmm = pmmp1; pmmp1 = pll;
+  }
+  return pll;
+}
+
+// Orthonormal normalization constant K_l^|m|.
+function Klm(l, m) {
+  const am = Math.abs(m);
+  let r = 1.0;
+  for (let i = l - am + 1; i <= l + am; i++) r /= i;
+  return Math.sqrt((2*l+1) / (4*Math.PI) * r);
+}
+
+// Real spherical harmonic Y_l^m(theta, phi).
+// theta in [0, pi], phi in [0, 2pi].
+// Convention: m>0 uses cos(m*phi), m<0 uses sin(|m|*phi).
+function Ylm(l, m, theta, phi) {
+  const am = Math.abs(m);
+  const K  = Klm(l, m);
+  const P  = Plm(l, am, Math.cos(theta));
+  if (m === 0) return K * P;
+  if (m > 0)  return Math.SQRT2 * K * Math.cos(m  * phi) * P;
+               return Math.SQRT2 * K * Math.sin(am * phi) * P;
+}
+
+// Build a vertex buffer for the (l, m) form.
+// Buffer layout: [(NT+1)*(NP+1)] entries of [x, y, z, sign].
+// The sphere is displaced radially: r = 1 + SCALE*|Y_l^m|.
+function buildMesh(l, m) {
+  const buf = new Float32Array((NT+1)*(NP+1)*4);
+  let vi = 0;
+  for (let i = 0; i <= NT; i++) {
+    const th   = i * Math.PI / NT;
+    const cosT = Math.cos(th), sinT = Math.sin(th);
+    for (let j = 0; j <= NP; j++) {
+      const ph = j * 2 * Math.PI / NP;
+      const y  = Ylm(l, m, th, ph);
+      const r  = 1 + SCALE * Math.abs(y);
+      buf[vi++] = r * sinT * Math.cos(ph);   // x
+      buf[vi++] = r * cosT;                  // y (polar axis)
+      buf[vi++] = r * sinT * Math.sin(ph);   // z
+      buf[vi++] = y >= 0 ? 1 : -1;           // sign for coloring
+    }
+  }
+  return buf;
+}
+
+// Pre-allocated buffer for in-place lerp — avoids GC churn at 60 fps.
+const _lerpBuf = new Float32Array((NT+1)*(NP+1)*4);
+
+function lerpMesh(a, b, t) {
+  const n = a.length, u = 1 - t;
+  for (let i = 0; i < n; i++) _lerpBuf[i] = u*a[i] + t*b[i];
+  return _lerpBuf;
+}
+
+function easeIO(t) { return t*t*(3 - 2*t); }
+
+// Perspective projection after Y-axis rotation.
+function proj(x, y, z, cosA, sinA) {
+  const rx = x*cosA + z*sinA;
+  const rz = z*cosA - x*sinA;
+  const sc = SR * CAM_Z / (CAM_Z - rz);
+  return [CX + rx*sc, CY - y*sc, rz];
+}
+
+// Precomputed colour table: 101 shades × 2 signs = 202 entries.
+// Indices 0..100 → positive (amber), 101..201 → negative (teal).
+const CLR = (() => {
+  const t = [];
+  for (let s = 0; s < 2; s++) {
+    const c = s === 0 ? C_POS : C_NEG;
+    for (let f = 0; f <= 100; f++) {
+      const lf = f / 100;
+      t.push(`rgb(${c[0]*lf|0},${c[1]*lf|0},${c[2]*lf|0})`);
+    }
+  }
+  return t;
+})();
+
+// Light direction (1, 2, 1) normalised
+const LX = 1/Math.sqrt(6), LY = 2/Math.sqrt(6), LZ = 1/Math.sqrt(6);
+
+// --- Animation state ---
+let meshA   = buildMesh(...SEQ[0]);
+let meshB   = buildMesh(...SEQ[1]);
+let seqIdx  = 0;
+let phase   = 'hold';  // 'hold' | 'morph'
+let timer   = 0;
+let rot     = 0;
+let lastTs  = null;
+
+function frame(ts) {
+  if (!lastTs) lastTs = ts;
+  const dt = Math.min((ts - lastTs) * 0.001, 0.05);
+  lastTs = ts;
+  timer += dt;
+  rot   += dt * 0.28;   // ~1 full revolution per 22 seconds
+
+  let mesh;
+  if (phase === 'hold') {
+    mesh = meshA;
+    if (timer >= HOLD_S) { phase = 'morph'; timer = 0; }
+  } else {
+    const t = easeIO(Math.min(timer / MORPH_S, 1));
+    mesh = lerpMesh(meshA, meshB, t);
+    if (timer >= MORPH_S) {
+      meshA  = meshB;
+      seqIdx = (seqIdx + 1) % SEQ.length;
+      meshB  = buildMesh(...SEQ[(seqIdx + 1) % SEQ.length]);
+      phase  = 'hold';
+      timer  = 0;
+      mesh   = meshA;
+    }
+  }
+
+  const cosA = Math.cos(rot), sinA = Math.sin(rot);
+  const STRIDE = NP + 1;
+
+  // Build and sort face list (painter's algorithm)
+  const faces = [];
+  for (let i = 0; i < NT; i++) {
+    for (let j = 0; j < NP; j++) {
+      const b0 = (i   * STRIDE + j) * 4;
+      const b1 = (i   * STRIDE + j + 1) * 4;
+      const b2 = ((i+1) * STRIDE + j) * 4;
+      const b3 = ((i+1) * STRIDE + j + 1) * 4;
+
+      const p0 = proj(mesh[b0], mesh[b0+1], mesh[b0+2], cosA, sinA);
+      const p1 = proj(mesh[b1], mesh[b1+1], mesh[b1+2], cosA, sinA);
+      const p2 = proj(mesh[b2], mesh[b2+1], mesh[b2+2], cosA, sinA);
+      const p3 = proj(mesh[b3], mesh[b3+1], mesh[b3+2], cosA, sinA);
+
+      // Face-centre normal approximation (works for convex displaced spheres).
+      // Rotate the face-centre coords then normalise to get the surface normal.
+      const cx = (mesh[b0]+mesh[b1]+mesh[b2]+mesh[b3]) * 0.25;
+      const cy = (mesh[b0+1]+mesh[b1+1]+mesh[b2+1]+mesh[b3+1]) * 0.25;
+      const cz = (mesh[b0+2]+mesh[b1+2]+mesh[b2+2]+mesh[b3+2]) * 0.25;
+      const nx = cx*cosA + cz*sinA;
+      const ny = cy;
+      const nz = cz*cosA - cx*sinA;
+      const nl = Math.sqrt(nx*nx + ny*ny + nz*nz) || 1;
+
+      if (nz / nl < -0.05) continue;  // back-face cull
+
+      const ndotl = Math.max(0, nx/nl*LX + ny/nl*LY + nz/nl*LZ);
+      const lf  = 0.18 + 0.82 * ndotl;
+      const fi  = Math.min(100, lf * 100 | 0);
+      const pos = (mesh[b0+3]+mesh[b1+3]+mesh[b2+3]+mesh[b3+3]) >= 0;
+      const avgZ = (p0[2]+p1[2]+p2[2]+p3[2]) * 0.25;
+
+      faces.push([p0, p1, p3, p2, avgZ, pos ? fi : 101 + fi]);
+    }
+  }
+
+  faces.sort((a, b) => a[4] - b[4]);
+
+  ctx.fillStyle = BG;
+  ctx.fillRect(0, 0, W, H);
+
+  ctx.lineWidth = 0.5;
+  ctx.strokeStyle = 'rgba(255,255,255,0.04)';
+
+  for (const f of faces) {
+    const [p0, p1, p2, p3, , ci] = f;
+    ctx.fillStyle = CLR[ci];
+    ctx.beginPath();
+    ctx.moveTo(p0[0], p0[1]);
+    ctx.lineTo(p1[0], p1[1]);
+    ctx.lineTo(p2[0], p2[1]);
+    ctx.lineTo(p3[0], p3[1]);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+  }
+
+  requestAnimationFrame(frame);
+}
+
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>

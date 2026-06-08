@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" width="400" height="400">
+  <rect width="400" height="400" fill="#1a0a3a"/>
+  <!-- d_{z^2} orbital silhouette: central torus (negative, teal) + two polar lobes (positive, amber) -->
+  <!-- polar lobes — positive (amber) -->
+  <ellipse cx="200" cy="110" rx="60" ry="90" fill="#f5a030" opacity="0.92"/>
+  <ellipse cx="200" cy="290" rx="60" ry="90" fill="#f5a030" opacity="0.92"/>
+  <!-- equatorial ring — negative (teal) -->
+  <ellipse cx="200" cy="200" rx="120" ry="38" fill="#30d0c0" opacity="0.82"/>
+  <!-- shading overlays -->
+  <ellipse cx="200" cy="110" rx="60" ry="90" fill="url(#lobe_shade)"/>
+  <ellipse cx="200" cy="290" rx="60" ry="90" fill="url(#lobe_shade2)"/>
+  <defs>
+    <radialGradient id="lobe_shade" cx="38%" cy="35%" r="65%">
+      <stop offset="0%" stop-color="#fff" stop-opacity="0.18"/>
+      <stop offset="100%" stop-color="#000" stop-opacity="0.32"/>
+    </radialGradient>
+    <radialGradient id="lobe_shade2" cx="38%" cy="35%" r="65%">
+      <stop offset="0%" stop-color="#fff" stop-opacity="0.10"/>
+      <stop offset="100%" stop-color="#000" stop-opacity="0.38"/>
+    </radialGradient>
+    <radialGradient id="ring_shade" cx="50%" cy="40%" r="60%">
+      <stop offset="0%" stop-color="#fff" stop-opacity="0.14"/>
+      <stop offset="100%" stop-color="#000" stop-opacity="0.28"/>
+    </radialGradient>
+  </defs>
+  <ellipse cx="200" cy="200" rx="120" ry="38" fill="url(#ring_shade)"/>
+  <!-- faint mesh lines -->
+  <ellipse cx="200" cy="110" rx="60" ry="90" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="0.8"/>
+  <ellipse cx="200" cy="290" rx="60" ry="90" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="0.8"/>
+  <ellipse cx="200" cy="200" rx="120" ry="38" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="0.8"/>
+  <!-- axis line hint -->
+  <line x1="200" y1="22" x2="200" y2="378" stroke="rgba(255,255,255,0.07)" stroke-width="0.7"/>
+</svg>
