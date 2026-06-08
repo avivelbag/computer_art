@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" width="400" height="400">
+  <rect width="400" height="400" fill="#000000"/>
+  <line x1="163.90" y1="224.31" x2="74.56" y2="245.21" stroke="rgb(17,81,142)" stroke-opacity="0.484" stroke-width="1.2"/>
+  <line x1="163.90" y1="224.31" x2="149.28" y2="301.91" stroke="rgb(26,0,80)" stroke-opacity="0.200" stroke-width="1.2"/>
+  <line x1="163.90" y1="224.31" x2="157.85" y2="115.31" stroke="rgb(26,0,80)" stroke-opacity="0.200" stroke-width="1.2"/>
+  <line x1="163.90" y1="224.31" x2="278.43" y2="228.27" stroke="rgb(25,5,84)" stroke-opacity="0.217" stroke-width="1.2"/>
+  <line x1="74.56" y1="245.21" x2="-70.36" y2="490.75" stroke="rgb(4,191,226)" stroke-opacity="0.867" stroke-width="1.2"/>
+  <line x1="74.56" y1="245.21" x2="28.89" y2="15.99" stroke="rgb(4,191,226)" stroke-opacity="0.867" stroke-width="1.2"/>
+  <line x1="74.56" y1="245.21" x2="290.75" y2="261.12" stroke="rgb(1,224,251)" stroke-opacity="0.983" stroke-width="1.2"/>
+  <line x1="149.28" y1="301.91" x2="-70.36" y2="490.75" stroke="rgb(17,81,142)" stroke-opacity="0.484" stroke-width="1.2"/>
+  <line x1="149.28" y1="301.91" x2="136.47" y2="157.21" stroke="rgb(26,0,80)" stroke-opacity="0.200" stroke-width="1.2"/>
+  <line x1="149.28" y1="301.91" x2="317.96" y2="326.86" stroke="rgb(25,5,84)" stroke-opacity="0.217" stroke-width="1.2"/>
+  <line x1="-70.36" y1="490.75" x2="-436.57" y2="-29.45" stroke="rgb(4,191,226)" stroke-opacity="0.867" stroke-width="1.2"/>
+  <line x1="-70.36" y1="490.75" x2="529.60" y2="862.31" stroke="rgb(1,224,251)" stroke-opacity="0.983" stroke-width="1.2"/>
+  <line x1="157.85" y1="115.31" x2="28.89" y2="15.99" stroke="rgb(17,81,142)" stroke-opacity="0.484" stroke-width="1.2"/>
+  <line x1="157.85" y1="115.31" x2="136.47" y2="157.21" stroke="rgb(26,0,80)" stroke-opacity="0.200" stroke-width="1.2"/>
+  <line x1="157.85" y1="115.31" x2="294.14" y2="98.76" stroke="rgb(25,5,84)" stroke-opacity="0.217" stroke-width="1.2"/>
+  <line x1="28.89" y1="15.99" x2="-436.57" y2="-29.45" stroke="rgb(4,191,226)" stroke-opacity="0.867" stroke-width="1.2"/>
+  <line x1="28.89" y1="15.99" x2="341.99" y2="-85.31" stroke="rgb(1,224,251)" stroke-opacity="0.983" stroke-width="1.2"/>
+  <line x1="136.47" y1="157.21" x2="-436.57" y2="-29.45" stroke="rgb(17,81,142)" stroke-opacity="0.484" stroke-width="1.2"/>
+  <line x1="136.47" y1="157.21" x2="357.50" y2="143.23" stroke="rgb(25,5,84)" stroke-opacity="0.217" stroke-width="1.2"/>
+  <line x1="-436.57" y1="-29.45" x2="-861.55" y2="914.94" stroke="rgb(1,224,251)" stroke-opacity="0.983" stroke-width="1.2"/>
+  <line x1="278.43" y1="228.27" x2="290.75" y2="261.12" stroke="rgb(9,148,193)" stroke-opacity="0.716" stroke-width="1.2"/>
+  <line x1="278.43" y1="228.27" x2="317.96" y2="326.86" stroke="rgb(22,38,109)" stroke-opacity="0.333" stroke-width="1.2"/>
+  <line x1="278.43" y1="228.27" x2="294.14" y2="98.76" stroke="rgb(22,38,109)" stroke-opacity="0.333" stroke-width="1.2"/>
+  <line x1="290.75" y1="261.12" x2="529.60" y2="862.31" stroke="rgb(0,229,255)" stroke-opacity="1.000" stroke-width="1.2"/>
+  <line x1="290.75" y1="261.12" x2="341.99" y2="-85.31" stroke="rgb(0,229,255)" stroke-opacity="1.000" stroke-width="1.2"/>
+  <line x1="317.96" y1="326.86" x2="529.60" y2="862.31" stroke="rgb(9,148,193)" stroke-opacity="0.716" stroke-width="1.2"/>
+  <line x1="317.96" y1="326.86" x2="357.50" y2="143.23" stroke="rgb(22,38,109)" stroke-opacity="0.333" stroke-width="1.2"/>
+  <line x1="529.60" y1="862.31" x2="-861.55" y2="914.94" stroke="rgb(0,229,255)" stroke-opacity="1.000" stroke-width="1.2"/>
+  <line x1="294.14" y1="98.76" x2="341.99" y2="-85.31" stroke="rgb(9,148,193)" stroke-opacity="0.716" stroke-width="1.2"/>
+  <line x1="294.14" y1="98.76" x2="357.50" y2="143.23" stroke="rgb(22,38,109)" stroke-opacity="0.333" stroke-width="1.2"/>
+  <line x1="341.99" y1="-85.31" x2="-861.55" y2="914.94" stroke="rgb(0,229,255)" stroke-opacity="1.000" stroke-width="1.2"/>
+  <line x1="357.50" y1="143.23" x2="-861.55" y2="914.94" stroke="rgb(9,148,193)" stroke-opacity="0.716" stroke-width="1.2"/>
+</svg>
