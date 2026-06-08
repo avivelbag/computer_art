@@ -1,0 +1,105 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300" width="400" height="300">
+  <defs>
+    <!-- Deep space background -->
+    <radialGradient id="bg" cx="50%" cy="50%" r="70%">
+      <stop offset="0%" stop-color="#0a0510"/>
+      <stop offset="100%" stop-color="#000003"/>
+    </radialGradient>
+    <!-- Disk: left (approaching) side — blue/cyan shifted -->
+    <radialGradient id="diskLeft" cx="30%" cy="50%" r="60%" gradientUnits="userSpaceOnUse"
+                    x1="0" y1="0" x2="200" y2="0">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.9"/>
+      <stop offset="25%" stop-color="#88ddff" stop-opacity="0.95"/>
+      <stop offset="55%" stop-color="#3399cc" stop-opacity="0.7"/>
+      <stop offset="100%" stop-color="#112244" stop-opacity="0.0"/>
+    </radialGradient>
+    <!-- Disk: right (receding) side — red/amber shifted -->
+    <radialGradient id="diskRight" cx="70%" cy="50%" r="60%" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#ff4400" stop-opacity="0.9"/>
+      <stop offset="25%" stop-color="#cc3300" stop-opacity="0.85"/>
+      <stop offset="55%" stop-color="#882200" stop-opacity="0.6"/>
+      <stop offset="100%" stop-color="#220800" stop-opacity="0.0"/>
+    </radialGradient>
+    <!-- Hot inner ring glow -->
+    <radialGradient id="innerGlow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%"  stop-color="#ffffff" stop-opacity="0.0"/>
+      <stop offset="35%" stop-color="#ffcc66" stop-opacity="0.6"/>
+      <stop offset="55%" stop-color="#ff6600" stop-opacity="0.4"/>
+      <stop offset="70%" stop-color="#440000" stop-opacity="0.1"/>
+      <stop offset="100%" stop-color="#000000" stop-opacity="0.0"/>
+    </radialGradient>
+    <!-- Shadow (event horizon) -->
+    <radialGradient id="shadow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%"  stop-color="#000000" stop-opacity="1.0"/>
+      <stop offset="80%" stop-color="#000000" stop-opacity="1.0"/>
+      <stop offset="100%" stop-color="#000000" stop-opacity="0.0"/>
+    </radialGradient>
+    <!-- Lensing halo -->
+    <radialGradient id="lensHalo" cx="50%" cy="50%" r="50%">
+      <stop offset="0%"  stop-color="#000000" stop-opacity="0.0"/>
+      <stop offset="55%" stop-color="#ff9922" stop-opacity="0.0"/>
+      <stop offset="72%" stop-color="#ffcc44" stop-opacity="0.35"/>
+      <stop offset="85%" stop-color="#ff6600" stop-opacity="0.15"/>
+      <stop offset="100%" stop-color="#000000" stop-opacity="0.0"/>
+    </radialGradient>
+    <filter id="blur3" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="3"/>
+    </filter>
+    <filter id="blur6" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="6"/>
+    </filter>
+    <clipPath id="diskClip">
+      <ellipse cx="200" cy="150" rx="185" ry="52"/>
+    </clipPath>
+  </defs>
+
+  <!-- Background -->
+  <rect width="400" height="300" fill="url(#bg)"/>
+
+  <!-- Scattered stars -->
+  <g fill="white" opacity="0.7">
+    <circle cx="30"  cy="20"  r="0.8"/>
+    <circle cx="370" cy="40"  r="1.0"/>
+    <circle cx="60"  cy="270" r="0.7"/>
+    <circle cx="340" cy="250" r="0.9"/>
+    <circle cx="15"  cy="150" r="0.6"/>
+    <circle cx="385" cy="180" r="0.8"/>
+    <circle cx="120" cy="30"  r="1.1"/>
+    <circle cx="280" cy="260" r="0.7"/>
+    <circle cx="350" cy="120" r="0.9"/>
+    <circle cx="50"  cy="200" r="0.6"/>
+    <circle cx="190" cy="10"  r="0.8"/>
+    <circle cx="310" cy="290" r="1.0"/>
+  </g>
+
+  <!-- Disk lower half (behind shadow) -->
+  <ellipse cx="200" cy="150" rx="185" ry="52" fill="#1a0800" opacity="0.5"/>
+
+  <!-- Disk body — left (blue-shifted) half -->
+  <ellipse cx="200" cy="150" rx="185" ry="52"
+           fill="url(#diskLeft)" filter="url(#blur3)"/>
+
+  <!-- Disk body — right (red-shifted) half -->
+  <ellipse cx="200" cy="150" rx="185" ry="52"
+           fill="url(#diskRight)" filter="url(#blur3)"/>
+
+  <!-- Inner hot ring glow -->
+  <ellipse cx="200" cy="150" rx="72" ry="20"
+           fill="url(#innerGlow)" filter="url(#blur6)"/>
+
+  <!-- Photon ring / gravitational lensing halo -->
+  <ellipse cx="200" cy="150" rx="52" ry="15"
+           fill="none" stroke="#ffcc44" stroke-width="2.5" opacity="0.5"
+           filter="url(#blur3)"/>
+
+  <!-- Event horizon shadow (dark circle) -->
+  <circle cx="200" cy="150" r="38" fill="black"/>
+  <!-- Subtle shadow gradient edge -->
+  <circle cx="200" cy="150" r="48" fill="url(#shadow)"/>
+
+  <!-- Top arc of disk (foreground, crosses in front of shadow) -->
+  <path d="M 15 150 Q 200 98 385 150" fill="none"
+        stroke="#ffaa44" stroke-width="3" opacity="0.5" filter="url(#blur3)"/>
+  <path d="M 80 143 Q 200 108 320 143" fill="none"
+        stroke="#ffffff" stroke-width="1.5" opacity="0.35"/>
+</svg>
