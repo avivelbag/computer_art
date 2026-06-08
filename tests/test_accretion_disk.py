@@ -3,8 +3,6 @@ import json
 import pathlib
 import re
 
-import pytest
-
 REPO = pathlib.Path(__file__).parent.parent
 PIECE_DIR = REPO / "pieces" / "280-accretion-disk"
 INDEX_HTML = PIECE_DIR / "index.html"

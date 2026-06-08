@@ -127,11 +127,11 @@ void main() {
   // Radial temperature profile: T ∝ r^(-3/4), normalised so peak ≈ 1 at rInner
   float tProfile = pow(rInner / rDisk, 0.75);
 
-  // Keplerian velocity: v ∝ r^(-1/2).  Approaching side: sin(phi) > 0 → blue.
-  // sin(phi) maps φ∈[-π,π] so left half (cos>0) goes toward viewer.
+  // Keplerian velocity: v ∝ r^(-1/2).  Camera is in the y-z plane at 20° inclination,
+  // so line-of-sight velocity ∝ cos(phi).  Negate: left (phi≈π) → blue, right (phi≈0) → red.
   // Doppler factor d∈[0,1]: 0 = full red-shift, 1 = full blue-shift.
   float vKep   = pow(rInner / rDisk, 0.5);  // relative velocity magnitude
-  float dopplerShift = sin(phi) * vKep * 0.6;  // [-0.6, 0.6]
+  float dopplerShift = -cos(phi) * vKep * 0.6;  // left=blue, right=red
   float dopplerT = clamp(dopplerShift * 0.5 + 0.5, 0.0, 1.0);  // [0, 1]
 
   // Time-varying plasma turbulence via FBM noise
