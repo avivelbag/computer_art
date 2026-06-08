@@ -152,7 +152,7 @@ def test_html_no_external_libraries():
 
 # ── Associated Legendre polynomial reference implementation ───────────────────
 
-def _Plm(l, m, x):
+def _Plm(deg, m, x):
     """Python reference implementation matching the JS Plm function."""
     pmm = 1.0
     if m > 0:
@@ -161,30 +161,30 @@ def _Plm(l, m, x):
         for _ in range(1, m + 1):
             pmm *= -f * s
             f += 2.0
-    if l == m:
+    if deg == m:
         return pmm
     pmmp1 = x * (2 * m + 1) * pmm
-    if l == m + 1:
+    if deg == m + 1:
         return pmmp1
     pll = 0.0
-    for ll in range(m + 2, l + 1):
+    for ll in range(m + 2, deg + 1):
         pll = ((2*ll-1)*x*pmmp1 - (ll+m-1)*pmm) / (ll-m)
         pmm, pmmp1 = pmmp1, pll
     return pll
 
 
-def _Klm(l, m):
+def _Klm(deg, m):
     am = abs(m)
     r = 1.0
-    for i in range(l - am + 1, l + am + 1):
+    for i in range(deg - am + 1, deg + am + 1):
         r /= i
-    return math.sqrt((2*l+1) / (4*math.pi) * r)
+    return math.sqrt((2*deg+1) / (4*math.pi) * r)
 
 
-def _Ylm(l, m, theta, phi):
+def _Ylm(deg, m, theta, phi):
     am = abs(m)
-    K = _Klm(l, m)
-    P = _Plm(l, am, math.cos(theta))
+    K = _Klm(deg, m)
+    P = _Plm(deg, am, math.cos(theta))
     if m == 0:
         return K * P
     if m > 0:
@@ -252,15 +252,15 @@ def test_Ylm_Y43_has_eight_phi_lobes():
 
 def test_Ylm_negative_m_rotated_vs_positive():
     """Y_l^{-m} and Y_l^m are related by a 90° phase rotation in phi."""
-    l, m = 3, 2
+    deg, m = 3, 2
     theta = 0.8
     phi = 1.1
-    pos = _Ylm(l, m, theta, phi)
-    neg = _Ylm(l, -m, theta, phi)
+    pos = _Ylm(deg, m, theta, phi)
+    neg = _Ylm(deg, -m, theta, phi)
     # They use cos vs sin: Y_3^2 = √2·K·cos(2φ)·P, Y_3^{-2} = √2·K·sin(2φ)·P
     # Sum of squares should equal 2K²P² (Pythagorean identity)
-    K = _Klm(l, m)
-    P = _Plm(l, m, math.cos(theta))
+    K = _Klm(deg, m)
+    P = _Plm(deg, m, math.cos(theta))
     expected_sum_sq = 2 * K**2 * P**2
     actual_sum_sq = pos**2 + neg**2
     assert abs(actual_sum_sq - expected_sum_sq) < 1e-10
@@ -270,37 +270,37 @@ def test_Ylm_negative_m_rotated_vs_positive():
 
 def test_Ylm_at_poles():
     """At the poles (sin θ = 0) all harmonics with m≠0 must vanish."""
-    for l in range(1, 6):
-        for m in range(-l, l+1):
+    for deg in range(1, 6):
+        for m in range(-deg, deg+1):
             if m == 0:
                 continue
-            val_north = _Ylm(l, m, 0.0, 1.234)
-            val_south = _Ylm(l, m, math.pi, 1.234)
-            assert abs(val_north) < 1e-9, f"Y_{l}^{m} non-zero at north pole"
-            assert abs(val_south) < 1e-9, f"Y_{l}^{m} non-zero at south pole"
+            val_north = _Ylm(deg, m, 0.0, 1.234)
+            val_south = _Ylm(deg, m, math.pi, 1.234)
+            assert abs(val_north) < 1e-9, f"Y_{deg}^{m} non-zero at north pole"
+            assert abs(val_south) < 1e-9, f"Y_{deg}^{m} non-zero at south pole"
 
 
 def test_Ylm_high_l_finite():
     """High-order harmonics (l=6) must produce finite values everywhere."""
-    for l in [5, 6]:
-        for m in range(-l, l+1):
+    for deg in [5, 6]:
+        for m in range(-deg, deg+1):
             for theta in [0.01, math.pi/4, math.pi/2, math.pi - 0.01]:
                 for phi in [0.0, math.pi, 2*math.pi - 0.01]:
-                    v = _Ylm(l, m, theta, phi)
-                    assert math.isfinite(v), f"Y_{l}^{m}({theta},{phi}) is not finite"
+                    v = _Ylm(deg, m, theta, phi)
+                    assert math.isfinite(v), f"Y_{deg}^{m}({theta},{phi}) is not finite"
 
 
 def test_displacement_always_positive():
     """Radial displacement r = 1 + SCALE*|Y| must always be >= 1."""
     SCALE = 0.55
-    for l, m in [(1,0),(2,1),(3,2),(4,0),(4,3)]:
+    for deg, m in [(1,0),(2,1),(3,2),(4,0),(4,3)]:
         for i in range(20):
             theta = i * math.pi / 20
             for j in range(20):
                 phi = j * 2 * math.pi / 20
-                y = _Ylm(l, m, theta, phi)
+                y = _Ylm(deg, m, theta, phi)
                 r = 1 + SCALE * abs(y)
-                assert r >= 1.0, f"r={r} < 1 for Y_{l}^{m}"
+                assert r >= 1.0, f"r={r} < 1 for Y_{deg}^{m}"
 
 
 # ── Failure-mode tests ────────────────────────────────────────────────────────
