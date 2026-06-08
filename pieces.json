@@ -1198,5 +1198,15 @@
     "path": "pieces/285-sand-pendulum",
     "thumbnail": "pieces/285-sand-pendulum/thumbnail.png",
     "description": "A conical sand pendulum scatters 35 grains per frame in a Gaussian cloud around its instantaneous tip position. No canvas clear is ever called, so grains accumulate into a thickening Lissajous trace — brightest and most ochre where the path passes most often, fading to dusty rose at the scattered edges. Both amplitudes decay at 0.9995 per frame; when the oscillation shrinks below 2 px a 60-frame umber veil dissolves the image before the piece resets with the next curated frequency ratio. Five ratios cycle in sequence — 3:2, 4:3, 5:4, 5:3, 7:4 — producing closed trefoil, quatrefoil, and higher-order Lissajous figures, each with a different initial phase to vary the visual orientation."
+  },
+  {
+    "id": "286-hat-monotile",
+    "title": "The Spectre's Floor",
+    "tagline": "Aperiodic Hat monotile tiling grown by 4 levels of substitution inflation — the first proven single-shape aperiodic tessellation colored by substitution role",
+    "year": 2026,
+    "technique": "canvas 2D / Hat monotile / substitution inflation / affine transforms / triangular lattice",
+    "path": "pieces/286-hat-monotile",
+    "thumbnail": "pieces/286-hat-monotile/thumbnail.svg",
+    "description": "The Hat monotile (Smith, Myers, Kaplan & Goodman-Strauss 2023) is the first single shape proven to tile the plane aperiodically using only itself and its mirror image. Starting from one large Hat, 4 levels of the substitution rule recursively replace each tile with 5 children (scaled by 1/(1+√3)), building a patch of hundreds of interlocking 13-sided polyhexes. Each leaf tile is colored by its substitution role — terracotta (H), sandy (T), slate (F), or cream (P) — so the self-similar hierarchical structure is legible in color. A gentle Lissajous-phase viewport drift over 40 seconds reveals additional aperiodic structure. All geometry is computed from first principles: Hat vertices in triangular-grid coordinates converted to Cartesian, child placements tracked as composed affine transforms through the recursion tree."
   }
 ]
