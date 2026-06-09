@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Ancient Glaze</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { background: #e8dfc8; display: flex; justify-content: center; align-items: center; min-height: 100vh; overflow: hidden; }
+    canvas { display: block; }
+  </style>
+</head>
+<body>
+  <canvas id="c"></canvas>
+  <script>
+    const W = 800, H = 800;
+    const BG = '#e8dfc8', CRACK = '#3d2b1a';
+    const N_SEEDS = 6, PIXELS_PER_FRAME = 200, NOISE_DIM = 64;
+
+    // Seeded LCG so each reload is identical
+    let rng = 0xdeadbeef;
+    function rand() {
+      rng = (Math.imul(rng, 1664525) + 1013904223) >>> 0;
+      return rng / 0x100000000;
+    }
+
+    // 64×64 value-noise table for grain-angle bias
+    const noiseGrid = new Float32Array(NOISE_DIM * NOISE_DIM);
+    for (let i = 0; i < noiseGrid.length; i++) noiseGrid[i] = rand() * 2 - 1;
+
+    function sampleNoise(x, y) {
+      const tx = x / W * NOISE_DIM, ty = y / H * NOISE_DIM;
+      const ix = Math.floor(tx) % NOISE_DIM, iy = Math.floor(ty) % NOISE_DIM;
+      const fx = tx - Math.floor(tx),       fy = ty - Math.floor(ty);
+      const nx = (ix + 1) % NOISE_DIM,      ny = (iy + 1) % NOISE_DIM;
+      const v00 = noiseGrid[iy * NOISE_DIM + ix], v10 = noiseGrid[iy * NOISE_DIM + nx];
+      const v01 = noiseGrid[ny * NOISE_DIM + ix], v11 = noiseGrid[ny * NOISE_DIM + nx];
+      return v00*(1-fx)*(1-fy) + v10*fx*(1-fy) + v01*(1-fx)*fy + v11*fx*fy;
+    }
+
+    const canvas = document.getElementById('c');
+    canvas.width = W; canvas.height = H;
+    const ctx = canvas.getContext('2d');
+    ctx.fillStyle = BG;
+    ctx.fillRect(0, 0, W, H);
+
+    // Occupancy grid: 0 = empty, 1 = crack
+    const grid = new Uint8Array(W * H);
+    let live = [];
+
+    function spawn(x, y, angle) {
+      live.push({ x, y, angle, alive: true });
+    }
+
+    for (let i = 0; i < N_SEEDS; i++) {
+      spawn(rand() * W, rand() * H, rand() * Math.PI * 2);
+    }
+
+    function stepSeed(s) {
+      // Bias heading by ±0.05 rad (~±3°) sampled from the grain noise field
+      s.angle += sampleNoise(s.x, s.y) * 0.05;
+      const nx = s.x + Math.cos(s.angle), ny = s.y + Math.sin(s.angle);
+      const px = Math.round(nx), py = Math.round(ny);
+
+      if (px < 0 || px >= W || py < 0 || py >= H) {
+        s.alive = false;
+        return;
+      }
+
+      if (grid[py * W + px]) {
+        // Contact: die and spawn a perpendicular offspring with ±5° jitter
+        s.alive = false;
+        const jitter = (rand() - 0.5) * 0.17453;
+        spawn(px, py, s.angle + (rand() < 0.5 ? 1 : -1) * Math.PI / 2 + jitter);
+      } else {
+        grid[py * W + px] = 1;
+        ctx.moveTo(s.x, s.y);
+        ctx.lineTo(nx, ny);
+        s.x = nx; s.y = ny;
+      }
+    }
+
+    let done = false;
+
+    function tick() {
+      if (done) return;
+      // Snapshot alive seeds so newly spawned ones start next frame
+      const cur = live.slice();
+      if (!cur.length) { done = true; return; }
+      // Distribute PIXELS_PER_FRAME evenly across alive seeds
+      const reps = Math.max(1, Math.ceil(PIXELS_PER_FRAME / cur.length));
+      ctx.strokeStyle = CRACK;
+      ctx.lineWidth = 1.5;
+      ctx.lineCap = 'round';
+      ctx.beginPath();
+      for (const s of cur) {
+        for (let i = 0; i < reps; i++) {
+          if (!s.alive) break;
+          stepSeed(s);
+        }
+      }
+      ctx.stroke();
+      live = live.filter(s => s.alive);
+      requestAnimationFrame(tick);
+    }
+
+    tick();
+  </script>
+</body>
+</html>
