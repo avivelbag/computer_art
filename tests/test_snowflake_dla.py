@@ -6,11 +6,8 @@ used in the thumbnail generator, and the D6 symmetry logic.
 import json
 import math
 import pathlib
-import sys
 
 import importlib.util
-
-import pytest
 
 REPO = pathlib.Path(__file__).parent.parent
 PIECE_DIR = REPO / "pieces" / "291-crystalline"
