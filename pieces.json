@@ -1318,5 +1318,15 @@
     "path": "pieces/296-ammann-beenker",
     "thumbnail": "pieces/296-ammann-beenker/thumbnail.svg",
     "description": "An aperiodic Ammann-Beenker tiling built by five rounds of substitution deflation from an 8-rhombus octagonal seed. Two prototiles — a square and a 45°/135° rhombus sharing the same edge length — tile the plane under the silver ratio δ = 1+√2 ≈ 2.414: each square deflates into a central square plus four corner rhombi; each rhombus deflates into a central rhombus, two squares at the acute vertices, and two rhombi at the obtuse vertices. Starting from the 8-fold symmetric seed, all five deflation steps preserve exact D₈ dihedral symmetry at the center. After 5 deflations the canvas holds ~21 000 tiles: squares in deep ochre (#c8882a), rhombi in slate blue (#3a5a8a), on warm cream (#f5f0e8), with thin dark (#1a1a1a) lines delineating every edge. No external libraries; substitution math under 200 lines of JavaScript."
+  },
+  {
+    "id": "297-hopf-fibration",
+    "title": "Rings of the Fourth",
+    "tagline": "252 Hopf fibers — circles in S³ stereographically projected into R³ — form nested glowing tori that rotate slowly on a near-black canvas, colored from cool blue-green at the poles to warm amber at the equator",
+    "year": 2026,
+    "technique": "canvas 2D / Hopf fibration / S³ fiber parametrization / stereographic projection / perspective 3D / painter's algorithm",
+    "path": "pieces/297-hopf-fibration",
+    "thumbnail": "pieces/297-hopf-fibration/thumbnail.svg",
+    "description": "The Hopf fibration η: S³ → S² maps the 3-sphere onto S² so every point on S² has exactly one circle as its preimage. For each of 252 base points sampled on S² via 14 latitudes × 18 longitudes, the preimage circle is parametrized in S³ as q(t)=(cos(φ/2)e^{i(t+θ/2)}, sin(φ/2)e^{i(t−θ/2)}), then stereographically projected to R³ by (a,b,c,d)→(a,b,c)/(1−d). Fibers at the same latitude lie on a torus in R³; the nested tori are depth-sorted back-to-front each frame (painter's algorithm) and drawn as semi-transparent polylines at alpha ≈ 0.6. A continuous Y-axis rotation of one revolution per 20 seconds reveals the interlocked ring structure from every azimuth. Color interpolates by |cos(φ)|: cool blue-green (#2a8a9f) at the poles, warm amber (#d4832a) at the equator."
   }
 ]
