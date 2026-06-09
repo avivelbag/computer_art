@@ -1288,5 +1288,15 @@
     "path": "pieces/293-substrate-cracks",
     "thumbnail": "pieces/293-substrate-cracks/thumbnail.svg",
     "description": "Six seeds scatter across an 800×800 canvas at random positions and angles. Each crack tip advances one pixel per step along its heading, with the angle biased by ±3° from a precomputed 64×64 value-noise grain field (bilinearly interpolated) for organic waviness. On contact with an existing crack, the arriving tip dies and spawns a perpendicular offspring with ±5° jitter at the contact point. Growth continues until no seeds remain, producing a cracked-ceramic-glaze pattern in deep umber (#3d2b1a) on aged parchment (#e8dfc8)."
+  },
+  {
+    "id": "294-rose-window",
+    "title": "Cathedral Light",
+    "tagline": "A Gothic rose window under D12 dihedral symmetry — three concentric rings of trefoil petals and lancet arches filled with ruby, cobalt, gold, emerald, violet, and amber on near-black",
+    "year": 2026,
+    "technique": "SVG / D12 dihedral symmetry / annular sectors / lancet arch paths / stained-glass palette",
+    "path": "pieces/294-rose-window",
+    "thumbnail": "pieces/294-rose-window/thumbnail.svg",
+    "description": "A purely mathematical construction of a Gothic rose window. A gold centre disc at radius 60 is surrounded by three concentric rings under 12-fold rotational and reflective symmetry: Ring 1 (r 60–160) holds 12 trefoil-style annular petals alternating ruby and cobalt; Ring 2 (r 160–280) holds 24 quatrefoil lobes cycling through emerald, violet, and amber; Ring 3 (r 280–400) holds 12 lancet arches each subdivided into an inner sliver and a pointed outer body, 4-coloured with ruby, cobalt, gold, and emerald so that no two adjacent regions share the same colour. Dark gray lead lines (#222) separate every region, mimicking the leaded caming of stained glass."
   }
 ]
