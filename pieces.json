@@ -1358,5 +1358,15 @@
     "path": "pieces/300-marble-veins-noise",
     "thumbnail": "pieces/300-marble-veins-noise/thumbnail.svg",
     "description": "Classic generative marble implemented as a WebGL fragment shader. Each pixel samples a 4-octave turbulence field: a deterministic 3D hash on the integer lattice is bilinearly interpolated with Hermite smoothing, then four octaves are summed with halved amplitude and doubled frequency each time; abs() folds the centered noise at zero, producing the cusped banding geology of real stone. The vein value v = sin(uv.x × 3 + turbulence(uv × 4, z) × 8) maps that turbulence onto a sinusoidal marble pattern. Two smoothstep bands paint the Calacatta palette: primary veins near |v| = 1 receive deep charcoal (#2a2520), secondary veins near |v| = 0.7 receive warm taupe (#9e8e7a), and the base is ivory (#f5f0e8). The third noise coordinate z drifts at 0.3 units/second, making the stone appear to breathe. A CPU ImageData fallback at 400×400 uses the same formula in JavaScript when WebGL is unavailable. No external libraries."
+  },
+  {
+    "id": "301-burning-ship",
+    "title": "The Wreck Below",
+    "tagline": "The Burning Ship fractal — absolute-value folds create angular flame tendrils; smooth colouring through deep indigo, amber, and pale cream; idle drift-zoom into the mast tip",
+    "year": 2026,
+    "technique": "WebGL / Burning Ship fractal / smooth iteration colouring / GLSL fragment shader",
+    "path": "pieces/301-burning-ship",
+    "thumbnail": "pieces/301-burning-ship/thumbnail.png",
+    "description": "The Burning Ship fractal iterates z_{n+1} = (|Re z_n| + i|Im z_n|)² + c — identical to the Mandelbrot set except both components are forced positive before squaring. This single change folds the complex plane with absolute values each step, producing the famous asymmetric 'ship' silhouette with angular, flame-shaped masts that look unlike any other fractal. A WebGL fragment shader runs up to 256 iterations per pixel; the smooth (continuous) iteration count nu = n − log₂(log₂|z|) eliminates discrete banding rings. The smooth count drives a 3-stop gradient: deep indigo #0d0221 → amber #e07b00 → pale cream #fff8e7; non-escaping interior points are near-black #050008. The initial view centres on the classic full ship (Re ∈ [−2.0, 1.0], Im ∈ [−1.8, 0.1]). An idle drift zoom slowly approaches a mast tip at Re ≈ −0.52, Im ≈ −0.62, resetting when zoom exceeds 200×. Pan by click-drag, zoom by scroll wheel; current view is encoded in the URL hash for sharing. No external libraries."
   }
 ]

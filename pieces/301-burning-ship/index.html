@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>The Wreck Below — Burning Ship Fractal</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { background: #050008; overflow: hidden; }
+    canvas { display: block; width: 100vw; height: 100vh; }
+    #info {
+      position: fixed; bottom: 12px; left: 50%; transform: translateX(-50%);
+      color: rgba(255,255,255,0.35); font: 11px/1.4 monospace;
+      pointer-events: none; text-align: center;
+    }
+  </style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="info">drag to pan · scroll to zoom</div>
+
+<script id="vert" type="x-shader/x-vertex">
+attribute vec2 aPos;
+void main() { gl_Position = vec4(aPos, 0.0, 1.0); }
+</script>
+
+<script id="frag" type="x-shader/x-fragment">
+precision highp float;
+
+uniform vec2  uRes;
+uniform vec2  uCenter;
+uniform float uScale;
+
+const int   MAX_ITER = 256;
+const float ESCAPE   = 4.0;
+
+/* Map smooth iteration count in [0,256] to the 3-stop gradient:
+   #0d0221 (deep indigo) → #e07b00 (amber) → #fff8e7 (pale cream)
+   Interior (#050008) is returned when escaped==false. */
+vec3 palette(float t) {
+  vec3 indigo = vec3(0.051, 0.008, 0.129);
+  vec3 amber  = vec3(0.878, 0.482, 0.0);
+  vec3 cream  = vec3(1.0,   0.973, 0.906);
+  if (t < 0.3) {
+    float s = t / 0.3;
+    return mix(indigo, amber, smoothstep(0.0, 1.0, s));
+  } else {
+    float s = (t - 0.3) / 0.7;
+    return mix(amber, cream, smoothstep(0.0, 1.0, s));
+  }
+}
+
+void main() {
+  float aspect = uRes.x / uRes.y;
+  vec2 uv = gl_FragCoord.xy / uRes;
+  /* Map fragment to complex plane; y flipped so ship appears upright */
+  vec2 c = uCenter + (uv - 0.5) * uScale * vec2(aspect, -1.0);
+
+  vec2 z = vec2(0.0);
+  float n = 0.0;
+  bool escaped = false;
+
+  for (int i = 0; i < MAX_ITER; i++) {
+    /* Burning Ship fold: take absolute values before squaring */
+    z = vec2(abs(z.x), abs(z.y));
+    z = vec2(z.x*z.x - z.y*z.y + c.x,
+             2.0*z.x*z.y         + c.y);
+    if (dot(z, z) > ESCAPE) {
+      n = float(i);
+      escaped = true;
+      break;
+    }
+  }
+
+  if (!escaped) {
+    gl_FragColor = vec4(0.020, 0.0, 0.031, 1.0); /* near-black #050008 */
+    return;
+  }
+
+  /* Smooth (continuous) iteration count — eliminates discrete banding */
+  float nu = n - log2(log2(length(z)));
+  float t  = clamp(nu / 256.0, 0.0, 1.0);
+
+  gl_FragColor = vec4(palette(t), 1.0);
+}
+</script>
+
+<script>
+const canvas = document.getElementById('c');
+const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+
+function mkShader(type, src) {
+  const sh = gl.createShader(type);
+  gl.shaderSource(sh, src);
+  gl.compileShader(sh);
+  if (!gl.getShaderParameter(sh, gl.COMPILE_STATUS))
+    console.error(gl.getShaderInfoLog(sh));
+  return sh;
+}
+
+const prog = gl.createProgram();
+gl.attachShader(prog, mkShader(gl.VERTEX_SHADER,   document.getElementById('vert').textContent));
+gl.attachShader(prog, mkShader(gl.FRAGMENT_SHADER, document.getElementById('frag').textContent));
+gl.linkProgram(prog);
+gl.useProgram(prog);
+
+const buf = gl.createBuffer();
+gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+gl.bufferData(gl.ARRAY_BUFFER,
+  new Float32Array([-1,-1, 1,-1, -1,1, 1,-1, 1,1, -1,1]),
+  gl.STATIC_DRAW);
+
+const aPos    = gl.getAttribLocation(prog, 'aPos');
+gl.enableVertexAttribArray(aPos);
+gl.vertexAttribPointer(aPos, 2, gl.FLOAT, false, 0, 0);
+
+const uRes    = gl.getUniformLocation(prog, 'uRes');
+const uCenter = gl.getUniformLocation(prog, 'uCenter');
+const uScale  = gl.getUniformLocation(prog, 'uScale');
+
+/* Initial view: Re ∈ [−2.0, 1.0], Im ∈ [−1.8, 0.1] (aspect-corrected via shader) */
+const INIT_CX    = -0.5;
+const INIT_CY    = -0.85;
+const INIT_SCALE = 2.8;    /* half-height span covers ≈2.8 units on Im axis */
+
+/* Drift zoom target: an interesting mast-tip on the main hull */
+const ZOOM_TARGET_X = -0.52;
+const ZOOM_TARGET_Y = -0.62;
+const ZOOM_FACTOR   = 0.998; /* per-frame scale multiplier ≈ 0.12× per 200 frames */
+const MIN_SCALE     = INIT_SCALE * 1e-4; /* reset threshold: 200× zoom from initial */
+
+let cx = INIT_CX, cy = INIT_CY, scale = INIT_SCALE;
+let dragging = false, lastX = 0, lastY = 0;
+
+function readHash() {
+  const h = location.hash.slice(1);
+  if (!h) return;
+  const parts = h.split(',');
+  if (parts.length === 3) {
+    const nx = parseFloat(parts[0]);
+    const ny = parseFloat(parts[1]);
+    const ns = parseFloat(parts[2]);
+    if (isFinite(nx) && isFinite(ny) && isFinite(ns) && ns > 0) {
+      cx = nx; cy = ny; scale = ns;
+    }
+  }
+}
+
+function writeHash() {
+  location.replace('#' + cx.toFixed(10) + ',' + cy.toFixed(10) + ',' + scale.toExponential(6));
+}
+
+function resize() {
+  canvas.width  = window.innerWidth;
+  canvas.height = window.innerHeight;
+  gl.viewport(0, 0, canvas.width, canvas.height);
+  gl.uniform2f(uRes, canvas.width, canvas.height);
+}
+window.addEventListener('resize', resize);
+resize();
+readHash();
+
+canvas.addEventListener('mousedown', e => {
+  dragging = true;
+  lastX = e.clientX;
+  lastY = e.clientY;
+});
+window.addEventListener('mouseup',   () => { dragging = false; });
+window.addEventListener('mousemove', e => {
+  if (!dragging) return;
+  const dx = e.clientX - lastX;
+  const dy = e.clientY - lastY;
+  lastX = e.clientX;
+  lastY = e.clientY;
+  /* Convert pixel delta to complex-plane delta */
+  const aspect = canvas.width / canvas.height;
+  cx -= dx / canvas.height * scale * aspect;
+  cy += dy / canvas.height * scale;  /* +y because Im flipped in shader */
+  writeHash();
+});
+
+canvas.addEventListener('wheel', e => {
+  e.preventDefault();
+  const factor = e.deltaY > 0 ? 1.15 : 1 / 1.15;
+  /* Zoom toward mouse cursor position */
+  const rect   = canvas.getBoundingClientRect();
+  const mx     = (e.clientX - rect.left) / canvas.height;
+  const my     = (e.clientY - rect.top)  / canvas.height;
+  const aspect = canvas.width / canvas.height;
+  cx += (mx - 0.5 * aspect) * scale * (factor - 1.0);
+  cy -= (my - 0.5)           * scale * (factor - 1.0);
+  scale *= factor;
+  writeHash();
+}, { passive: false });
+
+/* Idle drift zoom: slowly approach the zoom target, reset when too deep */
+function tickDrift() {
+  if (dragging) return;
+  /* Interpolate center toward zoom target */
+  cx    += (ZOOM_TARGET_X - cx) * 0.0005;
+  cy    += (ZOOM_TARGET_Y - cy) * 0.0005;
+  scale *= ZOOM_FACTOR;
+  if (scale < MIN_SCALE) {
+    cx = INIT_CX; cy = INIT_CY; scale = INIT_SCALE;
+  }
+}
+
+function frame() {
+  tickDrift();
+  gl.uniform2f(uCenter, cx, cy);
+  gl.uniform1f(uScale,  scale);
+  gl.drawArrays(gl.TRIANGLES, 0, 6);
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>
