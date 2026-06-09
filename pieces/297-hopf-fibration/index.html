@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Rings of the Fourth</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#0a0a12;overflow:hidden;display:flex;align-items:center;justify-content:center;min-height:100vh}
+canvas{display:block;width:min(100vw,100vh);height:min(100vw,100vh)}
+</style>
+</head>
+<body>
+<canvas id="c" width="800" height="800"></canvas>
+<script>
+const W=800,H=800,CX=400,CY=400;
+const FOV=380,CAM_D=3.5;
+const N_LAT=14,N_LON=18,N_PTS=64;
+const PHI_MIN=Math.PI/12,PHI_MAX=Math.PI*11/12; // 15° … 165°
+const PERIOD=20000; // ms per full Y-axis rotation
+
+// Amber (#d4832a) at equator, teal (#2a8a9f) at poles
+const AMBER=[212,131,42];
+const TEAL=[42,138,159];
+
+function lerp(a,b,t){return a+(b-a)*t;}
+
+/** Interpolate between amber (equator) and teal (poles) by |cos(phi)|. */
+function fiberColor(phi){
+  const t=Math.abs(Math.cos(phi));
+  return[lerp(AMBER[0],TEAL[0],t)|0,lerp(AMBER[1],TEAL[1],t)|0,lerp(AMBER[2],TEAL[2],t)|0];
+}
+
+/**
+ * Hopf fiber: for base point (phi, theta) on S², return the S³ point at
+ * parameter t. Formula: q = (cos(phi/2)e^{i(t+theta/2)}, sin(phi/2)e^{i(t-theta/2)})
+ * expressed as four real components (a, b, c, d).
+ * Verification: Hopf map h(a,b,c,d)=(2(ac+bd), 2(bc-ad), a²+b²-c²-d²) equals
+ * (sin(phi)cos(theta), sin(phi)sin(theta), cos(phi)) for all t.
+ */
+function hopfFiber(phi,theta,t){
+  const hp=phi/2,ht=theta/2;
+  const chp=Math.cos(hp),shp=Math.sin(hp);
+  return[chp*Math.cos(t+ht),chp*Math.sin(t+ht),shp*Math.cos(t-ht),shp*Math.sin(t-ht)];
+}
+
+/**
+ * Stereographic projection from S³ (subset of R⁴) to R³.
+ * Projects from the south pole (0,0,0,1): (a,b,c,d) → (a,b,c)/(1-d).
+ * Returns null when d is too close to 1 (near the projection pole).
+ */
+function stereoProj([a,b,c,d]){
+  if(d>0.999)return null;
+  const f=1/(1-d);
+  return[a*f,b*f,c*f];
+}
+
+/** Rotate 3D point around the Y-axis by angle given as (cos, sin) pair. */
+function rotY([x,y,z],ca,sa){return[x*ca+z*sa,y,-x*sa+z*ca];}
+
+/**
+ * Perspective projection from R³ to canvas pixels.
+ * Camera sits at (0,0,-CAM_D) looking at origin; screen is at z=0.
+ * Points behind the camera or too far off canvas return null.
+ */
+function project([x,y,z]){
+  const dz=z+CAM_D;
+  if(dz<0.05)return null;
+  const sx=CX+FOV*x/dz,sy=CY-FOV*y/dz;
+  if(Math.abs(sx-CX)>W*4||Math.abs(sy-CY)>H*4)return null;
+  return[sx,sy];
+}
+
+// Precompute all fiber 3D points (before rotation) once at startup.
+const fibers=[];
+for(let li=0;li<N_LAT;li++){
+  const phi=PHI_MIN+(PHI_MAX-PHI_MIN)*li/(N_LAT-1);
+  const color=fiberColor(phi);
+  for(let lo=0;lo<N_LON;lo++){
+    const theta=2*Math.PI*lo/N_LON;
+    const pts=[];
+    for(let i=0;i<=N_PTS;i++){
+      const t=2*Math.PI*i/N_PTS;
+      pts.push(stereoProj(hopfFiber(phi,theta,t)));
+    }
+    fibers.push({pts,color});
+  }
+}
+
+const canvas=document.getElementById('c');
+const ctx=canvas.getContext('2d');
+
+function draw(ts){
+  ctx.fillStyle='#0a0a12';
+  ctx.fillRect(0,0,W,H);
+
+  const angle=(ts%PERIOD)/PERIOD*Math.PI*2;
+  const ca=Math.cos(angle),sa=Math.sin(angle);
+
+  // Rotate all fiber points and compute average depth for depth fading + sorting.
+  const batches=fibers.map(({pts,color})=>{
+    const rots=pts.map(p=>p?rotY(p,ca,sa):null);
+    let zs=0,n=0;
+    for(const r of rots)if(r){zs+=r[2];n++;}
+    return{rots,color,zAvg:n>0?zs/n:0};
+  });
+
+  // Painter's algorithm: draw back-to-front so near fibers overlap far ones.
+  batches.sort((a,b)=>a.zAvg-b.zAvg);
+
+  ctx.lineWidth=1.0;
+  for(const{rots,color,zAvg}of batches){
+    // Depth fading: zAvg ≈ [-2, 2] for the visible scene.
+    const alpha=Math.max(0.1,Math.min(0.6,0.6*(0.35+0.65*Math.max(0,Math.min(1,(zAvg+2)/4)))));
+    const[r,g,b]=color;
+    ctx.strokeStyle=`rgba(${r},${g},${b},${alpha.toFixed(3)})`;
+    ctx.beginPath();
+    let on=false;
+    for(const rv of rots){
+      if(!rv){on=false;continue;}
+      const p2=project(rv);
+      if(!p2){on=false;continue;}
+      const[sx,sy]=p2;
+      if(!on){ctx.moveTo(sx,sy);on=true;}
+      else ctx.lineTo(sx,sy);
+    }
+    ctx.stroke();
+  }
+  requestAnimationFrame(draw);
+}
+
+requestAnimationFrame(draw);
+</script>
+</body>
+</html>
