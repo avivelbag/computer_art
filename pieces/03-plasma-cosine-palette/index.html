@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Liquid Color — Plasma Cosine Palette</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: #000;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+    }
+    canvas { display: block; width: min(800px, 100vmin); height: min(800px, 100vmin); }
+    #btn {
+      margin-top: 0.75rem;
+      padding: 0.4rem 1.4rem;
+      background: rgba(255,255,255,0.12);
+      color: #fff;
+      border: 1px solid rgba(255,255,255,0.25);
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 0.95rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+    #btn:hover { background: rgba(255,255,255,0.22); }
+  </style>
+</head>
+<body>
+  <canvas id="c" width="800" height="800"></canvas>
+  <button id="btn">arctic</button>
+  <script>
+    const W = 800, H = 800, TAU = Math.PI * 2;
+    const ctx = document.getElementById('c').getContext('2d');
+    const img = ctx.createImageData(W, H);
+    const buf = img.data;
+
+    const PALS = {
+      lava:   { a:[0.5,0.1,0.0], b:[0.5,0.4,0.3], c:[1.0,1.0,0.5], d:[0.0,0.2,0.6] },
+      arctic: { a:[0.4,0.5,0.6], b:[0.4,0.4,0.3], c:[1.0,1.0,1.0], d:[0.0,0.1,0.5] },
+    };
+    const KEYS = ['lava', 'arctic'];
+    let idx = 0;
+    let ca=[...PALS.lava.a], cb=[...PALS.lava.b], cc=[...PALS.lava.c], cd=[...PALS.lava.d];
+    let fa=ca.slice(), fb=cb.slice(), fc=cc.slice(), fd=cd.slice();
+    let ta=ca.slice(), tb=cb.slice(), tc=cc.slice(), td=cd.slice();
+    let lf = 1, LF = 60;
+
+    document.getElementById('btn').addEventListener('click', () => {
+      idx = (idx + 1) % 2;
+      const p = PALS[KEYS[idx]];
+      fa=ca.slice(); fb=cb.slice(); fc=cc.slice(); fd=cd.slice();
+      ta=[...p.a]; tb=[...p.b]; tc=[...p.c]; td=[...p.d];
+      lf = 0;
+      document.getElementById('btn').textContent = KEYS[(idx + 1) % 2];
+    });
+
+    function palette(v) {
+      return [0,1,2].map(i => (ca[i] + cb[i] * Math.cos(TAU*(cc[i]*v + cd[i]))) * 255 | 0);
+    }
+
+    let t0 = null;
+    function draw(ts) {
+      if (!t0) t0 = ts;
+      const t = (ts - t0) * 0.001;
+      if (lf < 1) {
+        lf = Math.min(lf + 1/LF, 1);
+        for (let i = 0; i < 3; i++) {
+          ca[i] = fa[i] + (ta[i]-fa[i]) * lf;
+          cb[i] = fb[i] + (tb[i]-fb[i]) * lf;
+          cc[i] = fc[i] + (tc[i]-fc[i]) * lf;
+          cd[i] = fd[i] + (td[i]-fd[i]) * lf;
+        }
+      }
+      for (let py = 0; py < H; py++) {
+        const y = (py/H - 0.5) * 4;
+        for (let px = 0; px < W; px++) {
+          const x = (px/W - 0.5) * 4;
+          const v = Math.sin(x + t)
+                  + Math.sin(y*0.7 + t*1.3)
+                  + Math.sin((x+y)*0.5 + t*0.8)
+                  + Math.sin(Math.sqrt(x*x + y*y)*0.9 - t*1.1);
+          const n = (v + 4) / 8;
+          const [r,g,b] = palette(n);
+          const p = (py*W + px) << 2;
+          buf[p] = r; buf[p+1] = g; buf[p+2] = b; buf[p+3] = 255;
+        }
+      }
+      ctx.putImageData(img, 0, 0);
+      requestAnimationFrame(draw);
+    }
+    requestAnimationFrame(draw);
+  </script>
+</body>
+</html>
