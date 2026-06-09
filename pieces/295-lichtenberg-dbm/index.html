@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Arc &amp; Ether — Electric Discharge Trees</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { background: #08071a; display: flex; align-items: center; justify-content: center; min-height: 100vh; }
+    canvas { display: block; }
+  </style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<script>
+'use strict';
+
+const W = 500, H = 500;
+const CX = W >> 1, CY = H >> 1;
+// branching exponent: higher = more fractal, more tip-dominated growth
+const ETA = 1.5;
+// local Gauss-Seidel relaxation radius and iteration count per growth step
+const LOCAL_R = 22;
+const RELAX_N = 160;
+// segments added per animation frame
+const STEPS_PER_FRAME = 4;
+// frame counts for end-of-cycle pause and fade
+const PAUSE_FRAMES = 60;
+const FADE_FRAMES = 100;
+
+const canvas = document.getElementById('c');
+canvas.width = W; canvas.height = H;
+const ctx = canvas.getContext('2d');
+
+// phi[y*W+x] — electric potential; boundary edges fixed at 1, tree cells at 0
+let phi;
+// tree[y*W+x] — 1 if cell belongs to the growing discharge
+let tree;
+// flat index of each cell's parent in the tree (-1 = none)
+let parent;
+// candidate growth cells: non-tree cells adjacent to at least one tree cell
+let frontier;
+
+const STATE_GROW  = 0;
+const STATE_PAUSE = 1;
+const STATE_FADE  = 2;
+let state = STATE_GROW;
+let timer = 0;
+
+function isEdge(x, y) {
+  return x === 0 || x === W - 1 || y === 0 || y === H - 1;
+}
+
+/**
+ * Initialise phi with a radial approximation: phi = dist(x,y, centre) / max_dist.
+ * Edge cells are fixed at 1 (source electrode); interior starts at the radial
+ * value so local relaxation can converge quickly without a full global solve.
+ */
+function initPhi() {
+  const maxD = Math.sqrt(CX * CX + CY * CY);
+  for (let y = 0; y < H; y++) {
+    for (let x = 0; x < W; x++) {
+      const i = y * W + x;
+      if (isEdge(x, y)) {
+        phi[i] = 1.0;
+      } else {
+        const dx = x - CX, dy = y - CY;
+        phi[i] = Math.sqrt(dx * dx + dy * dy) / maxD;
+      }
+    }
+  }
+}
+
+/**
+ * Mark cell (x,y) as part of the discharge tree: fix phi=0, register non-tree
+ * orthogonal neighbours as new frontier candidates.
+ */
+function addToTree(x, y, parIdx) {
+  const i = y * W + x;
+  tree[i] = 1;
+  phi[i] = 0.0;
+  parent[i] = parIdx;
+  frontier.delete(i);
+  const dx4 = [-1, 1, 0, 0];
+  const dy4 = [ 0, 0,-1, 1];
+  for (let d = 0; d < 4; d++) {
+    const nx = x + dx4[d], ny = y + dy4[d];
+    if (nx >= 0 && nx < W && ny >= 0 && ny < H && !tree[ny * W + nx]) {
+      frontier.add(ny * W + nx);
+    }
+  }
+}
+
+/**
+ * Run RELAX_N Gauss-Seidel sweeps on all non-fixed cells within LOCAL_R pixels
+ * of (ox, oy). Edge cells (phi=1) and tree cells (phi=0) are never updated.
+ * This sparse update keeps each frame within budget instead of solving the
+ * full 500×500 field every step.
+ */
+function relaxAround(ox, oy) {
+  const r2 = LOCAL_R * LOCAL_R;
+  for (let iter = 0; iter < RELAX_N; iter++) {
+    for (let dy = -LOCAL_R; dy <= LOCAL_R; dy++) {
+      for (let dx = -LOCAL_R; dx <= LOCAL_R; dx++) {
+        if (dx * dx + dy * dy > r2) continue;
+        const nx = ox + dx, ny = oy + dy;
+        if (nx <= 0 || nx >= W - 1 || ny <= 0 || ny >= H - 1) continue;
+        const i = ny * W + nx;
+        if (tree[i]) continue;
+        phi[i] = (phi[i - W] + phi[i + W] + phi[i - 1] + phi[i + 1]) * 0.25;
+      }
+    }
+  }
+}
+
+/**
+ * Pick one frontier cell by weighted random sample: probability ∝ phi[i]^ETA.
+ * The ETA exponent amplifies potential differences so cells at branch tips
+ * (higher phi, less electrically screened) win over shielded trunk neighbours.
+ */
+function pickFrontierCell() {
+  const cells = Array.from(frontier);
+  const n = cells.length;
+  const weights = new Float64Array(n);
+  let total = 0;
+  for (let i = 0; i < n; i++) {
+    const p = phi[cells[i]];
+    const w = p > 0 ? Math.pow(p, ETA) : 0;
+    weights[i] = w;
+    total += w;
+  }
+  if (total === 0) return cells[Math.floor(Math.random() * n)];
+  let r = Math.random() * total;
+  for (let i = 0; i < n; i++) {
+    r -= weights[i];
+    if (r <= 0) return cells[i];
+  }
+  return cells[n - 1];
+}
+
+/**
+ * Draw a single branch segment from (x1,y1) to (x2,y2) with two passes:
+ * outer glow in violet (#6040c0, wide stroke + shadowBlur) then bright core
+ * in white-violet (#d0c8ff, narrow stroke).
+ */
+function drawSegment(x1, y1, x2, y2) {
+  ctx.save();
+  ctx.strokeStyle = '#6040c0';
+  ctx.lineWidth = 4;
+  ctx.shadowColor = '#6040c0';
+  ctx.shadowBlur = 14;
+  ctx.lineCap = 'round';
+  ctx.beginPath();
+  ctx.moveTo(x1 + 0.5, y1 + 0.5);
+  ctx.lineTo(x2 + 0.5, y2 + 0.5);
+  ctx.stroke();
+  ctx.restore();
+
+  ctx.save();
+  ctx.strokeStyle = '#d0c8ff';
+  ctx.lineWidth = 1.5;
+  ctx.shadowColor = '#ffffff';
+  ctx.shadowBlur = 4;
+  ctx.lineCap = 'round';
+  ctx.beginPath();
+  ctx.moveTo(x1 + 0.5, y1 + 0.5);
+  ctx.lineTo(x2 + 0.5, y2 + 0.5);
+  ctx.stroke();
+  ctx.restore();
+}
+
+/**
+ * Perform one DBM growth step: select a frontier cell, add it to the tree,
+ * relax the local potential field, and draw the new segment.
+ * Returns true if the new cell lies on the canvas boundary.
+ */
+function growStep() {
+  if (frontier.size === 0) return false;
+  const idx = pickFrontierCell();
+  const x = idx % W, y = (idx / W) | 0;
+
+  // Find the adjacent tree cell that will be this cell's parent
+  let parIdx = -1;
+  const dx4 = [-1, 1, 0, 0];
+  const dy4 = [ 0, 0,-1, 1];
+  for (let d = 0; d < 4; d++) {
+    const nx = x + dx4[d], ny = y + dy4[d];
+    if (nx >= 0 && nx < W && ny >= 0 && ny < H && tree[ny * W + nx]) {
+      parIdx = ny * W + nx;
+      break;
+    }
+  }
+
+  addToTree(x, y, parIdx);
+  relaxAround(x, y);
+
+  if (parIdx >= 0) {
+    drawSegment(parIdx % W, (parIdx / W) | 0, x, y);
+  }
+
+  return isEdge(x, y);
+}
+
+/**
+ * Reinitialise all grid state and canvas for a fresh growth cycle.
+ * Called after each fade completes; produces a new fractal each run via
+ * the stochastic frontier selection in pickFrontierCell.
+ */
+function reset() {
+  phi    = new Float32Array(W * H);
+  tree   = new Uint8Array(W * H);
+  parent = new Int32Array(W * H).fill(-1);
+  frontier = new Set();
+
+  initPhi();
+  addToTree(CX, CY, -1);
+  // Warm up the local field around the seed before growth begins
+  relaxAround(CX, CY);
+  relaxAround(CX, CY);
+
+  ctx.fillStyle = '#08071a';
+  ctx.fillRect(0, 0, W, H);
+
+  state = STATE_GROW;
+  timer = 0;
+}
+
+function frame() {
+  switch (state) {
+    case STATE_GROW: {
+      let reached = false;
+      for (let s = 0; s < STEPS_PER_FRAME && !reached; s++) {
+        reached = growStep();
+      }
+      if (reached) { state = STATE_PAUSE; timer = 0; }
+      break;
+    }
+    case STATE_PAUSE:
+      timer++;
+      if (timer >= PAUSE_FRAMES) { state = STATE_FADE; timer = 0; }
+      break;
+    case STATE_FADE:
+      // Gradually overlay the background colour; after FADE_FRAMES the tree
+      // has faded to near-invisible (remaining ≈ 0.96^100 ≈ 2% brightness).
+      ctx.fillStyle = 'rgba(8,7,26,0.04)';
+      ctx.fillRect(0, 0, W, H);
+      timer++;
+      if (timer >= FADE_FRAMES) reset();
+      break;
+  }
+  requestAnimationFrame(frame);
+}
+
+reset();
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>
