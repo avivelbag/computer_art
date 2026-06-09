@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Complex Portrait — Domain Coloring</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { background: #000; overflow: hidden; }
+    canvas { display: block; width: 100vw; height: 100vh; }
+    #info {
+      position: fixed; bottom: 12px; left: 50%; transform: translateX(-50%);
+      color: rgba(255,255,255,0.40); font: 11px/1.4 monospace;
+      pointer-events: none; text-align: center;
+    }
+    #label {
+      position: fixed; top: 14px; left: 50%; transform: translateX(-50%);
+      color: rgba(255,255,255,0.60); font: 13px/1.4 monospace;
+      pointer-events: none; text-align: center;
+    }
+  </style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="label">f(z) = z³ − 1</div>
+<div id="info">drag to pan · scroll to zoom · click to skip</div>
+
+<script id="vert" type="x-shader/x-vertex">
+attribute vec2 aPos;
+void main() { gl_Position = vec4(aPos, 0.0, 1.0); }
+</script>
+
+<script id="frag" type="x-shader/x-fragment">
+precision highp float;
+
+uniform vec2  uRes;
+uniform vec2  uPan;
+uniform float uScale;
+uniform int   uFuncA;
+uniform int   uFuncB;
+uniform float uBlend;
+
+const float PI = 3.14159265358979323846;
+
+/* ---------- Complex arithmetic — all inline GLSL, no external libraries ---------- */
+
+vec2 cmul(vec2 a, vec2 b) {
+  return vec2(a.x*b.x - a.y*b.y, a.x*b.y + a.y*b.x);
+}
+
+vec2 cdiv(vec2 a, vec2 b) {
+  float d = dot(b, b);
+  return vec2(dot(a, b), a.y*b.x - a.x*b.y) / d;
+}
+
+vec2 cpow2(vec2 z) { return cmul(z, z); }
+vec2 cpow3(vec2 z) { return cmul(cpow2(z), z); }
+
+/* e^z = e^x · (cos y + i sin y) */
+vec2 cexp(vec2 z) {
+  return exp(z.x) * vec2(cos(z.y), sin(z.y));
+}
+
+/* sin(x+iy) = sin(x)cosh(y) + i·cos(x)sinh(y) */
+vec2 csin(vec2 z) {
+  return vec2(sin(z.x) * cosh(z.y), cos(z.x) * sinh(z.y));
+}
+
+/* cos(x+iy) = cos(x)cosh(y) − i·sin(x)sinh(y) */
+vec2 ccos(vec2 z) {
+  return vec2(cos(z.x) * cosh(z.y), -sin(z.x) * sinh(z.y));
+}
+
+/* ---------- Curated function library ---------- */
+/*
+ * 0: z³ − 1          — three zeros at cube roots of unity, 120°-symmetric petals
+ * 1: sin(z)          — periodic zeros along real axis, complex periodicity in y
+ * 2: (z²+1)/(z²−1)  — zeros at ±i, poles at ±1, four-fold symmetry
+ */
+vec2 evalFunc(vec2 z, int f) {
+  if (f == 0) {
+    return cpow3(z) - vec2(1.0, 0.0);
+  }
+  if (f == 1) {
+    return csin(z);
+  }
+  /* f == 2: (z²+1)/(z²−1) */
+  vec2 z2  = cpow2(z);
+  vec2 num = z2 + vec2(1.0, 0.0);
+  vec2 den = z2 - vec2(1.0, 0.0);
+  return cdiv(num, den);
+}
+
+/* ---------- Color mapping ---------- */
+
+/* HSV → RGB, all components in [0, 1] */
+vec3 hsv2rgb(vec3 c) {
+  vec4 K = vec4(1.0, 2.0/3.0, 1.0/3.0, 3.0);
+  vec3 p = abs(fract(c.xxx + K.xyz) * 6.0 - K.www);
+  return c.z * mix(K.xxx, clamp(p - K.xxx, 0.0, 1.0), c.y);
+}
+
+/*
+ * Domain coloring:
+ *   hue       = normalized argument of f(z), 0..1 cycling once per 2π
+ *   brightness = 0.5 + 0.5·sin(2π·log₂|f(z)|) — isochromatic rings revealing magnitude
+ *   saturation = 0.85 — vivid but not garish
+ */
+vec3 domainColor(vec2 fz) {
+  float arg = atan(fz.y, fz.x);
+  float hue = (arg + PI) / (2.0 * PI);
+  float mag = length(fz);
+  float bri = 0.5 + 0.5 * sin(2.0 * PI * log2(mag + 1e-10));
+  return hsv2rgb(vec3(hue, 0.85, bri));
+}
+
+void main() {
+  /* Map pixel → complex coordinate, centered with scale covering ±(scale/2) */
+  vec2 z = (gl_FragCoord.xy / uRes - 0.5) * uScale + uPan;
+
+  vec3 colA = domainColor(evalFunc(z, uFuncA));
+  vec3 colB = domainColor(evalFunc(z, uFuncB));
+
+  gl_FragColor = vec4(mix(colA, colB, uBlend), 1.0);
+}
+</script>
+
+<script>
+const canvas  = document.getElementById('c');
+const labelEl = document.getElementById('label');
+
+const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+
+function mkShader(type, src) {
+  const sh = gl.createShader(type);
+  gl.shaderSource(sh, src);
+  gl.compileShader(sh);
+  if (!gl.getShaderParameter(sh, gl.COMPILE_STATUS))
+    console.error(gl.getShaderInfoLog(sh));
+  return sh;
+}
+
+const prog = gl.createProgram();
+gl.attachShader(prog, mkShader(gl.VERTEX_SHADER,   document.getElementById('vert').textContent));
+gl.attachShader(prog, mkShader(gl.FRAGMENT_SHADER, document.getElementById('frag').textContent));
+gl.linkProgram(prog);
+if (!gl.getProgramParameter(prog, gl.LINK_STATUS))
+  console.error(gl.getProgramInfoLog(prog));
+gl.useProgram(prog);
+
+/* Full-screen quad — two triangles covering clip space */
+const buf = gl.createBuffer();
+gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+gl.bufferData(gl.ARRAY_BUFFER,
+  new Float32Array([-1,-1, 1,-1, -1,1, 1,-1, 1,1, -1,1]),
+  gl.STATIC_DRAW);
+
+const aPos   = gl.getAttribLocation(prog, 'aPos');
+gl.enableVertexAttribArray(aPos);
+gl.vertexAttribPointer(aPos, 2, gl.FLOAT, false, 0, 0);
+
+const uRes   = gl.getUniformLocation(prog, 'uRes');
+const uPan   = gl.getUniformLocation(prog, 'uPan');
+const uScale = gl.getUniformLocation(prog, 'uScale');
+const uFuncA = gl.getUniformLocation(prog, 'uFuncA');
+const uFuncB = gl.getUniformLocation(prog, 'uFuncB');
+const uBlend = gl.getUniformLocation(prog, 'uBlend');
+
+/* View state — default covers Re/Im ∈ [-3, 3] */
+let pan   = [0.0, 0.0];
+let scale = 6.0;
+
+/* Transition schedule:
+ *   hold HOLD_MS  →  crossfade over FADE_MS  →  advance  →  hold again
+ */
+const FUNC_NAMES = ['f(z) = z³ − 1', 'f(z) = sin(z)', 'f(z) = (z²+1)/(z²−1)'];
+const NUM_FUNCS  = 3;
+const HOLD_MS    = 7000;
+const FADE_MS    = 1500;
+
+let funcA    = 0;
+let funcB    = 1;
+let blend    = 0.0;
+let inFade   = false;
+let phaseTs  = 0;   /* timestamp when current phase started */
+
+function resize() {
+  canvas.width  = window.innerWidth;
+  canvas.height = window.innerHeight;
+  gl.viewport(0, 0, canvas.width, canvas.height);
+  gl.uniform2f(uRes, canvas.width, canvas.height);
+}
+window.addEventListener('resize', resize);
+resize();
+
+function draw() {
+  gl.uniform2f(uPan, pan[0], pan[1]);
+  gl.uniform1f(uScale, scale);
+  gl.uniform1i(uFuncA, funcA);
+  gl.uniform1i(uFuncB, funcB);
+  gl.uniform1f(uBlend, blend);
+  gl.drawArrays(gl.TRIANGLES, 0, 6);
+}
+
+function beginFade(ts) {
+  inFade  = true;
+  phaseTs = ts;
+}
+
+function commitAdvance(ts) {
+  funcA   = funcB;
+  funcB   = (funcB + 1) % NUM_FUNCS;
+  blend   = 0.0;
+  inFade  = false;
+  phaseTs = ts;
+  labelEl.textContent = FUNC_NAMES[funcA];
+}
+
+function frame(ts) {
+  if (inFade) {
+    blend = Math.min(1.0, (ts - phaseTs) / FADE_MS);
+    if (blend >= 1.0) commitAdvance(ts);
+  } else if (ts - phaseTs >= HOLD_MS) {
+    beginFade(ts);
+  }
+  draw();
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+
+/* Click — skip to next function immediately */
+let dragged = false;
+canvas.addEventListener('click', () => {
+  if (!dragged) {
+    if (inFade) {
+      commitAdvance(performance.now());
+    } else {
+      beginFade(performance.now());
+    }
+  }
+});
+
+/* Drag to pan */
+let dragging  = false;
+let dragStart = [0, 0];
+let panStart  = [0, 0];
+
+canvas.addEventListener('mousedown', e => {
+  dragging  = true;
+  dragged   = false;
+  dragStart = [e.clientX, e.clientY];
+  panStart  = [...pan];
+});
+window.addEventListener('mousemove', e => {
+  if (!dragging) return;
+  const dx = (e.clientX - dragStart[0]) / canvas.width  * scale;
+  const dy = (e.clientY - dragStart[1]) / canvas.height * scale;
+  if (Math.abs(dx) > 0.001 || Math.abs(dy) > 0.001) dragged = true;
+  pan = [panStart[0] - dx, panStart[1] + dy];
+  draw();
+});
+window.addEventListener('mouseup', () => { dragging = false; });
+
+/* Scroll to zoom */
+canvas.addEventListener('wheel', e => {
+  e.preventDefault();
+  scale *= e.deltaY > 0 ? 1.15 : 0.87;
+  draw();
+}, { passive: false });
+</script>
+</body>
+</html>
