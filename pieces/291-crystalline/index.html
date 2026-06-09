@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Crystalline</title>
+<style>
+  body { margin: 0; background: #080c18; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
+  canvas { display: block; }
+</style>
+</head>
+<body>
+<canvas id="c" width="600" height="600"></canvas>
+<script>
+const W = 600, H = 600, CX = 300, CY = 300;
+const HEX_SIZE = 4;
+const MAX_R_HEX = 38;
+const WALKERS_PER_FRAME = 80;
+const STEPS_PER_WALKER = 30;
+const KILL_MARGIN = 8;
+const SPAWN_MARGIN = 3;
+const SQ3 = Math.sqrt(3);
+
+// Six neighbor directions in axial (q, r) hex coordinates.
+const DIRS = [[1,0],[0,1],[-1,1],[-1,0],[0,-1],[1,-1]];
+
+// Convert axial hex (q, r) to canvas pixel (px, py) — pointy-top orientation.
+function hexToPixel(q, r) {
+  return [CX + HEX_SIZE * (SQ3 * q + SQ3 / 2 * r),
+          CY + HEX_SIZE * 1.5 * r];
+}
+
+// Chebyshev distance in cube hex coordinates.
+function hexRadius(q, r) {
+  return Math.max(Math.abs(q), Math.abs(r), Math.abs(q + r));
+}
+
+// All 12 cells in the D6 (6-fold rotation + reflection) orbit of (q, r).
+// Derived from the six 60° rotations in axial coords combined with one
+// reflection S: (q,r) → (q, -q-r), giving the full dihedral group.
+function symmetrySet(q, r) {
+  const s = -q - r;
+  return [
+    [q, r],    [q+r, -q],  [r, s],     [-q, -r],  [s, q],    [-r, q+r],
+    [q, s],    [q+r, -r],  [r, q],     [-q, -s],  [s, r],    [-r, -q],
+  ];
+}
+
+// Round fractional axial hex coords to the nearest integer hex cell.
+function hexRound(fq, fr) {
+  const fs = -fq - fr;
+  let rq = Math.round(fq), rr = Math.round(fr), rs = Math.round(fs);
+  const dq = Math.abs(rq - fq), dr = Math.abs(rr - fr), ds = Math.abs(rs - fs);
+  if (dq > dr && dq > ds) rq = -rr - rs;
+  else if (dr > ds) rr = -rq - rs;
+  return [rq, rr];
+}
+
+// Convert canvas pixel (px, py) to the nearest axial hex cell.
+function pixelToHex(px, py) {
+  const x = (px - CX) / HEX_SIZE, y = (py - CY) / HEX_SIZE;
+  return hexRound(SQ3 / 3 * x - y / 3, y * 2 / 3);
+}
+
+// Fill a pointy-top hexagon centred at pixel (px, py).
+function drawHex(px, py, color) {
+  ctx.fillStyle = color;
+  ctx.beginPath();
+  for (let i = 0; i < 6; i++) {
+    const a = Math.PI / 3 * i;
+    const hx = px + HEX_SIZE * Math.cos(a), hy = py + HEX_SIZE * Math.sin(a);
+    i === 0 ? ctx.moveTo(hx, hy) : ctx.lineTo(hx, hy);
+  }
+  ctx.closePath();
+  ctx.fill();
+}
+
+// Core cells are semi-transparent (appear dimmer); tips are fully opaque #deeeff.
+function cellColor(hr) {
+  const t = Math.min(1, hr / MAX_R_HEX);
+  return `rgba(222,238,255,${(0.4 + 0.6 * t).toFixed(2)})`;
+}
+
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+
+let frozen, clusterR, walkers, fading, fadeAlpha;
+
+// Freeze (q, r) and all 11 symmetry equivalents; draw each newly frozen cell.
+function freeze(q, r) {
+  for (const [cq, cr] of symmetrySet(q, r)) {
+    const key = `${cq},${cr}`;
+    if (frozen.has(key)) continue;
+    frozen.add(key);
+    const hr = hexRadius(cq, cr);
+    if (hr > clusterR) clusterR = hr;
+    const [px, py] = hexToPixel(cq, cr);
+    drawHex(px, py, cellColor(hr));
+  }
+}
+
+function init() {
+  ctx.fillStyle = '#080c18';
+  ctx.fillRect(0, 0, W, H);
+  frozen = new Set();
+  clusterR = 0;
+  walkers = [];
+  fading = false;
+  fadeAlpha = 0;
+  freeze(0, 0);
+}
+
+// Spawn a walker on a circle slightly beyond the current frozen cluster.
+function spawnWalker() {
+  const spawnR = (clusterR + SPAWN_MARGIN) * HEX_SIZE * SQ3;
+  const a = Math.random() * 2 * Math.PI;
+  const [q, r] = pixelToHex(CX + spawnR * Math.cos(a), CY + spawnR * Math.sin(a));
+  return { q, r };
+}
+
+// Advance a walker one random hex step. Returns false when the walker
+// should be retired (stuck to cluster or escaped kill radius).
+function stepWalker(w) {
+  const [dq, dr] = DIRS[(Math.random() * 6) | 0];
+  w.q += dq; w.r += dr;
+  if (hexRadius(w.q, w.r) > clusterR + KILL_MARGIN) return false;
+  if (frozen.has(`${w.q},${w.r}`)) return false;
+  for (const [nq, nr] of DIRS) {
+    if (frozen.has(`${w.q + nq},${w.r + nr}`)) {
+      freeze(w.q, w.r);
+      return false;
+    }
+  }
+  return true;
+}
+
+function loop() {
+  requestAnimationFrame(loop);
+
+  if (fading) {
+    fadeAlpha += 0.006;
+    if (fadeAlpha >= 1) { init(); return; }
+    ctx.fillStyle = `rgba(8,12,24,${fadeAlpha.toFixed(3)})`;
+    ctx.fillRect(0, 0, W, H);
+    return;
+  }
+
+  while (walkers.length < WALKERS_PER_FRAME) walkers.push(spawnWalker());
+  const next = [];
+  for (const w of walkers) {
+    let alive = true;
+    for (let s = 0; s < STEPS_PER_WALKER && alive; s++) alive = stepWalker(w);
+    if (alive) next.push(w);
+  }
+  walkers = next;
+
+  if (clusterR >= MAX_R_HEX) { fading = true; walkers = []; }
+}
+
+init();
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>

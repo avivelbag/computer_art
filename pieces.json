@@ -1248,5 +1248,15 @@
     "path": "pieces/290-rotating-tesseract",
     "thumbnail": "pieces/290-rotating-tesseract/thumbnail.svg",
     "description": "A unit tesseract (16 vertices, 32 edges) rotates simultaneously in the XW plane at 0.007 rad/frame and the YZ plane at 0.011 rad/frame — an irrational ratio that makes the motion quasiperiodic, never repeating. Two sequential perspective projections reduce 4D to 2D: first w-depth (D4=2) yields 3D coordinates, then z-depth (D3=3) yields screen coordinates. Each edge is coloured and alpha-modulated by its average w-coordinate after rotation, lerping from deep indigo (#1a0050) at w=−1 to bright cyan (#00e5ff) at w=+1, so the fourth-dimensional depth is immediately readable as colour."
+  },
+  {
+    "id": "291-crystalline",
+    "title": "Crystalline",
+    "tagline": "A snowflake grown by hexagonal DLA with strict D6 symmetry — each particle that sticks instantly mirrors across all 6 rotational and reflective axes, building pale blue-white crystal arms on deep indigo",
+    "year": 2026,
+    "technique": "canvas 2D / diffusion-limited aggregation / hexagonal grid / axial coordinates / D6 symmetry group / requestAnimationFrame",
+    "path": "pieces/291-crystalline",
+    "thumbnail": "pieces/291-crystalline/thumbnail.svg",
+    "description": "Random-walk particles are released one by one from a circle just beyond the growing cluster and wander on a hexagonal grid until they touch a frozen neighbour. The moment a particle sticks at cell (q, r), all 12 members of its D6 orbit are frozen simultaneously — the six 60° rotations and their reflections — so the flake is perfectly symmetric at every instant, never distorted by the randomness of individual arrivals. Cell brightness encodes distance from the centre: the seed and inner core appear as dim, semi-transparent blue-white, while the outermost branch tips glow at full #deeeff opacity. When the cluster radius reaches ~90 % of the canvas the whole image fades to black and a new seed starts growing, creating a seamless loop."
   }
 ]
