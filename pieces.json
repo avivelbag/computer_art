@@ -1348,5 +1348,15 @@
     "path": "pieces/299-domain-coloring",
     "thumbnail": "pieces/299-domain-coloring/thumbnail.png",
     "description": "Domain coloring maps each pixel z in the complex plane to a color derived from f(z): hue encodes arg f(z) so a full 2π rotation completes one rainbow cycle, and brightness follows 0.5+0.5·sin(2π·log₂|f(z)|) to produce isochromatic rings spaced one octave apart in magnitude. Three curated functions cycle automatically every 7 seconds with a 1.5-second alpha crossfade: z³−1 (three zeros at cube roots of unity, three 120°-symmetric rainbow petals), sin(z) (periodic zeros along the real axis, complex periodicity in the imaginary direction), and (z²+1)/(z²−1) (zeros at ±i, poles at ±1, four-fold symmetry). All complex arithmetic — multiply, divide, power, exp, sin, cos — is implemented inline in a WebGL fragment shader with no external libraries. Pan by dragging, zoom by scrolling; default view covers Re/Im ∈ [−3, 3]."
+  },
+  {
+    "id": "300-marble-veins-noise",
+    "title": "Stone Memory",
+    "tagline": "Calacatta marble grown from 4-octave turbulence noise — sinuous charcoal veins on ivory breathe imperceptibly as the noise field drifts through a third dimension at 0.3 units/second",
+    "year": 2026,
+    "technique": "WebGL / value noise / turbulence / marble veining / GLSL fragment shader",
+    "path": "pieces/300-marble-veins-noise",
+    "thumbnail": "pieces/300-marble-veins-noise/thumbnail.svg",
+    "description": "Classic generative marble implemented as a WebGL fragment shader. Each pixel samples a 4-octave turbulence field: a deterministic 3D hash on the integer lattice is bilinearly interpolated with Hermite smoothing, then four octaves are summed with halved amplitude and doubled frequency each time; abs() folds the centered noise at zero, producing the cusped banding geology of real stone. The vein value v = sin(uv.x × 3 + turbulence(uv × 4, z) × 8) maps that turbulence onto a sinusoidal marble pattern. Two smoothstep bands paint the Calacatta palette: primary veins near |v| = 1 receive deep charcoal (#2a2520), secondary veins near |v| = 0.7 receive warm taupe (#9e8e7a), and the base is ivory (#f5f0e8). The third noise coordinate z drifts at 0.3 units/second, making the stone appear to breathe. A CPU ImageData fallback at 400×400 uses the same formula in JavaScript when WebGL is unavailable. No external libraries."
   }
 ]
