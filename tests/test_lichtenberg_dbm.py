@@ -6,8 +6,6 @@ for the DBM algorithm helpers and SVG output.
 """
 import importlib.util
 import pathlib
-import sys
-import math
 import random
 
 import pytest
