@@ -1278,5 +1278,15 @@
     "path": "pieces/292-ink-bloom",
     "thumbnail": "pieces/292-ink-bloom/thumbnail.svg",
     "description": "A real-time implementation of Jos Stam’s stable-fluids algorithm on a 256×256 grid. Four ink colors — deep violet, cobalt, rose, and amber — are periodically injected at the canvas corners with inward velocity impulses. The incompressible Navier-Stokes solver (viscous diffusion, Helmholtz pressure projection, semi-Lagrangian advection) carries the dye through vortex roll-ups and laminar sheets that never repeat, rendered via ImageData at 60 fps with no external libraries."
+  },
+  {
+    "id": "293-substrate-cracks",
+    "title": "Ancient Glaze",
+    "tagline": "6 crack seeds scatter across aged parchment and branch perpendicularly on contact — Jared Tarbell’s substrate algorithm grows crystalline fault lines in deep umber, biased by a 2D value-noise grain field",
+    "year": 2026,
+    "technique": "canvas 2D / substrate algorithm / value noise / Uint8Array occupancy grid",
+    "path": "pieces/293-substrate-cracks",
+    "thumbnail": "pieces/293-substrate-cracks/thumbnail.svg",
+    "description": "Six seeds scatter across an 800×800 canvas at random positions and angles. Each crack tip advances one pixel per step along its heading, with the angle biased by ±3° from a precomputed 64×64 value-noise grain field (bilinearly interpolated) for organic waviness. On contact with an existing crack, the arriving tip dies and spawns a perpendicular offspring with ±5° jitter at the contact point. Growth continues until no seeds remain, producing a cracked-ceramic-glaze pattern in deep umber (#3d2b1a) on aged parchment (#e8dfc8)."
   }
 ]
