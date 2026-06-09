@@ -3,8 +3,6 @@
 import importlib.util
 import math
 import pathlib
-import sys
-import types
 
 import pytest
 
@@ -220,8 +218,10 @@ def test_thumbnail_svg_tiles_near_center():
     near_center = 0
     for p in polys:
         pts = [float(x) for pair in p.split() for x in pair.split(",")]
-        xs = pts[::2]; ys = pts[1::2]
-        cx = sum(xs) / len(xs); cy = sum(ys) / len(ys)
+        xs = pts[::2]
+        ys = pts[1::2]
+        cx = sum(xs) / len(xs)
+        cy = sum(ys) / len(ys)
         if abs(cx - 200) < 80 and abs(cy - 200) < 80:
             near_center += 1
     assert near_center >= 100, f"Only {near_center} tiles near center"

@@ -35,22 +35,22 @@ def make_seed(edge):
     return tiles
 
 
-def add_rhombus(tip, d1, d2, l, out):
-    v1 = (tip[0] + d1[0] * l, tip[1] + d1[1] * l)
-    v3 = (tip[0] + d2[0] * l, tip[1] + d2[1] * l)
-    v2 = (v1[0] + d2[0] * l, v1[1] + d2[1] * l)
+def add_rhombus(tip, d1, d2, side, out):
+    v1 = (tip[0] + d1[0] * side, tip[1] + d1[1] * side)
+    v3 = (tip[0] + d2[0] * side, tip[1] + d2[1] * side)
+    v2 = (v1[0] + d2[0] * side, v1[1] + d2[1] * side)
     out.append(("R", [tip, v1, v2, v3]))
 
 
 def inflate_square(v, f, out):
     A, B, C, D = v
     L = math.hypot(B[0] - A[0], B[1] - A[1])
-    l = L * f
+    s = L * f
     ab = ((B[0] - A[0]) / L, (B[1] - A[1]) / L)
     ad = ((D[0] - A[0]) / L, (D[1] - A[1]) / L)
 
     center = lerp(A, C, 0.5)
-    h = l / 2
+    h = s / 2
     sq = [
         (center[0] - h * ab[0] - h * ad[0], center[1] - h * ab[1] - h * ad[1]),
         (center[0] + h * ab[0] - h * ad[0], center[1] + h * ab[1] - h * ad[1]),
@@ -60,29 +60,29 @@ def inflate_square(v, f, out):
     out.append(("S", sq))
 
     bc2 = (-ab[1], ab[0])
-    add_rhombus(A, ab, ad, l, out)
+    add_rhombus(A, ab, ad, s, out)
     ba = (-ab[0], -ab[1])
-    add_rhombus(B, ba, bc2, l, out)
+    add_rhombus(B, ba, bc2, s, out)
     cb2 = (ab[1], -ab[0])
     cd2 = (-ab[0], -ab[1])
-    add_rhombus(C, cb2, cd2, l, out)
+    add_rhombus(C, cb2, cd2, s, out)
     da2 = ((A[0] - D[0]) / L, (A[1] - D[1]) / L)
     dc_v = ((C[0] - D[0]) / L, (C[1] - D[1]) / L)
-    add_rhombus(D, da2, dc_v, l, out)
+    add_rhombus(D, da2, dc_v, s, out)
 
 
 def inflate_rhombus(v, f, out):
     A, B, C, D = v
     L = math.hypot(B[0] - A[0], B[1] - A[1])
-    l = L * f
+    s = L * f
 
     ab = ((B[0] - A[0]) / L, (B[1] - A[1]) / L)
     ad = ((D[0] - A[0]) / L, (D[1] - A[1]) / L)
     cb = ((B[0] - C[0]) / L, (B[1] - C[1]) / L)
     cd = ((D[0] - C[0]) / L, (D[1] - C[1]) / L)
 
-    Aab = (A[0] + ab[0] * l, A[1] + ab[1] * l)
-    Ccb = (C[0] + cb[0] * l, C[1] + cb[1] * l)
+    Aab = (A[0] + ab[0] * s, A[1] + ab[1] * s)
+    Ccb = (C[0] + cb[0] * s, C[1] + cb[1] * s)
 
     center = lerp(A, C, 0.5)
     acLen = math.hypot(C[0] - A[0], C[1] - A[1])
@@ -103,8 +103,8 @@ def inflate_rhombus(v, f, out):
     sq_A = [
         A,
         Aab,
-        (Aab[0] + sign * perp_ab[0] * l, Aab[1] + sign * perp_ab[1] * l),
-        (A[0]   + sign * perp_ab[0] * l, A[1]   + sign * perp_ab[1] * l),
+        (Aab[0] + sign * perp_ab[0] * s, Aab[1] + sign * perp_ab[1] * s),
+        (A[0]   + sign * perp_ab[0] * s, A[1]   + sign * perp_ab[1] * s),
     ]
     out.append(("S", sq_A))
 
@@ -114,23 +114,23 @@ def inflate_rhombus(v, f, out):
     sq_C = [
         C,
         Ccb,
-        (Ccb[0] + sign2 * perp_cb[0] * l, Ccb[1] + sign2 * perp_cb[1] * l),
-        (C[0]   + sign2 * perp_cb[0] * l, C[1]   + sign2 * perp_cb[1] * l),
+        (Ccb[0] + sign2 * perp_cb[0] * s, Ccb[1] + sign2 * perp_cb[1] * s),
+        (C[0]   + sign2 * perp_cb[0] * s, C[1]   + sign2 * perp_cb[1] * s),
     ]
     out.append(("S", sq_C))
 
     ba = (-ab[0], -ab[1])
     bc = ((C[0] - B[0]) / L, (C[1] - B[1]) / L)
-    B_opp = (B[0] + ba[0] * l + bc[0] * l, B[1] + ba[1] * l + bc[1] * l)
-    B_s1  = (B[0] + ba[0] * l, B[1] + ba[1] * l)
-    B_s2  = (B[0] + bc[0] * l, B[1] + bc[1] * l)
+    B_opp = (B[0] + ba[0] * s + bc[0] * s, B[1] + ba[1] * s + bc[1] * s)
+    B_s1  = (B[0] + ba[0] * s, B[1] + ba[1] * s)
+    B_s2  = (B[0] + bc[0] * s, B[1] + bc[1] * s)
     out.append(("R", [B_opp, B_s1, B, B_s2]))
 
     dc = (-cd[0], -cd[1])
     da = ((A[0] - D[0]) / L, (A[1] - D[1]) / L)
-    D_opp = (D[0] + dc[0] * l + da[0] * l, D[1] + dc[1] * l + da[1] * l)
-    D_s1  = (D[0] + dc[0] * l, D[1] + dc[1] * l)
-    D_s2  = (D[0] + da[0] * l, D[1] + da[1] * l)
+    D_opp = (D[0] + dc[0] * s + da[0] * s, D[1] + dc[1] * s + da[1] * s)
+    D_s1  = (D[0] + dc[0] * s, D[1] + dc[1] * s)
+    D_s2  = (D[0] + da[0] * s, D[1] + da[1] * s)
     out.append(("R", [D_opp, D_s1, D, D_s2]))
 
 
