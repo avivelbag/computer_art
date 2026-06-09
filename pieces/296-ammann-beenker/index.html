@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Eightfold Path — Ammann-Beenker Tiling</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: #f5f0e8;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      overflow: hidden;
+    }
+    canvas { display: block; width: 100vmin; height: 100vmin; }
+  </style>
+</head>
+<body>
+<canvas id="canvas" width="800" height="800"></canvas>
+<script>
+// Ammann-Beenker tiling via substitution/inflation rules.
+// Two prototiles: square (type 'S') and 45°/135° rhombus (type 'R').
+// Both share the same edge length. Inflation factor: 1 + sqrt(2).
+//
+// Each tile is represented as a polygon (array of {x,y} vertices in order).
+// Substitution produces child tiles scaled by 1/(1+√2) relative to parent.
+
+const SIZE = 800;
+const CX = SIZE / 2;
+const CY = SIZE / 2;
+
+const BG      = '#f5f0e8';
+const SQ_FILL = '#c8882a';
+const RH_FILL = '#3a5a8a';
+const STROKE  = '#1a1a1a';
+
+// √2 and the silver ratio δ = 1 + √2
+const S2 = Math.sqrt(2);
+const DELTA = 1 + S2;     // inflation factor per step
+
+// Rotate point p around origin by angle a
+function rot(p, a) {
+  const c = Math.cos(a), s = Math.sin(a);
+  return { x: p.x * c - p.y * s, y: p.x * s + p.y * c };
+}
+
+// Scale point by scalar
+function scl(p, f) { return { x: p.x * f, y: p.y * f }; }
+
+// Translate point
+function tr(p, dx, dy) { return { x: p.x + dx, y: p.y + dy }; }
+
+// Interpolate between two points
+function lerp(a, b, t) {
+  return { x: a.x + t * (b.x - a.x), y: a.y + t * (b.y - a.y) };
+}
+
+// A tile is { type: 'S'|'R', v: [{x,y}, ...] }
+// Square: 4 vertices in CCW order, side length L
+// Rhombus: 4 vertices in CCW order, angles 45°/135°, side length L
+
+// Build the 8-fold octagonal seed: 8 rhombi arranged in a ring around the origin.
+// Each rhombus has its acute vertex at the origin, rotated by multiples of 45°.
+// Edge length chosen so the tiling fills after STEPS inflations.
+function makeOctagonalSeed(edgeLen) {
+  const tiles = [];
+  // A rhombus with angles 45° and 135°: acute vertex at origin,
+  // two sides going out at angles θ and θ+45°, length edgeLen.
+  for (let k = 0; k < 8; k++) {
+    const theta = k * Math.PI / 4;
+    const a1 = theta;
+    const a2 = theta + Math.PI / 4;
+    const v0 = { x: 0, y: 0 };
+    const v1 = { x: edgeLen * Math.cos(a1), y: edgeLen * Math.sin(a1) };
+    const v3 = { x: edgeLen * Math.cos(a2), y: edgeLen * Math.sin(a2) };
+    const v2 = { x: v1.x + v3.x, y: v1.y + v3.y };
+    tiles.push({ type: 'R', v: [v0, v1, v2, v3] });
+  }
+  return tiles;
+}
+
+// Apply one inflation step.
+// Each square S with vertices [A,B,C,D] (CCW, side L) inflates to:
+//   1 central square (side L/δ) + 4 rhombi (one per corner)
+// Each rhombus R with vertices [A,B,C,D] (A=acute tip, B,D=side pts, C=obtuse)
+//   inflates to: 1 rhombus + 2 squares + 2 rhombi
+//
+// We work in the local frame of each tile, compute children in that frame,
+// then transform back to world space.
+function inflate(tiles) {
+  const out = [];
+  const f = 1 / DELTA;   // child edge = parent edge / δ
+
+  for (const tile of tiles) {
+    const { type, v } = tile;
+    if (type === 'S') {
+      inflateSquare(v, f, out);
+    } else {
+      inflateRhombus(v, f, out);
+    }
+  }
+  return out;
+}
+
+// Square [A,B,C,D] CCW. Side L. Children have side L/δ.
+// The substitution for the Ammann-Beenker square:
+//   Place a child square at the center, oriented same way.
+//   Place 4 rhombi at the 4 corners, each with acute tip at corner.
+function inflateSquare(v, f, out) {
+  const [A, B, C, D] = v;
+  const L = Math.hypot(B.x - A.x, B.y - A.y);
+  const l = L * f;  // child edge length
+
+  // Direction vectors along each side (unit), then scale to child edge
+  const ab = { x: (B.x - A.x) / L, y: (B.y - A.y) / L };
+  const ad = { x: (D.x - A.x) / L, y: (D.y - A.y) / L };
+
+  // Midpoints of sides
+  const mAB = lerp(A, B, 0.5);
+  const mBC = lerp(B, C, 0.5);
+  const mCD = lerp(C, D, 0.5);
+  const mDA = lerp(D, A, 0.5);
+  const center = lerp(A, C, 0.5);
+
+  // Child square at center, side l, same orientation
+  // Its corners are offset from center by ±l/2 in ab and ad directions
+  const h = l / 2;
+  const sq = [
+    tr(center, -h * ab.x - h * ad.x, -h * ab.y - h * ad.y),
+    tr(center,  h * ab.x - h * ad.x,  h * ab.y - h * ad.y),
+    tr(center,  h * ab.x + h * ad.x,  h * ab.y + h * ad.y),
+    tr(center, -h * ab.x + h * ad.x, -h * ab.y + h * ad.y),
+  ];
+  out.push({ type: 'S', v: sq });
+
+  // 4 corner rhombi: each has acute tip at parent corner, pointing inward.
+  // The acute angle is 45°, so the two sides go along the two parent edges
+  // adjacent to that corner.
+  // Corner A: sides along AB and AD directions, length l
+  addRhombus(A, ab, ad, l, out);
+  // Corner B: sides along BA and BC directions
+  const ba = { x: -ab.x, y: -ab.y };
+  const bc = { x: ad.x, y: ad.y };   // BC direction = AD direction (square)
+  // Actually for a square ABCD CCW: AB⊥AD, BC = rot90(AB)
+  const bc2 = { x: -ab.y, y: ab.x }; // 90° CCW from ab
+  addRhombus(B, ba, bc2, l, out);
+  // Corner C: sides along CB and CD directions
+  const cb = { x: ab.x, y: ab.y };   // CB = AB direction reversed reversed = AB
+  // CD = -AD direction
+  const cd = { x: -ad.x, y: -ad.y };
+  // CB direction = B->C reversed = -(BC direction)
+  const cb2 = { x: ab.y, y: -ab.x }; // opposite of bc2
+  const cd2 = { x: -ab.x, y: -ab.y };
+  addRhombus(C, cb2, cd2, l, out);
+  // Corner D: sides along DC and DA directions
+  const dc2 = { x: -ab.y, y: ab.x }; // DC = CB reversed ... let me be more careful
+  // For CCW square ABCD: A->B, B->C, C->D, D->A
+  // At corner D, two edges go D->A and D->C
+  const da2 = { x: (A.x - D.x) / L, y: (A.y - D.y) / L };
+  const dc_v = { x: (C.x - D.x) / L, y: (C.y - D.y) / L };
+  addRhombus(D, da2, dc_v, l, out);
+}
+
+// Add a rhombus tile with acute vertex at tip, two side directions d1 and d2 (unit),
+// and side length l. The acute angle between d1 and d2 is 45°.
+function addRhombus(tip, d1, d2, l, out) {
+  const v1 = { x: tip.x + d1.x * l, y: tip.y + d1.y * l };
+  const v3 = { x: tip.x + d2.x * l, y: tip.y + d2.y * l };
+  const v2 = { x: v1.x + d2.x * l, y: v1.y + d2.y * l };
+  out.push({ type: 'R', v: [tip, v1, v2, v3] });
+}
+
+// Rhombus inflation: [A,B,C,D] where A and C are the acute (45°) vertices.
+// A is the "sharp" tip, C is the opposite acute vertex.
+// B and D are the obtuse (135°) vertices.
+// The substitution produces:
+//   1 child rhombus (at center, parallel to parent)
+//   2 child squares (near the acute tips A and C)
+//   2 child rhombi (near the obtuse vertices B and D)
+function inflateRhombus(v, f, out) {
+  const [A, B, C, D] = v;
+  const L = Math.hypot(B.x - A.x, B.y - A.y);
+  const l = L * f;
+
+  // Unit vectors along the sides
+  const ab = { x: (B.x - A.x) / L, y: (B.y - A.y) / L };
+  const ad = { x: (D.x - A.x) / L, y: (D.y - A.y) / L };
+  const cb = { x: (B.x - C.x) / L, y: (B.y - C.y) / L };
+  const cd = { x: (D.x - C.x) / L, y: (D.y - C.y) / L };
+
+  // Points along edges at distance l from each corner (child edge length)
+  // From A: along AB and AD
+  const Aab = { x: A.x + ab.x * l, y: A.y + ab.y * l };
+  const Aad = { x: A.x + ad.x * l, y: A.y + ad.y * l };
+  // From C: along CB and CD
+  const Ccb = { x: C.x + cb.x * l, y: C.y + cb.y * l };
+  const Ccd = { x: C.x + cd.x * l, y: C.y + cd.y * l };
+
+  // Center of rhombus
+  const center = lerp(A, C, 0.5);
+
+  // Child rhombus: same orientation as parent, scaled, centered at midpoint
+  // Its acute vertices are at center ± (A-C direction) * (L*f / DELTA ... )
+  // Actually the child rhombus vertices: the AC diagonal of parent has length L*sqrt(2+sqrt(2))?
+  // Let me compute it differently: The child rhombus is at the center, with vertices at
+  // midpoints of the parent edges (the 4 edge midpoints form a rhombus).
+  const mAB = lerp(A, B, 0.5);
+  const mBC = lerp(B, C, 0.5);
+  const mCD = lerp(C, D, 0.5);
+  const mDA = lerp(D, A, 0.5);
+
+  // The standard Ammann-Beenker substitution for rhombus:
+  // Place child rhombus at center scaled by 1/δ (same orientation).
+  // Place child squares at acute tips (A and C).
+  // Place child rhombi at obtuse vertices (B and D).
+  //
+  // The child rhombus at center:
+  // Its acute vertices are offset from center along the AC axis
+  // Its obtuse vertices are offset along the BD axis
+  const acLen = Math.hypot(C.x - A.x, C.y - A.y);
+  const acDir = { x: (C.x - A.x) / acLen, y: (C.y - A.y) / acLen };
+  const bdLen = Math.hypot(D.x - B.x, D.y - B.y);
+  const bdDir = { x: (D.x - B.x) / bdLen, y: (D.y - B.y) / bdLen };
+
+  // Child rhombus half-diagonals = l * cos(22.5°) and l * sin(22.5°)
+  // For 45° rhombus: diagonals are L*sqrt(2+sqrt(2)) and L*sqrt(2-sqrt(2))
+  // After scaling by f = 1/δ, half-diagonals:
+  const halfAC = (acLen * f) / 2;
+  const halfBD = (bdLen * f) / 2;
+  const rA = { x: center.x - acDir.x * halfAC, y: center.y - acDir.y * halfAC };
+  const rC = { x: center.x + acDir.x * halfAC, y: center.y + acDir.y * halfAC };
+  const rB = { x: center.x - bdDir.x * halfBD, y: center.y - bdDir.y * halfBD };
+  const rD = { x: center.x + bdDir.x * halfBD, y: center.y + bdDir.y * halfBD };
+  out.push({ type: 'R', v: [rA, rB, rC, rD] });
+
+  // Child squares at acute tips A and C
+  // Square at A: the two sides go along AB and AD, length l
+  // It's an actual square so the angle between ab and ad must be 90°.
+  // In the 45° rhombus, the angle at A is 45°, not 90° — so we need a different approach.
+  //
+  // For the Ammann-Beenker substitution, let me use a direct geometric approach.
+  // The substitution places squares at A and C with their diagonals along the
+  // rhombus edges. Specifically, one side of each square is along an edge of the parent.
+  //
+  // Square at A: vertices = A, Aab, Aab+perp*l, Aad (if AB⊥AD which isn't true for rhombus)
+  // Actually for a rhombus with 45° angle, we can construct the square as follows:
+  // One side A->Aab, opposite side parallel. The square's other two sides are perpendicular to AB.
+  const perp_ab = { x: -ab.y, y: ab.x };
+  const sq_A = [
+    A,
+    Aab,
+    { x: Aab.x + perp_ab.x * l, y: Aab.y + perp_ab.y * l },
+    { x: A.x + perp_ab.x * l,   y: A.y + perp_ab.y * l   },
+  ];
+  // Check if this square lands inside the rhombus or outside — use AD side check
+  // The AD direction from A, and the perpendicular to AB pointing into the rhombus:
+  // dot(ad, perp_ab) = ad.x*(-ab.y) + ad.y*ab.x
+  const dot_check = ad.x * perp_ab.x + ad.y * perp_ab.y;
+  if (dot_check < 0) {
+    // perpendicular points wrong way — flip
+    sq_A[2] = { x: Aab.x - perp_ab.x * l, y: Aab.y - perp_ab.y * l };
+    sq_A[3] = { x: A.x - perp_ab.x * l,   y: A.y - perp_ab.y * l   };
+  }
+  out.push({ type: 'S', v: sq_A });
+
+  const perp_cb = { x: -cb.y, y: cb.x };
+  const dot_check2 = cd.x * perp_cb.x + cd.y * perp_cb.y;
+  const sq_C = [
+    C,
+    Ccb,
+    { x: Ccb.x + perp_cb.x * l, y: Ccb.y + perp_cb.y * l },
+    { x: C.x + perp_cb.x * l,   y: C.y + perp_cb.y * l   },
+  ];
+  if (dot_check2 < 0) {
+    sq_C[2] = { x: Ccb.x - perp_cb.x * l, y: Ccb.y - perp_cb.y * l };
+    sq_C[3] = { x: C.x - perp_cb.x * l,   y: C.y - perp_cb.y * l   };
+  }
+  out.push({ type: 'S', v: sq_C });
+
+  // Child rhombi at obtuse vertices B and D
+  // At B: two parent edges BA and BC. The child rhombus has its obtuse vertex at B,
+  // sides along BA and BC directions, length l.
+  const ba = { x: -ab.x, y: -ab.y };
+  const bc = { x: (C.x - B.x) / L, y: (C.y - B.y) / L };
+  // Rhombus at B: acute vertex is opposite B, at B + ba*l + bc*l
+  const B_opp = { x: B.x + ba.x * l + bc.x * l, y: B.y + ba.y * l + bc.y * l };
+  const B_s1  = { x: B.x + ba.x * l, y: B.y + ba.y * l };
+  const B_s2  = { x: B.x + bc.x * l, y: B.y + bc.y * l };
+  out.push({ type: 'R', v: [B_opp, B_s1, B, B_s2] });
+
+  const dc = { x: -cd.x, y: -cd.y };
+  const da = { x: (A.x - D.x) / L, y: (A.y - D.y) / L };
+  const D_opp = { x: D.x + dc.x * l + da.x * l, y: D.y + dc.y * l + da.y * l };
+  const D_s1  = { x: D.x + dc.x * l, y: D.y + dc.y * l };
+  const D_s2  = { x: D.x + da.x * l, y: D.y + da.y * l };
+  out.push({ type: 'R', v: [D_opp, D_s1, D, D_s2] });
+}
+
+// Build tiling from octagonal seed with given initial edge length and inflation steps
+const STEPS = 5;
+// Seed tiles start large; each deflation step shrinks by 1/δ.
+// After 5 deflations: SEED_EDGE / δ^5 ≈ 400/82 ≈ 4.9 px — fine tile granularity.
+const SEED_EDGE = SIZE * 0.48;
+
+let tiles = makeOctagonalSeed(SEED_EDGE);
+for (let i = 0; i < STEPS; i++) {
+  tiles = inflate(tiles);
+}
+
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+
+// Clip to canvas bounds with small margin for performance
+const CLIP = SIZE / 2 + 4;
+
+function isVisible(v) {
+  for (const p of v) {
+    if (Math.abs(p.x) < CLIP && Math.abs(p.y) < CLIP) return true;
+  }
+  return false;
+}
+
+function draw() {
+  ctx.fillStyle = BG;
+  ctx.fillRect(0, 0, SIZE, SIZE);
+
+  ctx.save();
+  ctx.translate(CX, CY);
+
+  ctx.strokeStyle = STROKE;
+  ctx.lineWidth = 0.5;
+  ctx.lineJoin = 'round';
+
+  // Draw squares first, then rhombi on top (so stroke ordering looks right)
+  for (const { type, v } of tiles) {
+    if (!isVisible(v)) continue;
+    ctx.fillStyle = type === 'S' ? SQ_FILL : RH_FILL;
+    ctx.beginPath();
+    ctx.moveTo(v[0].x, v[0].y);
+    for (let i = 1; i < v.length; i++) ctx.lineTo(v[i].x, v[i].y);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+  }
+
+  ctx.restore();
+}
+
+draw();
+</script>
+</body>
+</html>
