@@ -135,6 +135,7 @@ class TestLerpColor:
         # Indigo: r=26 g=16 b=96; Teal: r=42 g=128 b=112
         assert 26 <= r_val <= 42
         assert 16 <= g_val <= 128
+        assert 96 <= b_val <= 112
 
 
 # ---------------------------------------------------------------------------
