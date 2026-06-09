@@ -1308,5 +1308,15 @@
     "path": "pieces/295-lichtenberg-dbm",
     "thumbnail": "pieces/295-lichtenberg-dbm/thumbnail.svg",
     "description": "The Dielectric Breakdown Model (Niemeyer, Pietronero & Wiesmann 1984) grows a fractal discharge tree from the canvas centre. A 500×500 potential field satisfies the Laplace equation ∇²φ = 0 with the tree held at φ = 0 and the boundary at φ = 1; each step a frontier cell is selected with probability proportional to φ^η (η = 1.5) and absorbed into the tree. The η exponent amplifies screened vs. unscreened potential differences, so branch tips — reaching into high-potential unshielded space — dominate over shielded trunk cells, producing the characteristic fractal branching of Lichtenberg figures. Relaxation sweeps only the 22-pixel neighbourhood of the newest node to stay within the 16 ms/frame budget. When the tree reaches the canvas edge, the figure fades and regrows with a new stochastic realisation."
+  },
+  {
+    "id": "296-ammann-beenker",
+    "title": "Eightfold Path",
+    "tagline": "An Ammann-Beenker quasicrystal tiling with 8-fold octagonal symmetry — squares and 45°-rhombi grown from an octagonal seed by five substitution deflations in ochre, slate blue, and cream",
+    "year": 2026,
+    "technique": "canvas 2D / Ammann-Beenker tiling / substitution deflation / silver ratio δ=1+√2",
+    "path": "pieces/296-ammann-beenker",
+    "thumbnail": "pieces/296-ammann-beenker/thumbnail.svg",
+    "description": "An aperiodic Ammann-Beenker tiling built by five rounds of substitution deflation from an 8-rhombus octagonal seed. Two prototiles — a square and a 45°/135° rhombus sharing the same edge length — tile the plane under the silver ratio δ = 1+√2 ≈ 2.414: each square deflates into a central square plus four corner rhombi; each rhombus deflates into a central rhombus, two squares at the acute vertices, and two rhombi at the obtuse vertices. Starting from the 8-fold symmetric seed, all five deflation steps preserve exact D₈ dihedral symmetry at the center. After 5 deflations the canvas holds ~21 000 tiles: squares in deep ochre (#c8882a), rhombi in slate blue (#3a5a8a), on warm cream (#f5f0e8), with thin dark (#1a1a1a) lines delineating every edge. No external libraries; substitution math under 200 lines of JavaScript."
   }
 ]
