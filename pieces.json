@@ -1268,5 +1268,15 @@
     "path": "pieces/291-crystalline",
     "thumbnail": "pieces/291-crystalline/thumbnail.svg",
     "description": "Random-walk particles are released one by one from a circle just beyond the growing cluster and wander on a hexagonal grid until they touch a frozen neighbour. The moment a particle sticks at cell (q, r), all 12 members of its D6 orbit are frozen simultaneously — the six 60° rotations and their reflections — so the flake is perfectly symmetric at every instant, never distorted by the randomness of individual arrivals. Cell brightness encodes distance from the centre: the seed and inner core appear as dim, semi-transparent blue-white, while the outermost branch tips glow at full #deeeff opacity. When the cluster radius reaches ~90 % of the canvas the whole image fades to black and a new seed starts growing, creating a seamless loop."
+  },
+  {
+    "id": "292-ink-bloom",
+    "title": "Ink Bloom",
+    "tagline": "Four ink colors injected into a 256×256 Navier-Stokes fluid — dye advects through swirling vortices on a black background",
+    "year": 2026,
+    "technique": "canvas / stable-fluids / Navier-Stokes / ImageData",
+    "path": "pieces/292-ink-bloom",
+    "thumbnail": "pieces/292-ink-bloom/thumbnail.svg",
+    "description": "A real-time implementation of Jos Stam’s stable-fluids algorithm on a 256×256 grid. Four ink colors — deep violet, cobalt, rose, and amber — are periodically injected at the canvas corners with inward velocity impulses. The incompressible Navier-Stokes solver (viscous diffusion, Helmholtz pressure projection, semi-Lagrangian advection) carries the dye through vortex roll-ups and laminar sheets that never repeat, rendered via ImageData at 60 fps with no external libraries."
   }
 ]

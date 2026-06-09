@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Ink Bloom — Stable Fluids</title>
+<style>
+  body { margin: 0; background: #000; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
+  canvas { display: block; image-rendering: pixelated; width: 512px; height: 512px; }
+</style>
+</head>
+<body>
+<canvas id="c" width="256" height="256"></canvas>
+<script>
+const N = 256;
+const ITER = 8;
+const DT = 0.1;
+const DIFF = 0.00002;
+const VISC = 0.000005;
+const SIZE = (N + 2) * (N + 2);
+
+function idx(x, y) { return x + (N + 2) * y; }
+
+// Ink colors: #3a0066 deep violet, #1040c0 cobalt, #c02060 rose, #d08000 amber
+const COLORS = [
+  [58/255, 0/255, 102/255],
+  [16/255, 64/255, 192/255],
+  [192/255, 32/255, 96/255],
+  [208/255, 128/255, 0/255],
+];
+
+// Injection point positions (normalized 0-1) and associated color index
+const INJECT_PTS = [
+  { x: 0.25, y: 0.25, c: 0 },
+  { x: 0.75, y: 0.25, c: 1 },
+  { x: 0.25, y: 0.75, c: 2 },
+  { x: 0.75, y: 0.75, c: 3 },
+];
+
+const u     = new Float32Array(SIZE);
+const v     = new Float32Array(SIZE);
+const u0    = new Float32Array(SIZE);
+const v0    = new Float32Array(SIZE);
+// One density field per ink color
+const dens  = [new Float32Array(SIZE), new Float32Array(SIZE),
+               new Float32Array(SIZE), new Float32Array(SIZE)];
+const dens0 = [new Float32Array(SIZE), new Float32Array(SIZE),
+               new Float32Array(SIZE), new Float32Array(SIZE)];
+
+function setBoundary(b, x) {
+  for (let i = 1; i <= N; i++) {
+    x[idx(0, i)]     = b === 1 ? -x[idx(1, i)]   : x[idx(1, i)];
+    x[idx(N+1, i)]   = b === 1 ? -x[idx(N, i)]   : x[idx(N, i)];
+    x[idx(i, 0)]     = b === 2 ? -x[idx(i, 1)]   : x[idx(i, 1)];
+    x[idx(i, N+1)]   = b === 2 ? -x[idx(i, N)]   : x[idx(i, N)];
+  }
+  x[idx(0,     0)]   = 0.5 * (x[idx(1, 0)]     + x[idx(0, 1)]);
+  x[idx(0,   N+1)]   = 0.5 * (x[idx(1, N+1)]   + x[idx(0, N)]);
+  x[idx(N+1,   0)]   = 0.5 * (x[idx(N, 0)]     + x[idx(N+1, 1)]);
+  x[idx(N+1, N+1)]   = 0.5 * (x[idx(N, N+1)]   + x[idx(N+1, N)]);
+}
+
+function linSolve(b, x, x0, a, c) {
+  const cInv = 1 / c;
+  for (let k = 0; k < ITER; k++) {
+    for (let j = 1; j <= N; j++) {
+      for (let i = 1; i <= N; i++) {
+        x[idx(i,j)] = (x0[idx(i,j)] + a * (
+          x[idx(i-1,j)] + x[idx(i+1,j)] +
+          x[idx(i,j-1)] + x[idx(i,j+1)]
+        )) * cInv;
+      }
+    }
+    setBoundary(b, x);
+  }
+}
+
+function diffuse(b, x, x0, diff) {
+  const a = DT * diff * N * N;
+  linSolve(b, x, x0, a, 1 + 4 * a);
+}
+
+function advect(b, d, d0, u, v) {
+  const dt0 = DT * N;
+  for (let j = 1; j <= N; j++) {
+    for (let i = 1; i <= N; i++) {
+      let x = i - dt0 * u[idx(i,j)];
+      let y = j - dt0 * v[idx(i,j)];
+      x = x < 0.5 ? 0.5 : x > N + 0.5 ? N + 0.5 : x;
+      y = y < 0.5 ? 0.5 : y > N + 0.5 ? N + 0.5 : y;
+      const i0 = x | 0, i1 = i0 + 1;
+      const j0 = y | 0, j1 = j0 + 1;
+      const s1 = x - i0, s0 = 1 - s1;
+      const t1 = y - j0, t0 = 1 - t1;
+      d[idx(i,j)] =
+        s0 * (t0 * d0[idx(i0,j0)] + t1 * d0[idx(i0,j1)]) +
+        s1 * (t0 * d0[idx(i1,j0)] + t1 * d0[idx(i1,j1)]);
+    }
+  }
+  setBoundary(b, d);
+}
+
+function project(u, v, p, div) {
+  const hInv = 1 / N;
+  for (let j = 1; j <= N; j++) {
+    for (let i = 1; i <= N; i++) {
+      div[idx(i,j)] = -0.5 * hInv * (
+        u[idx(i+1,j)] - u[idx(i-1,j)] +
+        v[idx(i,j+1)] - v[idx(i,j-1)]
+      );
+      p[idx(i,j)] = 0;
+    }
+  }
+  setBoundary(0, div);
+  setBoundary(0, p);
+  linSolve(0, p, div, 1, 4);
+  for (let j = 1; j <= N; j++) {
+    for (let i = 1; i <= N; i++) {
+      u[idx(i,j)] -= 0.5 * N * (p[idx(i+1,j)] - p[idx(i-1,j)]);
+      v[idx(i,j)] -= 0.5 * N * (p[idx(i,j+1)] - p[idx(i,j-1)]);
+    }
+  }
+  setBoundary(1, u);
+  setBoundary(2, v);
+}
+
+function velStep(u, v, u0, v0) {
+  // u0, v0 are used as scratch for diffusion then advection
+  diffuse(1, u0, u, VISC);
+  diffuse(2, v0, v, VISC);
+  project(u0, v0, u, v);
+  advect(1, u, u0, u0, v0);
+  advect(2, v, v0, u0, v0);
+  project(u, v, u0, v0);
+}
+
+function densStep(d, d0, u, v) {
+  diffuse(0, d0, d, DIFF);
+  advect(0, d, d0, u, v);
+  // clamp to avoid unbounded growth
+  for (let i = 0; i < SIZE; i++) { if (d[i] > 1) d[i] = 1; }
+}
+
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+const img = ctx.createImageData(N, N);
+const buf = img.data;
+
+let frame = 0;
+// Random-state seeded with a fixed value for deterministic first impulse timing
+let rng = 1;
+function rand() {
+  rng ^= rng << 13; rng ^= rng >> 17; rng ^= rng << 5;
+  return (rng >>> 0) / 0xffffffff;
+}
+
+function addImpulse() {
+  // Pick one of the four injection points with a small random offset
+  const pt = INJECT_PTS[(frame / 120 | 0) % 4];
+  const gx = Math.round(pt.x * N) + Math.round((rand() - 0.5) * 10);
+  const gy = Math.round(pt.y * N) + Math.round((rand() - 0.5) * 10);
+  const ci = pt.c;
+  // Velocity impulse directed toward the center
+  const cx = N / 2, cy = N / 2;
+  const dx = cx - gx, dy = cy - gy;
+  const len = Math.sqrt(dx*dx + dy*dy) || 1;
+  const strength = 80 + rand() * 60;
+  for (let jj = -3; jj <= 3; jj++) {
+    for (let ii = -3; ii <= 3; ii++) {
+      const ix = gx + ii, iy = gy + jj;
+      if (ix < 1 || ix > N || iy < 1 || iy > N) continue;
+      const w = Math.exp(-(ii*ii + jj*jj) * 0.25);
+      u[idx(ix,iy)] += w * strength * dx / len;
+      v[idx(ix,iy)] += w * strength * dy / len;
+      dens[ci][idx(ix,iy)] += w * 1.5;
+    }
+  }
+}
+
+function draw() {
+  if (frame % 120 === 0) addImpulse();
+
+  // Clear force/source accumulators (they were applied above)
+  u0.fill(0); v0.fill(0);
+  for (let c = 0; c < 4; c++) dens0[c].fill(0);
+
+  velStep(u, v, u0, v0);
+  for (let c = 0; c < 4; c++) densStep(dens[c], dens0[c], u, v);
+
+  // Render: composite dye channels onto black background
+  for (let j = 0; j < N; j++) {
+    for (let i = 0; i < N; i++) {
+      // Interior cell index (1-based grid boundary)
+      const gi = idx(i + 1, j + 1);
+      let r = 0, g = 0, b = 0;
+      for (let c = 0; c < 4; c++) {
+        const d = dens[c][gi];
+        if (d > 0) {
+          const col = COLORS[c];
+          // additive alpha blending with gamma-like perception
+          const a = Math.min(d * 1.2, 1.0);
+          r += col[0] * a;
+          g += col[1] * a;
+          b += col[2] * a;
+        }
+      }
+      const p = (j * N + i) * 4;
+      buf[p]   = Math.min(r * 255, 255) | 0;
+      buf[p+1] = Math.min(g * 255, 255) | 0;
+      buf[p+2] = Math.min(b * 255, 255) | 0;
+      buf[p+3] = 255;
+    }
+  }
+
+  ctx.putImageData(img, 0, 0);
+  frame++;
+  requestAnimationFrame(draw);
+}
+
+// Warm up with a first impulse immediately
+addImpulse();
+requestAnimationFrame(draw);
+</script>
+</body>
+</html>
