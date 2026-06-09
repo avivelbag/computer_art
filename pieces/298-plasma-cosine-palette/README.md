@@ -1,4 +1,4 @@
-# Piece 03 — Liquid Color (Plasma Cosine Palette)
+# Piece 298 — Liquid Color (Plasma Cosine Palette)
 
 A demoscene plasma effect: four layered sine waves summed per pixel and mapped through an Inigo Quilez–style cosine palette, producing a seamlessly looping field of flowing color.
 

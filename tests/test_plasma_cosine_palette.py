@@ -1,13 +1,11 @@
-"""Tests for Piece 03 — Liquid Color (Plasma Cosine Palette)."""
+"""Tests for Piece 298 — Liquid Color (Plasma Cosine Palette)."""
 import json
 import math
 import pathlib
 import re
 
-import pytest
-
 REPO = pathlib.Path(__file__).parent.parent
-PIECE_ID = "03-plasma-cosine-palette"
+PIECE_ID = "298-plasma-cosine-palette"
 PIECE_DIR = REPO / "pieces" / PIECE_ID
 PIECES_JSON = REPO / "pieces.json"
 REQUIRED_FIELDS = {"id", "title", "tagline", "year", "technique", "path", "thumbnail", "description"}
@@ -152,7 +150,7 @@ class TestHtmlContent:
         """The JS inside the <script> tag must not exceed 80 lines."""
         match = re.search(r'<script[^>]*>(.*?)</script>', self.html, re.DOTALL)
         assert match, "No <script> block found"
-        lines = [l for l in match.group(1).splitlines() if l.strip()]
+        lines = [ln for ln in match.group(1).splitlines() if ln.strip()]
         assert len(lines) <= 80, f"JS has {len(lines)} non-blank lines, expected ≤ 80"
 
 
